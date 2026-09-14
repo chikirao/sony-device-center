@@ -24,7 +24,9 @@ ApplicationWindow {
             wrapMode: Text.Wrap
             color: controller.lastError.length ? window.danger : window.txtDim
             text: controller.lastError.length ? controller.lastError :
-                controller.busy ? "Working…" : "Connection: " + controller.connectionState
+                controller.busy ? "Working…"
+                : controller.connectionState === "waiting_for_device" ? "No connected headset. Connect one in Bluetooth settings or select a paired device."
+                : "Connection: " + controller.connectionState
         }
     }
 
