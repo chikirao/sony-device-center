@@ -43,7 +43,12 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
         if (generation == _generation) { _lastError = error; emit stateChanged(); }
     });
     connect(_backend, &DeviceBackend::completed, this, [this](quint64 generation) {
-        if (generation == _generation) { _busy = false; emit stateChanged(); }
+        if (generation != _generation) return;
+        _busy = false;
+        if (_pending.isEmpty()) { emit stateChanged(); return; }
+        // Flush the value the user most recently asked for while we were busy.
+        auto next = _pending.takeFirst();
+        _send(next.first, next.second);
     });
     _worker.start();
 }
@@ -52,7 +57,17 @@ DeviceCenterController::~DeviceCenterController() {
     _worker.quit(); _worker.wait();
 }
 void DeviceCenterController::_send(const QString& method, const QJsonObject& params) {
-    if (_busy) return;
+    if (_busy) {
+        // One in-flight command at a time. A slider drag produces many values
+        // per second; only the newest one per method is worth sending, so
+        // replace an earlier queued request for the same method in place and
+        // keep the order otherwise.
+        for (auto& entry : _pending) {
+            if (entry.first == method) { entry.second = params; return; }
+        }
+        _pending.append({method, params});
+        return;
+    }
     _busy = true; _lastError.clear(); const auto generation = ++_generation;
     emit stateChanged();
     const auto bytes = QJsonDocument(QJsonObject{{"method",method},{"params",params}}).toJson(QJsonDocument::Compact);

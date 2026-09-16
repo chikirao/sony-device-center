@@ -137,6 +137,7 @@ signals:
 private:
     void _applySnapshot(const QByteArray& data);
     void _send(const QString& method, const QJsonObject& params = {});
+    QList<QPair<QString, QJsonObject>> _pending;
     QThread _worker;
     DeviceBackend* _backend{nullptr};
     quint64 _generation{0};

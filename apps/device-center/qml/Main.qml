@@ -705,10 +705,12 @@ ApplicationWindow {
                                 visible: controller.connected && controller.hasDualBattery
                                 text: {
                                     var parts = []
-                                    if (controller.batteryLeft >= 0) parts.push("L " + controller.batteryLeft + "%")
-                                    if (controller.batteryRight >= 0) parts.push("R " + controller.batteryRight + "%")
-                                    if (controller.batteryCase >= 0) parts.push(window.tr("battery_case") + " " + controller.batteryCase + "%")
-                                    return parts.join("  ·  ")
+                                    // No "%" here: the ring next to it already says these are percentages,
+                                    // and the sidebar is too narrow for the long form.
+                                    if (controller.batteryLeft >= 0) parts.push("L " + controller.batteryLeft)
+                                    if (controller.batteryRight >= 0) parts.push("R " + controller.batteryRight)
+                                    if (controller.batteryCase >= 0) parts.push(window.tr("battery_case") + " " + controller.batteryCase)
+                                    return parts.join(" · ")
                                 }
                                 color: window.txtDim
                                 font.pixelSize: 11
