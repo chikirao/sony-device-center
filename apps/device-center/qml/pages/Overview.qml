@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -22,7 +23,7 @@ ViewPage {
                 Text {
                     textFormat: Text.PlainText
                     text: controller.deviceName
-                    color: appWindow.txt
+                    color: Theme.txt
                     font.pixelSize: 30
                     font.weight: Font.DemiBold
                     font.letterSpacing: -0.7
@@ -37,7 +38,7 @@ ViewPage {
                 visible: controller.connected
                 text: appWindow.tr("power_off")
                 glyphPath: appWindow.icons.power
-                tint: appWindow.danger
+                tint: Theme.danger
                 compact: true
                 onClicked: controller.powerOff()
             }
@@ -65,9 +66,9 @@ ViewPage {
                     implicitWidth: chipCol.implicitWidth + 30
                     implicitHeight: 54
                     radius: 14
-                    color: appWindow.surface
+                    color: Theme.surface
                     border.width: 1
-                    border.color: appWindow.line
+                    border.color: Theme.line
 
                     ColumnLayout {
                         id: chipCol
@@ -81,7 +82,7 @@ ViewPage {
                             textFormat: Text.PlainText
                             Layout.alignment: Qt.AlignHCenter
                             text: statChip.modelData.v
-                            color: appWindow.txt
+                            color: Theme.txt
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
                         }
@@ -113,11 +114,11 @@ ViewPage {
                         anchors.centerIn: parent
                         z: -1
                         width: 470; height: 470
-                        tint: controller.noiseControlMode === "unknown" ? appWindow.txtDim : controller.noiseControlMode === "cancelling" ? appWindow.accent
-                            : controller.noiseControlMode === "ambient" ? appWindow.ambientWarm
-                            : appWindow.txtFaint
+                        tint: controller.noiseControlMode === "unknown" ? Theme.txtDim : controller.noiseControlMode === "cancelling" ? Theme.accent
+                            : controller.noiseControlMode === "ambient" ? Theme.ambientWarm
+                            : Theme.txtFaint
                         strength: controller.noiseControlMode === "off" ? 0.05 : 0.18
-                        Behavior on strength { NumberAnimation { duration: appWindow.tSlow } }
+                        Behavior on strength { NumberAnimation { duration: Theme.tSlow } }
                     }
 
                     // Concentric rings. ANC pulls inward, Ambient opens outward.
@@ -136,40 +137,40 @@ ViewPage {
                             radius: width / 2
                             color: "transparent"
                             border.width: 1
-                            border.color: inward ? appWindow.accent : appWindow.ambientWarm
+                            border.color: inward ? Theme.accent : Theme.ambientWarm
                             opacity: 0
                             visible: live
 
                             SequentialAnimation {
-                                running: auraRing.live
+                                running: Theme.motionEnabled && !Theme.light && auraRing.live
                                 loops: Animation.Infinite
-                                PauseAnimation { duration: auraRing.index * 700 }
+                                PauseAnimation { duration: Theme.duration(auraRing.index * 700) }
                                 ParallelAnimation {
                                     NumberAnimation {
                                         target: auraRing; property: "opacity"
                                         from: 0.0; to: 0.28
-                                        duration: 900; easing.type: Easing.OutQuad
+                                        duration: Theme.duration(900); easing.type: Easing.OutQuad
                                     }
                                     NumberAnimation {
                                         target: auraRing; property: "scale"
                                         from: auraRing.inward ? 1.12 : 0.90
                                         to: 1.0
-                                        duration: 900; easing.type: Easing.OutQuad
+                                        duration: Theme.duration(900); easing.type: Easing.OutQuad
                                     }
                                 }
                                 ParallelAnimation {
                                     NumberAnimation {
                                         target: auraRing; property: "opacity"
                                         to: 0.0
-                                        duration: 1200; easing.type: Easing.InQuad
+                                        duration: Theme.duration(1200); easing.type: Easing.InQuad
                                     }
                                     NumberAnimation {
                                         target: auraRing; property: "scale"
                                         to: auraRing.inward ? 0.88 : 1.14
-                                        duration: 1200; easing.type: Easing.InQuad
+                                        duration: Theme.duration(1200); easing.type: Easing.InQuad
                                     }
                                 }
-                                PauseAnimation { duration: 400 }
+                                PauseAnimation { duration: Theme.duration(400) }
                             }
                         }
                     }
@@ -181,8 +182,8 @@ ViewPage {
                         opacity: controller.connected ? 1.0 : 0.35
                         scale: heroHover.hovered ? 1.06 : 1.0
 
-                        Behavior on scale { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
-                        Behavior on opacity { NumberAnimation { duration: appWindow.tSlow } }
+                        Behavior on scale { NumberAnimation { duration: Theme.duration(320); easing.type: Easing.OutCubic } }
+                        Behavior on opacity { NumberAnimation { duration: Theme.tSlow } }
 
                         HoverHandler { id: heroHover }
                     }
@@ -195,7 +196,7 @@ ViewPage {
                     text: controller.noiseControlMode === "unknown" ? appWindow.tr("unknown") : controller.noiseControlMode === "cancelling" ? appWindow.tr("noise_cancelling")
                         : controller.noiseControlMode === "ambient" ? appWindow.tr("ambient_sound")
                         : appWindow.tr("nc_title_off")
-                    color: appWindow.txt
+                    color: Theme.txt
                     font.pixelSize: 18
                     font.weight: Font.DemiBold
                     font.letterSpacing: -0.2
@@ -208,7 +209,7 @@ ViewPage {
                     text: controller.noiseControlMode === "unknown" ? appWindow.tr("unknown") : controller.noiseControlMode === "cancelling" ? appWindow.tr("nc_desc_cancelling")
                         : controller.noiseControlMode === "ambient" ? appWindow.tr("nc_desc_ambient").arg(controller.ambientLevel)
                         : appWindow.tr("nc_desc_off")
-                    color: appWindow.txtFaint
+                    color: Theme.txtFaint
                     font.pixelSize: 12
                 }
 
@@ -221,7 +222,7 @@ ViewPage {
                     PillButton { appWindow: root.appWindow;
                         text: appWindow.tr("noise_cancelling")
                         glyphPath: appWindow.icons.shield
-                        tint: appWindow.accent
+                        tint: Theme.accent
                         active: controller.noiseControlMode === "cancelling"
                         onClicked: controller.setAnc(!active)
                     }
@@ -229,7 +230,7 @@ ViewPage {
                     PillButton { appWindow: root.appWindow;
                         text: appWindow.tr("ambient")
                         glyphPath: appWindow.icons.mic
-                        tint: appWindow.ambientWarm
+                        tint: Theme.ambientWarm
                         active: controller.noiseControlMode === "ambient"
                         onClicked: controller.setAmbient(controller.ambientLevel, controller.focusOnVoice)
                     }
@@ -237,7 +238,7 @@ ViewPage {
                     PillButton { appWindow: root.appWindow;
                         text: appWindow.tr("noise_control_off")
                         glyphPath: appWindow.icons.power
-                        tint: appWindow.txtDim
+                        tint: Theme.txtDim
                         active: controller.noiseControlMode === "off"
                         onClicked: controller.setNoiseControlOff()
                     }

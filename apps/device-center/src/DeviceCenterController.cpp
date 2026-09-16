@@ -15,6 +15,13 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QSettings>
+#include <QTimer>
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QUrl>
@@ -27,6 +34,27 @@ namespace sony::devicecenter {
 DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<core::IDeviceService> service)
     : QObject(parent) {
     QSettings settings("SonyBridge", "SonyDeviceCenter");
+    _themeMode = settings.value("themeMode", "dark").toString();
+    if (_themeMode != "dark" && _themeMode != "light" && _themeMode != "system") _themeMode = "dark";
+    _iconAntialiasing = settings.value("iconAntialiasing", true).toBool();
+    _animationsEnabled = settings.value("animationsEnabled", true).toBool();
+#ifdef Q_OS_WIN
+    // Qt 6.10 exposes color scheme, but not the Windows animation preference.
+    const auto updateMotion = [this] {
+        BOOL enabled = TRUE;
+        if (SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &enabled, 0)) {
+            const bool reduced = !enabled;
+            if (_systemReducedMotion != reduced) {
+                _systemReducedMotion = reduced;
+                emit appearanceChanged();
+            }
+        }
+    };
+    updateMotion();
+    auto* motionTimer = new QTimer(this);
+    connect(motionTimer, &QTimer::timeout, this, updateMotion);
+    motionTimer->start(2000);
+#endif
     _currentLanguage = settings.value("language", "en").toString();
     _minimizeToTray = settings.value("minimizeToTray", true).toBool();
     _notifyLowBattery = settings.value("notifyLowBattery", true).toBool();
@@ -240,6 +268,28 @@ void DeviceCenterController::setAutostart(bool enable) {
     }
 #endif
     emit autostartChanged();
+}
+
+void DeviceCenterController::setIconAntialiasing(bool enabled) {
+    if (_iconAntialiasing == enabled) return;
+    _iconAntialiasing = enabled;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("iconAntialiasing", enabled);
+    emit appearanceChanged();
+}
+
+void DeviceCenterController::setThemeMode(const QString& mode) {
+    if (mode != "dark" && mode != "light" && mode != "system") return;
+    if (_themeMode == mode) return;
+    _themeMode = mode;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("themeMode", mode);
+    emit appearanceChanged();
+}
+
+void DeviceCenterController::setAnimationsEnabled(bool enabled) {
+    if (_animationsEnabled == enabled) return;
+    _animationsEnabled = enabled;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("animationsEnabled", enabled);
+    emit appearanceChanged();
 }
 
 bool DeviceCenterController::minimizeToTray() const { return _minimizeToTray; }

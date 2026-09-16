@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -9,14 +10,17 @@ Item {
     id: glyph
     property string path: ""
     property real size: 18
-    property color color: appWindow.txtDim
+    property color color: Theme.txtDim
     property real weight: 1.8
     implicitWidth: size
     implicitHeight: size
 
     Shape {
         anchors.fill: parent
-        antialiasing: true
+        antialiasing: Theme.iconAntialiasing
+        // Geometry rendering needs multisampling to smooth ShapePath edges.
+        layer.enabled: Theme.iconAntialiasing
+        layer.samples: Theme.iconAntialiasing ? 4 : 0
         ShapePath {
             strokeColor: glyph.color
             // Path.scale scales geometry only — strokeWidth is already in
@@ -29,5 +33,5 @@ Item {
             PathSvg { path: glyph.path }
         }
     }
-    Behavior on color { ColorAnimation { duration: appWindow.tFast } }
+    Behavior on color { ColorAnimation { duration: Theme.tFast } }
 }

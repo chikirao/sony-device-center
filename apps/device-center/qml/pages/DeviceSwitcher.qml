@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -17,7 +18,7 @@ ViewPage {
             Text {
                 textFormat: Text.PlainText
                 text: appWindow.tr("paired_devices")
-                color: appWindow.txt
+                color: Theme.txt
                 font.pixelSize: 28
                 font.weight: Font.DemiBold
                 font.letterSpacing: -0.6
@@ -25,7 +26,7 @@ ViewPage {
             Text {
                 textFormat: Text.PlainText
                 text: appWindow.tr("paired_devices_desc")
-                color: appWindow.txtDim
+                color: Theme.txtDim
                 font.pixelSize: 13
             }
         }
@@ -47,7 +48,7 @@ ViewPage {
                     active: current
                     hovered: devHover.hovered
                     scale: (devHover.hovered && !current) ? 1.006 : 1.0
-                    Behavior on scale { NumberAnimation { duration: appWindow.tBase } }
+                    Behavior on scale { NumberAnimation { duration: Theme.tBase } }
 
                     HoverHandler { id: devHover }
 
@@ -61,15 +62,15 @@ ViewPage {
                             Layout.preferredWidth: 48
                             Layout.preferredHeight: 48
                             radius: 15
-                            color: devCard.current ? Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.18) : appWindow.surfaceSunk
+                            color: devCard.current ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.18) : Theme.surfaceSunk
                             border.width: 1
-                            border.color: devCard.current ? Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.5) : appWindow.line
+                            border.color: devCard.current ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5) : Theme.line
 
                             Glyph { appWindow: root.appWindow;
                                 anchors.centerIn: parent
                                 path: appWindow.icons.headphones
                                 size: 22
-                                color: devCard.current ? appWindow.accentSoft : appWindow.txtFaint
+                                color: devCard.current ? Theme.accentSoft : Theme.txtFaint
                             }
                         }
 
@@ -79,7 +80,7 @@ ViewPage {
                             Text {
                                 textFormat: Text.PlainText
                                 text: devCard.modelData.name
-                                color: appWindow.txt
+                                color: Theme.txt
                                 font.pixelSize: 15
                                 font.weight: Font.DemiBold
                             }
@@ -89,19 +90,19 @@ ViewPage {
                                     Layout.preferredWidth: 6
                                     Layout.preferredHeight: 6
                                     radius: 3
-                                    color: devCard.current ? appWindow.success : appWindow.txtFaint
+                                    color: devCard.current ? Theme.success : Theme.txtFaint
                                 }
                                 Text {
                                     textFormat: Text.PlainText
                                     text: devCard.current ? appWindow.tr("connected") : appWindow.tr("available")
-                                    color: devCard.current ? appWindow.success : appWindow.txtFaint
+                                    color: devCard.current ? Theme.success : Theme.txtFaint
                                     font.pixelSize: 11
                                     font.weight: Font.Medium
                                 }
                                 Text {
                                     textFormat: Text.PlainText
                                     text: "·  " + devCard.modelData.address
-                                    color: appWindow.txtFaint
+                                    color: Theme.txtFaint
                                     font.pixelSize: 11
                                 }
                             }

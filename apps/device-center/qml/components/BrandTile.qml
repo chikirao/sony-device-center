@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -10,8 +11,8 @@ Rectangle {
     id: brandTile
     radius: width * 0.325
     gradient: Gradient {
-        GradientStop { position: 0.0; color: appWindow.accentSoft }
-        GradientStop { position: 1.0; color: appWindow.accent }
+        GradientStop { position: 0.0; color: Theme.accentSoft }
+        GradientStop { position: 1.0; color: Theme.accent }
     }
 
     BrandMark { appWindow: brandTile.appWindow;

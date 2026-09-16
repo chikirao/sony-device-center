@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -7,7 +8,7 @@ import QtQuick.Shapes
 Button {
     required property var appWindow
     id: pill
-    property color tint: appWindow.accent
+    property color tint: Theme.accent
     property bool active: false
     property string glyphPath: ""
     property bool compact: false
@@ -25,19 +26,19 @@ Button {
     scale: pressed ? 0.955 : (hovered ? 1.035 : 1.0)
 
     Behavior on scale {
-        NumberAnimation { duration: 220; easing.type: Easing.OutBack; easing.overshoot: 2.2 }
+        NumberAnimation { duration: Theme.duration(220); easing.type: Easing.OutBack; easing.overshoot: 2.2 }
     }
 
     background: Rectangle {
         radius: height / 2
         color: pill.active ? Qt.rgba(pill.tint.r, pill.tint.g, pill.tint.b, 0.16)
-             : pill.hovered ? appWindow.surfaceHi : appWindow.surface
+             : pill.hovered ? Theme.surfaceHi : Theme.surface
         border.width: 1
         border.color: pill.active ? Qt.rgba(pill.tint.r, pill.tint.g, pill.tint.b, 0.8)
-                    : pill.hovered ? appWindow.lineHi : appWindow.line
+                    : pill.hovered ? Theme.lineHi : Theme.line
 
-        Behavior on color { ColorAnimation { duration: appWindow.tBase } }
-        Behavior on border.color { ColorAnimation { duration: appWindow.tBase } }
+        Behavior on color { ColorAnimation { duration: Theme.tBase } }
+        Behavior on border.color { ColorAnimation { duration: Theme.tBase } }
 
         // Halo ring — the difference between "on" and "on, and you felt it".
         Rectangle {
@@ -49,8 +50,8 @@ Button {
             border.color: pill.tint
             opacity: pill.active ? 0.4 : 0
             scale: pill.active ? 1.0 : 0.94
-            Behavior on opacity { NumberAnimation { duration: appWindow.tSlow } }
-            Behavior on scale { NumberAnimation { duration: appWindow.tSlow; easing.type: Easing.OutBack } }
+            Behavior on opacity { NumberAnimation { duration: Theme.tSlow } }
+            Behavior on scale { NumberAnimation { duration: Theme.tSlow; easing.type: Easing.OutBack } }
         }
     }
 
@@ -64,15 +65,15 @@ Button {
             path: pill.glyphPath
             size: pill.compact ? 17 : 20
             weight: 1.9
-            color: pill.active ? pill.tint : appWindow.txtDim
+            color: pill.active ? pill.tint : Theme.txtDim
         }
         Text {
             textFormat: Text.PlainText
             text: pill.text
-            color: pill.active ? appWindow.txt : appWindow.txtDim
+            color: pill.active ? Theme.txt : Theme.txtDim
             font.pixelSize: pill.compact ? 12 : 13
             font.weight: pill.active ? Font.DemiBold : Font.Medium
-            Behavior on color { ColorAnimation { duration: appWindow.tFast } }
+            Behavior on color { ColorAnimation { duration: Theme.tFast } }
         }
     }
 }

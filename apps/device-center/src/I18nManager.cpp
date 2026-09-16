@@ -163,6 +163,14 @@ void I18nManager::_initTranslations() {
     en["notify_disconnected"]             = "Headphones disconnected";
     en["notify_charged"]                  = "Fully charged";
     en["notify_low_battery"]              = "Battery at %1%";
+    en["appearance"]                      = "Appearance";
+    en["theme"]                           = "Theme";
+    en["theme_dark"]                      = "Dark";
+    en["theme_light"]                     = "Light";
+    en["theme_system"]                    = "Follow system";
+    en["animations"]                      = "Animations";
+    en["animations_desc"]                 = "Page transitions and display effects. System reduced motion takes priority.";
+    en["icon_antialiasing"]               = "Smooth icons";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -284,6 +292,14 @@ void I18nManager::_initTranslations() {
     pt["notify_disconnected"]             = "Fone desconectado";
     pt["notify_charged"]                  = "Totalmente carregado";
     pt["notify_low_battery"]              = "Bateria em %1%";
+    pt["appearance"]                      = "Aparência";
+    pt["theme"]                           = "Tema";
+    pt["theme_dark"]                      = "Escuro";
+    pt["theme_light"]                     = "Claro";
+    pt["theme_system"]                    = "Usar sistema";
+    pt["animations"]                      = "Animações";
+    pt["animations_desc"]                 = "Transições e efeitos visuais. A redução de movimento do sistema tem prioridade.";
+    pt["icon_antialiasing"]               = "Suavizar ícones";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -405,6 +421,14 @@ void I18nManager::_initTranslations() {
     es["notify_disconnected"]             = "Auriculares desconectados";
     es["notify_charged"]                  = "Carga completa";
     es["notify_low_battery"]              = "Batería al %1%";
+    es["appearance"]                      = "Apariencia";
+    es["theme"]                           = "Tema";
+    es["theme_dark"]                      = "Oscuro";
+    es["theme_light"]                     = "Claro";
+    es["theme_system"]                    = "Seguir sistema";
+    es["animations"]                      = "Animaciones";
+    es["animations_desc"]                 = "Transiciones y efectos visuales. Reducir movimiento del sistema tiene prioridad.";
+    es["icon_antialiasing"]               = "Suavizar iconos";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -526,6 +550,14 @@ void I18nManager::_initTranslations() {
     de["notify_disconnected"]             = "Kopfhörer getrennt";
     de["notify_charged"]                  = "Vollständig geladen";
     de["notify_low_battery"]              = "Akku bei %1 %";
+    de["appearance"]                      = "Darstellung";
+    de["theme"]                           = "Design";
+    de["theme_dark"]                      = "Dunkel";
+    de["theme_light"]                     = "Hell";
+    de["theme_system"]                    = "Wie System";
+    de["animations"]                      = "Animationen";
+    de["animations_desc"]                 = "Seitenübergänge und Anzeigeeffekte. Reduzierte Bewegung im System hat Vorrang.";
+    de["icon_antialiasing"]               = "Kantenglättung für Symbole";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -647,6 +679,14 @@ void I18nManager::_initTranslations() {
     fr["notify_disconnected"]             = "Casque déconnecté";
     fr["notify_charged"]                  = "Charge terminée";
     fr["notify_low_battery"]              = "Batterie à %1 %";
+    fr["appearance"]                      = "Apparence";
+    fr["theme"]                           = "Thème";
+    fr["theme_dark"]                      = "Sombre";
+    fr["theme_light"]                     = "Clair";
+    fr["theme_system"]                    = "Suivre le système";
+    fr["animations"]                      = "Animations";
+    fr["animations_desc"]                 = "Transitions et effets visuels. La réduction des animations du système est prioritaire.";
+    fr["icon_antialiasing"]               = "Lisser les icônes";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -768,6 +808,14 @@ void I18nManager::_initTranslations() {
     ja["notify_disconnected"]             = "ヘッドホンが切断されました";
     ja["notify_charged"]                  = "充電が完了しました";
     ja["notify_low_battery"]              = "バッテリー残量 %1%";
+    ja["appearance"]                      = "外観";
+    ja["theme"]                           = "テーマ";
+    ja["theme_dark"]                      = "ダーク";
+    ja["theme_light"]                     = "ライト";
+    ja["theme_system"]                    = "システムに従う";
+    ja["animations"]                      = "アニメーション";
+    ja["animations_desc"]                 = "ページ遷移と表示効果。システムの視差効果を減らす設定が優先されます。";
+    ja["icon_antialiasing"]               = "アイコンのアンチエイリアス";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -889,6 +937,14 @@ void I18nManager::_initTranslations() {
     ru["notify_disconnected"]             = "Наушники отключены";
     ru["notify_charged"]                  = "Полностью заряжены";
     ru["notify_low_battery"]              = "Заряд %1%";
+    ru["appearance"]                      = "Оформление";
+    ru["theme"]                           = "Тема";
+    ru["theme_dark"]                      = "Тёмная";
+    ru["theme_light"]                     = "Светлая";
+    ru["theme_system"]                    = "Как в системе";
+    ru["animations"]                      = "Анимации";
+    ru["animations_desc"]                 = "Переходы страниц и эффекты табло. Системное уменьшение анимаций имеет приоритет.";
+    ru["icon_antialiasing"]               = "Сглаживание иконок";
 }
 
 } // namespace sony::devicecenter

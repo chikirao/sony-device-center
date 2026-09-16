@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -17,7 +18,7 @@ ViewPage {
             Text {
                 textFormat: Text.PlainText
                 text: appWindow.tr("nav_equalizer")
-                color: appWindow.txt
+                color: Theme.txt
                 font.pixelSize: 28
                 font.weight: Font.DemiBold
                 font.letterSpacing: -0.6
@@ -25,7 +26,7 @@ ViewPage {
             Text {
                 textFormat: Text.PlainText
                 text: appWindow.tr("eq_page_desc")
-                color: appWindow.txtDim
+                color: Theme.txtDim
                 font.pixelSize: 13
             }
         }
@@ -57,18 +58,18 @@ ViewPage {
                     width: chipText.implicitWidth + 30
                     height: 38
                     radius: 19
-                    color: current ? Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.18)
-                         : chipHover.hovered ? appWindow.surfaceHi : appWindow.surface
+                    color: current ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.18)
+                         : chipHover.hovered ? Theme.surfaceHi : Theme.surface
                     border.width: 1
-                    border.color: current ? Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.7)
-                                : chipHover.hovered ? appWindow.lineHi : appWindow.line
+                    border.color: current ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.7)
+                                : chipHover.hovered ? Theme.lineHi : Theme.line
 
-                    Behavior on color { ColorAnimation { duration: appWindow.tFast } }
-                    Behavior on border.color { ColorAnimation { duration: appWindow.tFast } }
+                    Behavior on color { ColorAnimation { duration: Theme.tFast } }
+                    Behavior on border.color { ColorAnimation { duration: Theme.tFast } }
 
                     scale: chipTap.pressed ? 0.94 : (chipHover.hovered ? 1.04 : 1.0)
                     Behavior on scale {
-                        NumberAnimation { duration: 200; easing.type: Easing.OutBack; easing.overshoot: 2.4 }
+                        NumberAnimation { duration: Theme.duration(200); easing.type: Easing.OutBack; easing.overshoot: 2.4 }
                     }
 
                     HoverHandler { id: chipHover; cursorShape: Qt.PointingHandCursor }
@@ -79,10 +80,10 @@ ViewPage {
                         id: chipText
                         anchors.centerIn: parent
                         text: chip.modelData.name
-                        color: chip.current ? appWindow.txt : appWindow.txtDim
+                        color: chip.current ? Theme.txt : Theme.txtDim
                         font.pixelSize: 12
                         font.weight: chip.current ? Font.DemiBold : Font.Normal
-                        Behavior on color { ColorAnimation { duration: appWindow.tFast } }
+                        Behavior on color { ColorAnimation { duration: Theme.tFast } }
                     }
                 }
             }
@@ -105,7 +106,7 @@ ViewPage {
                     Text {
                         textFormat: Text.PlainText
                         text: controller.equalizerPresetName
-                        color: appWindow.accentSoft
+                        color: Theme.accentSoft
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
                     }
@@ -164,14 +165,14 @@ ViewPage {
                     Text {
                         textFormat: Text.PlainText
                         text: appWindow.tr("clear_bass")
-                        color: appWindow.txt
+                        color: Theme.txt
                         font.pixelSize: 15
                         font.weight: Font.DemiBold
                     }
                     Text {
                         textFormat: Text.PlainText
                         text: appWindow.tr("clear_bass_desc")
-                        color: appWindow.txtFaint
+                        color: Theme.txtFaint
                         font.pixelSize: 11
                     }
                 }
@@ -187,14 +188,14 @@ ViewPage {
                     implicitWidth: 56
                     implicitHeight: 34
                     radius: 11
-                    color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.16)
+                    color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.16)
                     border.width: 1
-                    border.color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.5)
+                    border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5)
                     Text {
                         textFormat: Text.PlainText
                         anchors.centerIn: parent
                         text: (controller.clearBass > 0 ? "+" : "") + controller.clearBass
-                        color: appWindow.accentSoft
+                        color: Theme.accentSoft
                         font.pixelSize: 14
                         font.weight: Font.DemiBold
                     }

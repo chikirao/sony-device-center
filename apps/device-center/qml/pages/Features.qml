@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -17,7 +18,7 @@ ViewPage {
             Text {
                 textFormat: Text.PlainText
                 text: appWindow.tr("features_title")
-                color: appWindow.txt
+                color: Theme.txt
                 font.pixelSize: 28
                 font.weight: Font.DemiBold
                 font.letterSpacing: -0.6
@@ -25,7 +26,7 @@ ViewPage {
             Text {
                 textFormat: Text.PlainText
                 text: appWindow.tr("features_desc")
-                color: appWindow.txtDim
+                color: Theme.txtDim
                 font.pixelSize: 13
             }
         }
@@ -71,17 +72,17 @@ ViewPage {
                             Layout.preferredWidth: 44
                             Layout.preferredHeight: 44
                             radius: 14
-                            color: featCard.on ? Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.18) : appWindow.surfaceSunk
+                            color: featCard.on ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.18) : Theme.surfaceSunk
                             border.width: 1
-                            border.color: featCard.on ? Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.5) : appWindow.line
-                            Behavior on color { ColorAnimation { duration: appWindow.tBase } }
-                            Behavior on border.color { ColorAnimation { duration: appWindow.tBase } }
+                            border.color: featCard.on ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5) : Theme.line
+                            Behavior on color { ColorAnimation { duration: Theme.tBase } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.tBase } }
 
                             Glyph { appWindow: root.appWindow;
                                 anchors.centerIn: parent
                                 path: featCard.modelData.glyph
                                 size: 21
-                                color: featCard.on ? appWindow.accentSoft : appWindow.txtFaint
+                                color: featCard.on ? Theme.accentSoft : Theme.txtFaint
                             }
                         }
 
@@ -91,7 +92,7 @@ ViewPage {
                             Text {
                                 textFormat: Text.PlainText
                                 text: featCard.modelData.title
-                                color: appWindow.txt
+                                color: Theme.txt
                                 font.pixelSize: 15
                                 font.weight: Font.DemiBold
                             }
@@ -99,7 +100,7 @@ ViewPage {
                                 textFormat: Text.PlainText
                                 Layout.fillWidth: true
                                 text: !featCard.supported ? appWindow.tr("not_supported") : !featCard.known ? appWindow.tr("state_unknown_waiting") : featCard.modelData.desc
-                                color: appWindow.txtFaint
+                                color: Theme.txtFaint
                                 font.pixelSize: 11
                                 wrapMode: Text.WordWrap
                             }
@@ -134,14 +135,14 @@ ViewPage {
                         Layout.preferredWidth: 44
                         Layout.preferredHeight: 44
                         radius: 14
-                        color: appWindow.surfaceSunk
+                        color: Theme.surfaceSunk
                         border.width: 1
-                        border.color: appWindow.line
+                        border.color: Theme.line
                         Glyph { appWindow: root.appWindow;
                             anchors.centerIn: parent
                             path: appWindow.icons.power
                             size: 21
-                            color: appWindow.txtFaint
+                            color: Theme.txtFaint
                         }
                     }
 
@@ -151,7 +152,7 @@ ViewPage {
                         Text {
                             textFormat: Text.PlainText
                             text: appWindow.tr("auto_power_off")
-                            color: appWindow.txt
+                            color: Theme.txt
                             font.pixelSize: 15
                             font.weight: Font.DemiBold
                         }
@@ -159,7 +160,7 @@ ViewPage {
                             textFormat: Text.PlainText
                             Layout.fillWidth: true
                             text: appWindow.tr("auto_power_off_desc")
-                            color: appWindow.txtFaint
+                            color: Theme.txtFaint
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
                         }
@@ -181,10 +182,10 @@ ViewPage {
 
                         background: Rectangle {
                             radius: 11
-                            color: powerCombo.hovered ? appWindow.surfaceHi : appWindow.surfaceSunk
+                            color: powerCombo.hovered ? Theme.surfaceHi : Theme.surfaceSunk
                             border.width: 1
-                            border.color: powerCombo.hovered ? appWindow.lineHi : appWindow.line
-                            Behavior on color { ColorAnimation { duration: appWindow.tFast } }
+                            border.color: powerCombo.hovered ? Theme.lineHi : Theme.line
+                            Behavior on color { ColorAnimation { duration: Theme.tFast } }
                         }
 
                         contentItem: Text {
@@ -192,7 +193,7 @@ ViewPage {
                             leftPadding: 13
                             rightPadding: 28
                             text: powerCombo.displayText
-                            color: appWindow.txt
+                            color: Theme.txt
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
                             elide: Text.ElideRight
@@ -202,10 +203,10 @@ ViewPage {
                             x: powerCombo.width - width - 12
                             y: powerCombo.height / 2 - height / 2
                             size: 14
-                            color: appWindow.txtFaint
+                            color: Theme.txtFaint
                             path: appWindow.icons.chevron
                             rotation: powerCombo.popup.visible ? 180 : 0
-                            Behavior on rotation { NumberAnimation { duration: appWindow.tBase } }
+                            Behavior on rotation { NumberAnimation { duration: Theme.tBase } }
                         }
                     }
                 }

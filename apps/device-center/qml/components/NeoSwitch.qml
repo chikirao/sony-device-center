@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -21,11 +22,11 @@ Switch {
         implicitWidth: 50
         implicitHeight: 28
         radius: height / 2
-        color: sw.checked ? appWindow.accent : appWindow.surfaceSunk
+        color: sw.checked ? Theme.accent : Theme.surfaceSunk
         border.width: 1
-        border.color: sw.checked ? appWindow.accent : (sw.hovered ? appWindow.lineHi : appWindow.line)
-        Behavior on color { ColorAnimation { duration: appWindow.tBase } }
-        Behavior on border.color { ColorAnimation { duration: appWindow.tBase } }
+        border.color: sw.checked ? Theme.accent : (sw.hovered ? Theme.lineHi : Theme.line)
+        Behavior on color { ColorAnimation { duration: Theme.tBase } }
+        Behavior on border.color { ColorAnimation { duration: Theme.tBase } }
 
         Rectangle {
             width: 20
@@ -33,9 +34,9 @@ Switch {
             radius: 10
             y: 4
             x: sw.checked ? parent.width - width - 4 : 4
-            color: sw.checked ? "white" : appWindow.txtFaint
-            Behavior on x { NumberAnimation { duration: 240; easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
-            Behavior on color { ColorAnimation { duration: appWindow.tBase } }
+            color: sw.checked ? "white" : Theme.txtFaint
+            Behavior on x { NumberAnimation { duration: Theme.duration(240); easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
+            Behavior on color { ColorAnimation { duration: Theme.tBase } }
         }
     }
     contentItem: Item {}

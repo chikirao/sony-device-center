@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -17,10 +18,10 @@ ColumnLayout {
         textFormat: Text.PlainText
         Layout.alignment: Qt.AlignHCenter
         text: (band.value > 0 ? "+" : "") + Math.round(band.value)
-        color: Math.round(band.value) === 0 ? appWindow.txtFaint : appWindow.accentSoft
+        color: Math.round(band.value) === 0 ? Theme.txtFaint : Theme.accentSoft
         font.pixelSize: 12
         font.weight: Font.DemiBold
-        Behavior on color { ColorAnimation { duration: appWindow.tFast } }
+        Behavior on color { ColorAnimation { duration: Theme.tFast } }
     }
 
     Slider {
@@ -46,9 +47,9 @@ ColumnLayout {
             width: 6
             height: vs.availableHeight
             radius: 3
-            color: appWindow.surfaceSunk
+            color: Theme.surfaceSunk
             border.width: 1
-            border.color: appWindow.line
+            border.color: Theme.line
 
             // The zero line. Small detail, big legibility win.
             Rectangle {
@@ -56,7 +57,7 @@ ColumnLayout {
                 height: 1
                 x: -4
                 y: parent.height / 2
-                color: appWindow.lineHi
+                color: Theme.lineHi
             }
 
             Rectangle {
@@ -66,8 +67,8 @@ ColumnLayout {
                 height: parent.height * Math.abs(p - 0.5)
                 radius: 3
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: appWindow.accentSoft }
-                    GradientStop { position: 1.0; color: appWindow.accent }
+                    GradientStop { position: 0.0; color: Theme.accentSoft }
+                    GradientStop { position: 1.0; color: Theme.accent }
                 }
             }
         }
@@ -80,10 +81,10 @@ ColumnLayout {
             radius: 10
             color: "white"
             border.width: 2
-            border.color: appWindow.accent
+            border.color: Theme.accent
             scale: vs.pressed ? 1.22 : (vs.hovered ? 1.1 : 1.0)
             Behavior on scale {
-                NumberAnimation { duration: 180; easing.type: Easing.OutBack; easing.overshoot: 2.5 }
+                NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutBack; easing.overshoot: 2.5 }
             }
         }
     }
@@ -92,7 +93,7 @@ ColumnLayout {
         textFormat: Text.PlainText
         Layout.alignment: Qt.AlignHCenter
         text: band.label
-        color: appWindow.txtFaint
+        color: Theme.txtFaint
         font.pixelSize: 10
         font.letterSpacing: 0.6
     }

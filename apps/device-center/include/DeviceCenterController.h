@@ -56,6 +56,10 @@ class DeviceCenterController : public QObject {
 
     Q_PROPERTY(QVariantList pairedDevices READ pairedDevices NOTIFY pairedDevicesChanged)
 
+    Q_PROPERTY(bool iconAntialiasing READ iconAntialiasing WRITE setIconAntialiasing NOTIFY appearanceChanged)
+    Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY appearanceChanged)
+    Q_PROPERTY(bool animationsEnabled READ animationsEnabled WRITE setAnimationsEnabled NOTIFY appearanceChanged)
+    Q_PROPERTY(bool systemReducedMotion READ systemReducedMotion NOTIFY appearanceChanged)
     Q_PROPERTY(bool autostart READ autostart WRITE setAutostart NOTIFY autostartChanged)
     Q_PROPERTY(bool minimizeToTray READ minimizeToTray WRITE setMinimizeToTray NOTIFY minimizeToTrayChanged)
     Q_PROPERTY(bool notifyLowBattery READ notifyLowBattery WRITE setNotifyLowBattery NOTIFY notificationSettingsChanged)
@@ -124,6 +128,13 @@ public:
     Q_INVOKABLE void setAutoPowerOff(int index);
     Q_INVOKABLE void powerOff();
 
+    bool iconAntialiasing() const { return _iconAntialiasing; }
+    Q_INVOKABLE void setIconAntialiasing(bool enabled);
+    QString themeMode() const { return _themeMode; }
+    bool animationsEnabled() const { return _animationsEnabled; }
+    bool systemReducedMotion() const { return _systemReducedMotion; }
+    Q_INVOKABLE void setThemeMode(const QString& mode);
+    Q_INVOKABLE void setAnimationsEnabled(bool enabled);
     Q_INVOKABLE void setAutostart(bool enable);
     [[nodiscard]] bool minimizeToTray() const;
     Q_INVOKABLE void setMinimizeToTray(bool enable);
@@ -151,6 +162,7 @@ signals:
     void minimizeToTrayChanged();
     void notificationSettingsChanged();
     void languageChanged();
+    void appearanceChanged();
 
 private:
     void _applySnapshot(const QByteArray& data);
@@ -183,6 +195,10 @@ private:
     bool _adaptiveVolume{false};
     int _autoPowerOff{0};
     QVariantList _pairedDevices;
+    QString _themeMode{"dark"};
+    bool _animationsEnabled{true};
+    bool _iconAntialiasing{true};
+    bool _systemReducedMotion{false};
     QString _currentLanguage{"en"};
     bool _minimizeToTray{true};
     bool _notifyLowBattery{true}, _notifyConnection{true}, _notifyCharged{false};

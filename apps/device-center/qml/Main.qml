@@ -22,10 +22,18 @@ ApplicationWindow {
             window.hide()
         }
     }
-    color: bg
+    color: Theme.bg
+    palette.window: Theme.bg
+    palette.windowText: Theme.txt
+    palette.base: Theme.surface
+    palette.text: Theme.txt
+    palette.button: Theme.surfaceHi
+    palette.buttonText: Theme.txt
+    palette.highlight: Theme.accent
+    palette.highlightedText: "#FFFFFF"
 
     footer: Rectangle {
-        color: window.surface
+        color: Theme.surface
         height: statusText.implicitHeight + 24
         Text {
             id: statusText
@@ -33,7 +41,7 @@ ApplicationWindow {
             anchors.margins: 12
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
-            color: controller.lastError.length ? window.danger : window.txtDim
+            color: controller.lastError.length ? Theme.danger : Theme.txtDim
             text: controller.lastError.length ? controller.lastError :
                 controller.busy ? window.tr("working") : window.tr("connection_prefix") + window.trState(controller.connectionState)
         }
@@ -59,44 +67,10 @@ ApplicationWindow {
         return value === key ? controller.equalizerPresetName : value
     }
 
-    // ==========================================================
-    // DESIGN TOKENS
-    // Every color in this file comes from here. No orphan hex.
-    // ==========================================================
-    readonly property color bg:            "#0A0B0F"
-    readonly property color surface:       "#14161E"
-    readonly property color surfaceHi:     "#1B1E29"
-    readonly property color surfaceSunk:   "#0E1016"
-    readonly property color line:          "#22252F"
-    readonly property color lineHi:        "#2F3341"
-
-    readonly property color accent:        "#7C5CFF"
-    readonly property color accentSoft:    "#A78BFA"
-    readonly property color ambientWarm:   "#F2A73B"
-    readonly property color success:       "#2DD4A7"
-    readonly property color danger:        "#FF5A5F"
-
-    readonly property color txt:           "#F4F6FA"
-    readonly property color txtDim:        "#98A1B2"
-    readonly property color txtFaint:      "#5C6473"
-
-    // Mono face for the wordmark. Resolved against the installed families
-    // rather than set through font.families: that property makes the engine
-    // abort loading the component on Qt 6.11, and silently — no error text.
-    readonly property string monoFamily: {
-        var wanted = ["JetBrains Mono", "JetBrainsMono Nerd Font", "Cascadia Code",
-                      "SF Mono", "Consolas", "DejaVu Sans Mono", "Liberation Mono"]
-        var installed = Qt.fontFamilies()
-        for (var i = 0; i < wanted.length; ++i)
-            if (installed.indexOf(wanted[i]) !== -1)
-                return wanted[i]
-        return "monospace"
-    }
-
-    // Motion constants — one place to retune the whole app's feel.
-    readonly property int   tFast:  140
-    readonly property int   tBase:  200
-    readonly property int   tSlow:  340
+    Binding { target: Theme; property: "iconAntialiasing"; value: controller.iconAntialiasing }
+    Binding { target: Theme; property: "mode"; value: controller.themeMode }
+    Binding { target: Theme; property: "animationsEnabled"; value: controller.animationsEnabled }
+    Binding { target: Theme; property: "systemReducedMotion"; value: controller.systemReducedMotion }
 
     // Icon library. Named, not scattered as magic strings.
     readonly property var icons: ({
@@ -122,12 +96,14 @@ ApplicationWindow {
     // ATMOSPHERE
     // ==========================================================
     Bloom { appWindow: window;
+        visible: !Theme.light
         width: 760; height: 760
         x: 140; y: -360
-        tint: window.accent
+        tint: Theme.accent
         strength: 0.13
     }
     Bloom { appWindow: window;
+        visible: !Theme.light
         width: 640; height: 640
         x: window.width - 380
         y: window.height - 340

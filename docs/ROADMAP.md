@@ -109,8 +109,8 @@ Suggested / сцены — Фаза «будущее»; Save as Custom — би�
   eleven reusable controls; explicit window dependency, unchanged dark styling.
   QML loading checks cover both simulated models, en/ru and both window sizes
   (upstream #21).
-- [ ] **`Theme` singleton** с токенами (цвета, радиусы, шрифты); текущие
-  токены из начала `Main.qml` — первая тема «Dark», макет — «Light».
+- [x] **Theme singleton.** Dark/light palettes, runtime system theme selection,
+  persisted appearance settings, reduced motion and optional MSAA icon smoothing.
 - [ ] **Шрифты — решено:** **Doto** для чисел и dot-matrix заголовков,
   **Space Grotesk** для всего остального текста. Оба OFL (совместимо с MIT,
   можно класть в репозиторий и в установщик), оба на Google Fonts. Файлы +
@@ -126,8 +126,7 @@ Suggested / сцены — Фаза «будущее»; Save as Custom — би�
   распространение) и выгрузки фирменных шрифтов Nothing (Ndot-55/57,
   NType-82, репозиторий xeji01/nothingfont) — они проприетарные, «All Rights
   Reserved», лицензии нет.
-- [ ] **Переключатель темы** в Settings + следование системе
-  (`Qt.styleHints.colorScheme`).
+- [x] **Theme selector in Settings**, including `Qt.styleHints.colorScheme`.
 - [ ] Все новые строки — через `window.tr` и `scripts/i18n-add-keys.py`.
 - [ ] Проверять на `--simulated` и `--simulated-model WF-1000XM5`, оба
   языка en/ru, окно на минимальном размере 980×660.
