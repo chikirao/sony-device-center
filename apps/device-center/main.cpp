@@ -1,3 +1,4 @@
+#include <QCommandLineParser>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -5,6 +6,8 @@
 #include <QIcon>
 
 #include "DeviceCenterController.h"
+#include "sony/core/DeviceService.h"
+#include "sony/core/SimulatedDevice.h"
 
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
@@ -27,7 +30,28 @@ int main(int argc, char *argv[]) {
     // asset when Qt's qsvg image plugin is deployed alongside the binary.
     app.setWindowIcon(QIcon(":/resources/brand/app-icon.png"));
 
-    sony::devicecenter::DeviceCenterController controller;
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Desktop companion for Sony headphones and earbuds");
+    parser.addHelpOption();
+    parser.addVersionOption();
+    // The daemon's simulator, but in-process: lets the UI be developed and
+    // screenshotted without a headset, and on Windows, where sonyd cannot run.
+    QCommandLineOption simulatedOption("simulated", "Drive the UI with a built-in simulated WH-1000XM5 instead of Bluetooth.");
+    parser.addOption(simulatedOption);
+    QCommandLineOption simulatedModelOption("simulated-model",
+        "Model name for --simulated; WF-* and LinkBuds names simulate earbuds with left/right/case batteries.", "name");
+    parser.addOption(simulatedModelOption);
+    parser.process(app);
+
+    std::shared_ptr<sony::core::IDeviceService> service;
+    if (parser.isSet(simulatedOption) || parser.isSet(simulatedModelOption)) {
+        auto simulated = sony::core::createSimulatedDevice(parser.value(simulatedModelOption).toStdString());
+        auto simulatedService = std::make_shared<sony::core::DeviceService>(simulated.transport, simulated.discovery);
+        simulatedService->startAutoConnect(simulated.address);
+        service = std::move(simulatedService);
+    }
+
+    sony::devicecenter::DeviceCenterController controller(nullptr, std::move(service));
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("controller", &controller);

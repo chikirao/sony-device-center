@@ -43,7 +43,12 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
         if (generation == _generation) { _lastError = error; emit stateChanged(); }
     });
     connect(_backend, &DeviceBackend::completed, this, [this](quint64 generation) {
-        if (generation == _generation) { _busy = false; emit stateChanged(); }
+        if (generation != _generation) return;
+        _busy = false;
+        if (_pending.isEmpty()) { emit stateChanged(); return; }
+        // Flush the value the user most recently asked for while we were busy.
+        auto next = _pending.takeFirst();
+        _send(next.first, next.second);
     });
     _worker.start();
 }
@@ -52,7 +57,17 @@ DeviceCenterController::~DeviceCenterController() {
     _worker.quit(); _worker.wait();
 }
 void DeviceCenterController::_send(const QString& method, const QJsonObject& params) {
-    if (_busy) return;
+    if (_busy) {
+        // One in-flight command at a time. A slider drag produces many values
+        // per second; only the newest one per method is worth sending, so
+        // replace an earlier queued request for the same method in place and
+        // keep the order otherwise.
+        for (auto& entry : _pending) {
+            if (entry.first == method) { entry.second = params; return; }
+        }
+        _pending.append({method, params});
+        return;
+    }
     _busy = true; _lastError.clear(); const auto generation = ++_generation;
     emit stateChanged();
     const auto bytes = QJsonDocument(QJsonObject{{"method",method},{"params",params}}).toJson(QJsonDocument::Compact);
@@ -65,7 +80,7 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     if (s.contains("name")) _deviceName = s.value("name").toString();
     if (s.contains("address")) _deviceAddress = s.value("address").toString();
     if (!s.contains("features")) {
-        _batteryLevel = -1; _noiseControlMode = "unknown";
+        _batteryLevel = _batteryLeft = _batteryRight = _batteryCase = -1; _noiseControlMode = "unknown";
         emit stateChanged(); return;
     }
     _features = s.value("features").toObject().toVariantMap();
@@ -76,6 +91,11 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     const auto battery = s.value("battery").toObject();
     _batteryLevel = _connected && valid("battery") ? battery.value("main").toInt(-1) : -1;
     _isCharging = _connected && battery.value("charging").toBool();
+    // Optional fields arrive as null; toInt(-1) keeps "not reported" distinct from 0%.
+    const bool batteryValid = _connected && valid("battery");
+    _batteryLeft = batteryValid ? battery.value("left").toInt(-1) : -1;
+    _batteryRight = batteryValid ? battery.value("right").toInt(-1) : -1;
+    _batteryCase = batteryValid ? battery.value("case").toInt(-1) : -1;
     const auto nc = s.value("noiseControl").toObject();
     _noiseControlMode = _connected && valid("noiseControl") ? nc.value("mode").toString() : "unknown";
     _ambientLevel = nc.value("ambientLevel").toInt(); _focusOnVoice = nc.value("focusOnVoice").toBool();
@@ -94,6 +114,10 @@ QString DeviceCenterController::deviceAddress() const { return _deviceAddress; }
 bool DeviceCenterController::isConnected() const { return _connected; }
 int DeviceCenterController::batteryLevel() const { return _batteryLevel; }
 bool DeviceCenterController::isCharging() const { return _isCharging; }
+int DeviceCenterController::batteryLeft() const { return _batteryLeft; }
+int DeviceCenterController::batteryRight() const { return _batteryRight; }
+int DeviceCenterController::batteryCase() const { return _batteryCase; }
+bool DeviceCenterController::hasDualBattery() const { return _batteryLeft >= 0 || _batteryRight >= 0; }
 QString DeviceCenterController::noiseControlMode() const { return _noiseControlMode; }
 int DeviceCenterController::ambientLevel() const { return _ambientLevel; }
 bool DeviceCenterController::focusOnVoice() const { return _focusOnVoice; }
@@ -159,6 +183,7 @@ void DeviceCenterController::setDsee(bool enabled) { _send("dsee", {{"enabled",e
 void DeviceCenterController::setSpeakToChat(bool enabled) { _send("speakToChat", {{"enabled",enabled}}); }
 void DeviceCenterController::setAdaptiveVolume(bool enabled) { _send("adaptiveVolume", {{"enabled",enabled}}); }
 void DeviceCenterController::setAutoPowerOff(int index) { _send("autoPowerOff", {{"index",index}}); }
+void DeviceCenterController::powerOff() { _send("powerOff"); }
 void DeviceCenterController::connectDevice(const QString& address, const QString& name) { _send("connect", {{"address",address},{"name",name}}); }
 void DeviceCenterController::disconnectDevice() { _send("disconnect"); }
 void DeviceCenterController::refreshDiscoveredDevices() {

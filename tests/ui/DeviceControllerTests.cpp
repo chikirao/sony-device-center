@@ -1,6 +1,8 @@
 #include <QtTest>
 #include "DeviceCenterController.h"
 #include "sony/core/DeviceService.h"
+#include "sony/core/SimulatedDevice.h"
+#include "sony/protocol/FrameCodec.h"
 #include "../support/ReplyTransport.h"
 #include <chrono>
 using namespace sony;
@@ -31,6 +33,45 @@ private slots:
         QCOMPARE(controller.batteryLevel(), -1);
         QCOMPARE(controller.noiseControlMode(), QString("unknown"));
         QCOMPARE(controller.codec(), QString("Unknown"));
+    }
+    void earbudsExposePerSideAndCaseBattery() {
+        auto simulated = core::createSimulatedDevice("WF-1000XM5");
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QVERIFY(controller.hasDualBattery());
+        QCOMPARE(controller.batteryLeft(), 81);
+        QCOMPARE(controller.batteryRight(), 79);
+        QCOMPARE(controller.batteryCase(), 64);
+        QCOMPARE(controller.batteryLevel(), 79); // the weaker side drives the ring
+    }
+    void overEarHasNoDualBattery() {
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QVERIFY(!controller.hasDualBattery());
+        QCOMPARE(controller.batteryLevel(), 87);
+        QCOMPARE(controller.batteryCase(), -1);
+    }
+    void rapidSliderValuesCoalesceToTheLastOne() {
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        simulated.transport->clearSent();
+        for (int level = 5; level <= 15; ++level) controller.setAmbient(level, false);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy() && controller.ambientLevel() == 15, 5000);
+        int noiseWrites = 0; int lastLevel = -1;
+        for (const auto& raw : simulated.transport->sentFrames()) {
+            const auto frame = protocol::FrameCodec::decode(raw);
+            if (frame.payload.size() >= 7 && frame.payload[0] == 0x68) { ++noiseWrites; lastLevel = frame.payload[6]; }
+        }
+        QCOMPARE(lastLevel, 15);
+        QVERIFY2(noiseWrites <= 3, qPrintable(QString("expected the drag to coalesce, got %1 writes").arg(noiseWrites)));
     }
     void failedActionPreservesConfirmedValue() {
         auto transport = std::make_shared<ReplyTransport>();
