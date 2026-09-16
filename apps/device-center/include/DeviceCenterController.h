@@ -28,6 +28,11 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(bool connected READ isConnected NOTIFY stateChanged)
     Q_PROPERTY(int batteryLevel READ batteryLevel NOTIFY stateChanged)
     Q_PROPERTY(bool isCharging READ isCharging NOTIFY stateChanged)
+    // Earbuds: per-side and case levels, -1 when the device does not report them.
+    Q_PROPERTY(int batteryLeft READ batteryLeft NOTIFY stateChanged)
+    Q_PROPERTY(int batteryRight READ batteryRight NOTIFY stateChanged)
+    Q_PROPERTY(int batteryCase READ batteryCase NOTIFY stateChanged)
+    Q_PROPERTY(bool hasDualBattery READ hasDualBattery NOTIFY stateChanged)
     Q_PROPERTY(QString noiseControlMode READ noiseControlMode NOTIFY stateChanged)
     Q_PROPERTY(int ambientLevel READ ambientLevel NOTIFY stateChanged)
     Q_PROPERTY(bool focusOnVoice READ focusOnVoice NOTIFY stateChanged)
@@ -71,6 +76,10 @@ public:
     [[nodiscard]] bool isConnected() const;
     [[nodiscard]] int batteryLevel() const;
     [[nodiscard]] bool isCharging() const;
+    [[nodiscard]] int batteryLeft() const;
+    [[nodiscard]] int batteryRight() const;
+    [[nodiscard]] int batteryCase() const;
+    [[nodiscard]] bool hasDualBattery() const;
     [[nodiscard]] QString noiseControlMode() const;
     [[nodiscard]] int ambientLevel() const;
     [[nodiscard]] bool focusOnVoice() const;
@@ -141,6 +150,7 @@ private:
     QString _deviceAddress{""};
     bool _connected{false};
     int _batteryLevel{-1};
+    int _batteryLeft{-1}, _batteryRight{-1}, _batteryCase{-1};
     bool _isCharging{false};
     QString _noiseControlMode{"unknown"};
     int _ambientLevel{10};

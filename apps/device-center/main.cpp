@@ -38,11 +38,14 @@ int main(int argc, char *argv[]) {
     // screenshotted without a headset, and on Windows, where sonyd cannot run.
     QCommandLineOption simulatedOption("simulated", "Drive the UI with a built-in simulated WH-1000XM5 instead of Bluetooth.");
     parser.addOption(simulatedOption);
+    QCommandLineOption simulatedModelOption("simulated-model",
+        "Model name for --simulated; WF-* and LinkBuds names simulate earbuds with left/right/case batteries.", "name");
+    parser.addOption(simulatedModelOption);
     parser.process(app);
 
     std::shared_ptr<sony::core::IDeviceService> service;
-    if (parser.isSet(simulatedOption)) {
-        auto simulated = sony::core::createSimulatedDevice();
+    if (parser.isSet(simulatedOption) || parser.isSet(simulatedModelOption)) {
+        auto simulated = sony::core::createSimulatedDevice(parser.value(simulatedModelOption).toStdString());
         auto simulatedService = std::make_shared<sony::core::DeviceService>(simulated.transport, simulated.discovery);
         simulatedService->startAutoConnect(simulated.address);
         service = std::move(simulatedService);

@@ -17,6 +17,10 @@ namespace sony::core {
 // run end to end without Bluetooth hardware.
 class SimulatedDeviceTransport : public transport::FakeTransport {
 public:
+    // Earbuds report left/right/case batteries and ignore the single-cell
+    // query; over-ear models do the opposite.
+    explicit SimulatedDeviceTransport(bool earbuds = false);
+
     size_t send(std::span<const std::byte> data) override;
 
 private:
@@ -26,8 +30,12 @@ private:
     std::mutex _stateMutex;
     uint8_t _sequence{0};
 
+    bool _earbuds{false};
     uint8_t _battery{87};
     bool _charging{false};
+    uint8_t _batteryLeft{81};
+    uint8_t _batteryRight{79};
+    uint8_t _batteryCase{64};
     // effect, settingType (0 = NC / 1 = ambient), focus on voice, ambient level
     std::array<uint8_t, 4> _noise{0x01, 0x00, 0x00, 0x00};
     uint8_t _eqPreset{0x16};
@@ -48,6 +56,7 @@ struct SimulatedDevice {
     std::string address;
 };
 
+// Names of the WF / LinkBuds families produce an earbuds simulation.
 SimulatedDevice createSimulatedDevice(std::string name = {}, std::string address = {});
 
 } // namespace sony::core

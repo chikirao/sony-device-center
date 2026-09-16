@@ -697,6 +697,23 @@ ApplicationWindow {
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
                             }
+                            // Earbuds carry three batteries; the ring shows the
+                            // weakest one, this line shows all of them.
+                            Text {
+                                textFormat: Text.PlainText
+                                Layout.fillWidth: true
+                                visible: controller.connected && controller.hasDualBattery
+                                text: {
+                                    var parts = []
+                                    if (controller.batteryLeft >= 0) parts.push("L " + controller.batteryLeft + "%")
+                                    if (controller.batteryRight >= 0) parts.push("R " + controller.batteryRight + "%")
+                                    if (controller.batteryCase >= 0) parts.push(window.tr("battery_case") + " " + controller.batteryCase + "%")
+                                    return parts.join("  ·  ")
+                                }
+                                color: window.txtDim
+                                font.pixelSize: 11
+                                elide: Text.ElideRight
+                            }
                             RowLayout {
                                 spacing: 6
                                 Rectangle {
@@ -898,12 +915,20 @@ ApplicationWindow {
 
                         // Compact status chips
                         Repeater {
-                            model: [
-                                { k: "Codec", v: controller.codec },
-                                { k: "Battery", v: controller.batteryLevel >= 0 ? controller.batteryLevel + "%" : "Unknown" },
-                                { k: "Mode", v: controller.noiseControlMode === "unknown" ? "Unknown" : controller.noiseControlMode === "cancelling" ? "ANC"
-                                              : controller.noiseControlMode === "ambient" ? "Ambient" : "Off" }
-                            ]
+                            model: {
+                                var pct = function(v) { return v >= 0 ? v + "%" : "Unknown" }
+                                var chips = [{ k: "Codec", v: controller.codec }]
+                                if (controller.hasDualBattery) {
+                                    chips.push({ k: "L", v: pct(controller.batteryLeft) })
+                                    chips.push({ k: "R", v: pct(controller.batteryRight) })
+                                    if (controller.batteryCase >= 0) chips.push({ k: window.tr("battery_case"), v: pct(controller.batteryCase) })
+                                } else {
+                                    chips.push({ k: "Battery", v: pct(controller.batteryLevel) })
+                                }
+                                chips.push({ k: "Mode", v: controller.noiseControlMode === "unknown" ? "Unknown" : controller.noiseControlMode === "cancelling" ? "ANC"
+                                              : controller.noiseControlMode === "ambient" ? "Ambient" : "Off" })
+                                return chips
+                            }
 
                             delegate: Rectangle {
                                 id: statChip

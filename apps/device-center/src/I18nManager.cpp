@@ -70,6 +70,7 @@ void I18nManager::_initTranslations() {
     en["connected"]           = "Connected";
     en["disconnected"]        = "Disconnected";
     en["battery"]             = "Battery";
+    en["battery_case"]        = "Case";
     en["charging"]            = "Charging";
     en["ready"]               = "Ready";
     en["noise_cancelling"]    = "Noise Cancelling";
@@ -110,6 +111,7 @@ void I18nManager::_initTranslations() {
     pt["connected"]           = "Conectado";
     pt["disconnected"]        = "Desconectado";
     pt["battery"]             = "Bateria";
+    pt["battery_case"]        = "Estojo";
     pt["charging"]            = "Carregando";
     pt["ready"]               = "Pronto";
     pt["noise_cancelling"]    = "Cancelamento de Ruído";
@@ -150,6 +152,7 @@ void I18nManager::_initTranslations() {
     es["connected"]           = "Conectado";
     es["disconnected"]        = "Desconectado";
     es["battery"]             = "Batería";
+    es["battery_case"]        = "Estuche";
     es["charging"]            = "Cargando";
     es["ready"]               = "Listo";
     es["noise_cancelling"]    = "Cancelación de Ruido";
@@ -190,6 +193,7 @@ void I18nManager::_initTranslations() {
     de["connected"]           = "Verbunden";
     de["disconnected"]        = "Getrennt";
     de["battery"]             = "Akku";
+    de["battery_case"]        = "Case";
     de["charging"]            = "Lädt";
     de["ready"]               = "Bereit";
     de["noise_cancelling"]    = "Geräuschminimierung";
@@ -230,6 +234,7 @@ void I18nManager::_initTranslations() {
     fr["connected"]           = "Connecté";
     fr["disconnected"]        = "Déconnecté";
     fr["battery"]             = "Batterie";
+    fr["battery_case"]        = "Boîtier";
     fr["charging"]            = "En charge";
     fr["ready"]               = "Prêt";
     fr["noise_cancelling"]    = "Réduction de bruit";

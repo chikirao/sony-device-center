@@ -1,6 +1,7 @@
 #include <QtTest>
 #include "DeviceCenterController.h"
 #include "sony/core/DeviceService.h"
+#include "sony/core/SimulatedDevice.h"
 #include "../support/ReplyTransport.h"
 #include <chrono>
 using namespace sony;
@@ -31,6 +32,28 @@ private slots:
         QCOMPARE(controller.batteryLevel(), -1);
         QCOMPARE(controller.noiseControlMode(), QString("unknown"));
         QCOMPARE(controller.codec(), QString("Unknown"));
+    }
+    void earbudsExposePerSideAndCaseBattery() {
+        auto simulated = core::createSimulatedDevice("WF-1000XM5");
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QVERIFY(controller.hasDualBattery());
+        QCOMPARE(controller.batteryLeft(), 81);
+        QCOMPARE(controller.batteryRight(), 79);
+        QCOMPARE(controller.batteryCase(), 64);
+        QCOMPARE(controller.batteryLevel(), 79); // the weaker side drives the ring
+    }
+    void overEarHasNoDualBattery() {
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QVERIFY(!controller.hasDualBattery());
+        QCOMPARE(controller.batteryLevel(), 87);
+        QCOMPARE(controller.batteryCase(), -1);
     }
     void failedActionPreservesConfirmedValue() {
         auto transport = std::make_shared<ReplyTransport>();

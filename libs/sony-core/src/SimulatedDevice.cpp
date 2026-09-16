@@ -14,6 +14,8 @@ constexpr const char* kDefaultName = "WH-1000XM5";
 constexpr const char* kDefaultAddress = "CC:98:8B:00:11:22";
 }
 
+SimulatedDeviceTransport::SimulatedDeviceTransport(bool earbuds) : _earbuds(earbuds) {}
+
 size_t SimulatedDeviceTransport::send(std::span<const std::byte> data) {
     const size_t written = FakeTransport::send(data);
     if (data.empty()) return written;
@@ -68,9 +70,17 @@ void SimulatedDeviceTransport::handle(const std::vector<uint8_t>& p) {
         if (type == 0x02) reply({0x13, 0x02, 0x10});
         break;
 
-    case 0x22: // battery; only the single-cell query is answered, like an over-ear model
-        if (type == 0x00) reply({0x23, 0x00, _battery, static_cast<uint8_t>(_charging ? 1 : 0)});
+    case 0x22: { // battery
+        const auto charging = static_cast<uint8_t>(_charging ? 1 : 0);
+        if (_earbuds) {
+            // 22 09 -> 23 09 <L> <Lchg> <R> <Rchg>; 22 0a -> 23 0a <case> <chg>
+            if (type == 0x09) reply({0x23, 0x09, _batteryLeft, charging, _batteryRight, charging});
+            if (type == 0x0a) reply({0x23, 0x0a, _batteryCase, 0x00});
+        } else if (type == 0x00) {
+            reply({0x23, 0x00, _battery, charging});
+        }
         break;
+    }
 
     case 0x66: // noise control query
         if (type == 0x17) reply({0x67, 0x17, 0x01, _noise[0], _noise[1], _noise[2], _noise[3]});
@@ -136,7 +146,8 @@ SimulatedDevice createSimulatedDevice(std::string name, std::string address) {
     SimulatedDevice device;
     device.name = name.empty() ? kDefaultName : std::move(name);
     device.address = address.empty() ? kDefaultAddress : std::move(address);
-    device.transport = std::make_shared<SimulatedDeviceTransport>();
+    const bool earbuds = device.name.rfind("WF-", 0) == 0 || device.name.rfind("LinkBuds", 0) == 0;
+    device.transport = std::make_shared<SimulatedDeviceTransport>(earbuds);
     device.discovery = std::make_shared<transport::FakeDeviceDiscovery>();
     device.discovery->addDevice(transport::DiscoveredDevice{
         .name = device.name,

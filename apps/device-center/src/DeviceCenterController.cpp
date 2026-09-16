@@ -65,7 +65,7 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     if (s.contains("name")) _deviceName = s.value("name").toString();
     if (s.contains("address")) _deviceAddress = s.value("address").toString();
     if (!s.contains("features")) {
-        _batteryLevel = -1; _noiseControlMode = "unknown";
+        _batteryLevel = _batteryLeft = _batteryRight = _batteryCase = -1; _noiseControlMode = "unknown";
         emit stateChanged(); return;
     }
     _features = s.value("features").toObject().toVariantMap();
@@ -76,6 +76,11 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     const auto battery = s.value("battery").toObject();
     _batteryLevel = _connected && valid("battery") ? battery.value("main").toInt(-1) : -1;
     _isCharging = _connected && battery.value("charging").toBool();
+    // Optional fields arrive as null; toInt(-1) keeps "not reported" distinct from 0%.
+    const bool batteryValid = _connected && valid("battery");
+    _batteryLeft = batteryValid ? battery.value("left").toInt(-1) : -1;
+    _batteryRight = batteryValid ? battery.value("right").toInt(-1) : -1;
+    _batteryCase = batteryValid ? battery.value("case").toInt(-1) : -1;
     const auto nc = s.value("noiseControl").toObject();
     _noiseControlMode = _connected && valid("noiseControl") ? nc.value("mode").toString() : "unknown";
     _ambientLevel = nc.value("ambientLevel").toInt(); _focusOnVoice = nc.value("focusOnVoice").toBool();
@@ -94,6 +99,10 @@ QString DeviceCenterController::deviceAddress() const { return _deviceAddress; }
 bool DeviceCenterController::isConnected() const { return _connected; }
 int DeviceCenterController::batteryLevel() const { return _batteryLevel; }
 bool DeviceCenterController::isCharging() const { return _isCharging; }
+int DeviceCenterController::batteryLeft() const { return _batteryLeft; }
+int DeviceCenterController::batteryRight() const { return _batteryRight; }
+int DeviceCenterController::batteryCase() const { return _batteryCase; }
+bool DeviceCenterController::hasDualBattery() const { return _batteryLeft >= 0 || _batteryRight >= 0; }
 QString DeviceCenterController::noiseControlMode() const { return _noiseControlMode; }
 int DeviceCenterController::ambientLevel() const { return _ambientLevel; }
 bool DeviceCenterController::focusOnVoice() const { return _focusOnVoice; }
