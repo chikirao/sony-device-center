@@ -24,7 +24,7 @@ ApplicationWindow {
             wrapMode: Text.Wrap
             color: controller.lastError.length ? window.danger : window.txtDim
             text: controller.lastError.length ? controller.lastError :
-                controller.busy ? "Working…" : "Connection: " + controller.connectionState
+                controller.busy ? window.tr("working") : window.tr("connection_prefix") + window.trState(controller.connectionState)
         }
     }
 
@@ -34,6 +34,18 @@ ApplicationWindow {
     function tr(key) {
         var _ = controller.currentLanguage
         return controller.t(key)
+    }
+    // Connection states come from the service as identifiers; translate the
+    // known ones and show anything new verbatim rather than as a key name.
+    function trState(state) {
+        var key = "state_" + state
+        var value = tr(key)
+        return value === key ? state : value
+    }
+    function trPreset(id) {
+        var key = "eq_preset_" + id
+        var value = tr(key)
+        return value === key ? controller.equalizerPresetName : value
     }
 
     // ==========================================================
@@ -902,7 +914,7 @@ ApplicationWindow {
 
                         ColumnLayout {
                             spacing: 5
-                            Eyebrow { text: controller.connected ? "Connected Device" : "Offline" }
+                            Eyebrow { text: controller.connected ? window.tr("connected_device") : window.tr("offline") }
                             Text {
                                 textFormat: Text.PlainText
                                 text: controller.deviceName
@@ -929,17 +941,17 @@ ApplicationWindow {
                         // Compact status chips
                         Repeater {
                             model: {
-                                var pct = function(v) { return v >= 0 ? v + "%" : "Unknown" }
-                                var chips = [{ k: "Codec", v: controller.codec }]
+                                var pct = function(v) { return v >= 0 ? v + "%" : window.tr("unknown") }
+                                var chips = [{ k: window.tr("codec"), v: controller.codec }]
                                 if (controller.hasDualBattery) {
                                     chips.push({ k: "L", v: pct(controller.batteryLeft) })
                                     chips.push({ k: "R", v: pct(controller.batteryRight) })
                                     if (controller.batteryCase >= 0) chips.push({ k: window.tr("battery_case"), v: pct(controller.batteryCase) })
                                 } else {
-                                    chips.push({ k: "Battery", v: pct(controller.batteryLevel) })
+                                    chips.push({ k: window.tr("battery"), v: pct(controller.batteryLevel) })
                                 }
-                                chips.push({ k: "Mode", v: controller.noiseControlMode === "unknown" ? "Unknown" : controller.noiseControlMode === "cancelling" ? "ANC"
-                                              : controller.noiseControlMode === "ambient" ? "Ambient" : "Off" })
+                                chips.push({ k: window.tr("mode"), v: controller.noiseControlMode === "unknown" ? window.tr("unknown") : controller.noiseControlMode === "cancelling" ? window.tr("mode_anc")
+                                              : controller.noiseControlMode === "ambient" ? window.tr("mode_ambient") : window.tr("mode_off") })
                                 return chips
                             }
 
@@ -1076,9 +1088,9 @@ ApplicationWindow {
                                 textFormat: Text.PlainText
                                 Layout.alignment: Qt.AlignHCenter
                                 Layout.topMargin: 10
-                                text: controller.noiseControlMode === "unknown" ? "Unknown" : controller.noiseControlMode === "cancelling" ? "Noise Cancelling"
-                                    : controller.noiseControlMode === "ambient" ? "Ambient Sound"
-                                    : "Processing Off"
+                                text: controller.noiseControlMode === "unknown" ? window.tr("unknown") : controller.noiseControlMode === "cancelling" ? window.tr("noise_cancelling")
+                                    : controller.noiseControlMode === "ambient" ? window.tr("ambient_sound")
+                                    : window.tr("nc_title_off")
                                 color: window.txt
                                 font.pixelSize: 18
                                 font.weight: Font.DemiBold
@@ -1089,9 +1101,9 @@ ApplicationWindow {
                                 textFormat: Text.PlainText
                                 Layout.alignment: Qt.AlignHCenter
                                 Layout.topMargin: 2
-                                text: controller.noiseControlMode === "unknown" ? "Unknown" : controller.noiseControlMode === "cancelling" ? "The outside world is sealed out"
-                                    : controller.noiseControlMode === "ambient" ? "Level " + controller.ambientLevel + " · hearing your surroundings"
-                                    : "Straight signal, no processing"
+                                text: controller.noiseControlMode === "unknown" ? window.tr("unknown") : controller.noiseControlMode === "cancelling" ? window.tr("nc_desc_cancelling")
+                                    : controller.noiseControlMode === "ambient" ? window.tr("nc_desc_ambient").arg(controller.ambientLevel)
+                                    : window.tr("nc_desc_off")
                                 color: window.txtFaint
                                 font.pixelSize: 12
                             }
@@ -1103,7 +1115,7 @@ ApplicationWindow {
                                 spacing: 11
 
                                 PillButton {
-                                    text: "Noise Cancelling"
+                                    text: window.tr("noise_cancelling")
                                     glyphPath: window.icons.shield
                                     tint: window.accent
                                     active: controller.noiseControlMode === "cancelling"
@@ -1111,7 +1123,7 @@ ApplicationWindow {
                                 }
 
                                 PillButton {
-                                    text: "Ambient"
+                                    text: window.tr("ambient")
                                     glyphPath: window.icons.mic
                                     tint: window.ambientWarm
                                     active: controller.noiseControlMode === "ambient"
@@ -1119,7 +1131,7 @@ ApplicationWindow {
                                 }
 
                                 PillButton {
-                                    text: "Off"
+                                    text: window.tr("noise_control_off")
                                     glyphPath: window.icons.power
                                     tint: window.txtDim
                                     active: controller.noiseControlMode === "off"
@@ -1132,7 +1144,7 @@ ApplicationWindow {
                                 Layout.alignment: Qt.AlignHCenter
                                 Layout.topMargin: 12
                                 compact: true
-                                text: "EQ · " + controller.equalizerPresetName
+                                text: window.tr("eq_chip") + window.trPreset(controller.equalizerPreset)
                                 glyphPath: window.icons.sliders
                                 onClicked: window.navIndex = 2
                             }
@@ -1152,10 +1164,10 @@ ApplicationWindow {
 
                     ColumnLayout {
                         spacing: 5
-                        Eyebrow { text: "Isolation" }
+                        Eyebrow { text: window.tr("isolation") }
                         Text {
                             textFormat: Text.PlainText
-                            text: "Noise Control"
+                            text: window.tr("nav_noise_control")
                             color: window.txt
                             font.pixelSize: 28
                             font.weight: Font.DemiBold
@@ -1163,7 +1175,7 @@ ApplicationWindow {
                         }
                         Text {
                             textFormat: Text.PlainText
-                            text: "Choose how much of the world gets through."
+                            text: window.tr("nc_page_desc")
                             color: window.txtDim
                             font.pixelSize: 13
                         }
@@ -1177,9 +1189,9 @@ ApplicationWindow {
 
                         Repeater {
                             model: [
-                                { mode: "cancelling", label: "Noise Cancelling", glyph: window.icons.shield, desc: "Seal out the room", tint: window.accent },
-                                { mode: "ambient",    label: "Ambient Sound",    glyph: window.icons.mic,    desc: "Let the room in",   tint: window.ambientWarm },
-                                { mode: "off",        label: "Off",              glyph: window.icons.power,  desc: "No processing",     tint: window.txtDim }
+                                { mode: "cancelling", label: window.tr("noise_cancelling"),  glyph: window.icons.shield, desc: window.tr("nc_card_cancelling"), tint: window.accent },
+                                { mode: "ambient",    label: window.tr("ambient_sound"),     glyph: window.icons.mic,    desc: window.tr("nc_card_ambient"),    tint: window.ambientWarm },
+                                { mode: "off",        label: window.tr("noise_control_off"), glyph: window.icons.power,  desc: window.tr("nc_card_off"),        tint: window.txtDim }
                             ]
 
                             delegate: Card {
@@ -1296,10 +1308,10 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 ColumnLayout {
                                     spacing: 2
-                                    Eyebrow { text: "Ambient" }
+                                    Eyebrow { text: window.tr("ambient") }
                                     Text {
                                         textFormat: Text.PlainText
-                                        text: "Sound Level"
+                                        text: window.tr("sound_level")
                                         color: window.txt
                                         font.pixelSize: 15
                                         font.weight: Font.DemiBold
@@ -1340,14 +1352,14 @@ ApplicationWindow {
                                     spacing: 2
                                     Text {
                                         textFormat: Text.PlainText
-                                        text: "Focus on Voice"
+                                        text: window.tr("focus_on_voice")
                                         color: window.txt
                                         font.pixelSize: 13
                                         font.weight: Font.Medium
                                     }
                                     Text {
                                         textFormat: Text.PlainText
-                                        text: "Lift human speech, filter the low rumble"
+                                        text: window.tr("focus_on_voice_desc")
                                         color: window.txtFaint
                                         font.pixelSize: 11
                                     }
@@ -1376,10 +1388,10 @@ ApplicationWindow {
 
                     ColumnLayout {
                         spacing: 5
-                        Eyebrow { text: "Signature" }
+                        Eyebrow { text: window.tr("signature") }
                         Text {
                             textFormat: Text.PlainText
-                            text: "Equalizer"
+                            text: window.tr("nav_equalizer")
                             color: window.txt
                             font.pixelSize: 28
                             font.weight: Font.DemiBold
@@ -1387,7 +1399,7 @@ ApplicationWindow {
                         }
                         Text {
                             textFormat: Text.PlainText
-                            text: "Five bands, plus dedicated Clear Bass."
+                            text: window.tr("eq_page_desc")
                             color: window.txtDim
                             font.pixelSize: 13
                         }
@@ -1400,16 +1412,16 @@ ApplicationWindow {
 
                         Repeater {
                             model: [
-                                { id: 0x00, name: "Off" },
-                                { id: 0x16, name: "Bass Boost" },
-                                { id: 0x15, name: "Treble Boost" },
-                                { id: 0x14, name: "Vocal" },
-                                { id: 0x10, name: "Bright" },
-                                { id: 0x11, name: "Excited" },
-                                { id: 0x12, name: "Mellow" },
-                                { id: 0x13, name: "Relaxed" },
-                                { id: 0x17, name: "Speech" },
-                                { id: 0xa0, name: "Custom" }
+                                { id: 0x00, name: window.trPreset(0x00) },
+                                { id: 0x16, name: window.trPreset(0x16) },
+                                { id: 0x15, name: window.trPreset(0x15) },
+                                { id: 0x14, name: window.trPreset(0x14) },
+                                { id: 0x10, name: window.trPreset(0x10) },
+                                { id: 0x11, name: window.trPreset(0x11) },
+                                { id: 0x12, name: window.trPreset(0x12) },
+                                { id: 0x13, name: window.trPreset(0x13) },
+                                { id: 0x17, name: window.trPreset(0x17) },
+                                { id: 0xa0, name: window.trPreset(0xa0) }
                             ]
 
                             delegate: Rectangle {
@@ -1526,14 +1538,14 @@ ApplicationWindow {
                                 spacing: 2
                                 Text {
                                     textFormat: Text.PlainText
-                                    text: "Clear Bass"
+                                    text: window.tr("clear_bass")
                                     color: window.txt
                                     font.pixelSize: 15
                                     font.weight: Font.DemiBold
                                 }
                                 Text {
                                     textFormat: Text.PlainText
-                                    text: "Sub-bass weight, no distortion"
+                                    text: window.tr("clear_bass_desc")
                                     color: window.txtFaint
                                     font.pixelSize: 11
                                 }
@@ -1578,10 +1590,10 @@ ApplicationWindow {
 
                     ColumnLayout {
                         spacing: 5
-                        Eyebrow { text: "Behaviour" }
+                        Eyebrow { text: window.tr("behaviour") }
                         Text {
                             textFormat: Text.PlainText
-                            text: "Sound & Device Features"
+                            text: window.tr("features_title")
                             color: window.txt
                             font.pixelSize: 28
                             font.weight: Font.DemiBold
@@ -1589,7 +1601,7 @@ ApplicationWindow {
                         }
                         Text {
                             textFormat: Text.PlainText
-                            text: "Upscaling, speak-to-chat, and power discipline."
+                            text: window.tr("features_desc")
                             color: window.txtDim
                             font.pixelSize: 13
                         }
@@ -1603,9 +1615,9 @@ ApplicationWindow {
 
                         Repeater {
                             model: [
-                                { key: "dsee",     title: "DSEE Extreme",    desc: "AI restores the highs that compression threw away", glyph: window.icons.sparkle },
-                                { key: "speak",    title: "Speak-to-Chat",   desc: "Pauses playback and opens ambient when you talk",   glyph: window.icons.mic },
-                                { key: "adaptive", title: "Adaptive Volume", desc: "Balances level against your surroundings",          glyph: window.icons.sliders }
+                                { key: "dsee",     title: "DSEE Extreme",    desc: window.tr("feat_dsee_desc"),     glyph: window.icons.sparkle },
+                                { key: "speak",    title: "Speak-to-Chat",   desc: window.tr("feat_speak_desc"),    glyph: window.icons.mic },
+                                { key: "adaptive", title: "Adaptive Volume", desc: window.tr("feat_adaptive_desc"), glyph: window.icons.sliders }
                             ]
 
                             delegate: Card {
@@ -1663,7 +1675,7 @@ ApplicationWindow {
                                         Text {
                                             textFormat: Text.PlainText
                                             Layout.fillWidth: true
-                                            text: !featCard.supported ? "Not supported" : !featCard.known ? "State unknown — waiting for device" : featCard.modelData.desc
+                                            text: !featCard.supported ? window.tr("not_supported") : !featCard.known ? window.tr("state_unknown_waiting") : featCard.modelData.desc
                                             color: window.txtFaint
                                             font.pixelSize: 11
                                             wrapMode: Text.WordWrap
@@ -1715,7 +1727,7 @@ ApplicationWindow {
                                     spacing: 3
                                     Text {
                                         textFormat: Text.PlainText
-                                        text: "Auto Power-Off"
+                                        text: window.tr("auto_power_off")
                                         color: window.txt
                                         font.pixelSize: 15
                                         font.weight: Font.DemiBold
@@ -1723,7 +1735,7 @@ ApplicationWindow {
                                     Text {
                                         textFormat: Text.PlainText
                                         Layout.fillWidth: true
-                                        text: "Shut down after idle or removal"
+                                        text: window.tr("auto_power_off_desc")
                                         color: window.txtFaint
                                         font.pixelSize: 11
                                         wrapMode: Text.WordWrap
@@ -1734,7 +1746,7 @@ ApplicationWindow {
                                     id: powerCombo
                                     implicitWidth: 134
                                     implicitHeight: 38
-                                    model: ["Off", "5 Minutes", "15 Minutes", "30 Minutes", "1 Hour", "3 Hours"]
+                                    model: [window.tr("apo_off"), window.tr("apo_5min"), window.tr("apo_15min"), window.tr("apo_30min"), window.tr("apo_1h"), window.tr("apo_3h")]
                                     currentIndex: controller.featureStatus.autoPowerOff && controller.featureStatus.autoPowerOff.availability === "valid" ? controller.autoPowerOff : -1
                                     Connections {
                                         target: controller
@@ -1792,10 +1804,10 @@ ApplicationWindow {
 
                     ColumnLayout {
                         spacing: 5
-                        Eyebrow { text: "Easy Switch" }
+                        Eyebrow { text: window.tr("easy_switch") }
                         Text {
                             textFormat: Text.PlainText
-                            text: "Paired Devices"
+                            text: window.tr("paired_devices")
                             color: window.txt
                             font.pixelSize: 28
                             font.weight: Font.DemiBold
@@ -1803,7 +1815,7 @@ ApplicationWindow {
                         }
                         Text {
                             textFormat: Text.PlainText
-                            text: "Hand the connection to another set without re-pairing."
+                            text: window.tr("paired_devices_desc")
                             color: window.txtDim
                             font.pixelSize: 13
                         }
@@ -2219,7 +2231,7 @@ ApplicationWindow {
 
                                     ColumnLayout {
                                         spacing: 2
-                                        Eyebrow { text: "Protocol Core" }
+                                        Eyebrow { text: window.tr("protocol_core") }
                                         Text {
                                             textFormat: Text.PlainText
                                             text: "MDR V1 & V2 (C++20)"
@@ -2231,7 +2243,7 @@ ApplicationWindow {
 
                                     ColumnLayout {
                                         spacing: 2
-                                        Eyebrow { text: "Framework" }
+                                        Eyebrow { text: window.tr("framework") }
                                         Text {
                                             textFormat: Text.PlainText
                                             text: "Qt 6 Quick / QML"
@@ -2243,10 +2255,10 @@ ApplicationWindow {
 
                                     ColumnLayout {
                                         spacing: 2
-                                        Eyebrow { text: "License" }
+                                        Eyebrow { text: window.tr("license") }
                                         Text {
                                             textFormat: Text.PlainText
-                                            text: "MIT Open Source"
+                                            text: window.tr("license_value")
                                             color: window.txt
                                             font.pixelSize: 12
                                             font.weight: Font.Medium
@@ -2296,7 +2308,7 @@ ApplicationWindow {
                                         }
                                         Text {
                                             textFormat: Text.PlainText
-                                            text: "GitHub & Sponsorship"
+                                            text: window.tr("github_sponsorship")
                                             color: window.txtDim
                                             font.pixelSize: 12
                                         }
