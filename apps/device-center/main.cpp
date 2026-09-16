@@ -1,16 +1,20 @@
+#include <QApplication>
 #include <QCommandLineParser>
-#include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
 #include <QIcon>
+#include <QWindow>
 
 #include "DeviceCenterController.h"
+#include "TrayController.h"
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
 
 int main(int argc, char *argv[]) {
-    QGuiApplication app(argc, argv);
+    // QApplication rather than QGuiApplication: the tray icon and its menu
+    // come from QtWidgets. The QML side is unaffected.
+    QApplication app(argc, argv);
 
     // Main.qml customises background/handle/indicator on its controls. The
     // native "Windows" and "macOS" styles Qt picks by default there refuse
@@ -41,6 +45,8 @@ int main(int argc, char *argv[]) {
     QCommandLineOption simulatedModelOption("simulated-model",
         "Model name for --simulated; WF-* and LinkBuds names simulate earbuds with left/right/case batteries.", "name");
     parser.addOption(simulatedModelOption);
+    QCommandLineOption minimizedOption("minimized", "Start hidden in the system tray (used by autostart).");
+    parser.addOption(minimizedOption);
     parser.process(app);
 
     std::shared_ptr<sony::core::IDeviceService> service;
@@ -52,9 +58,17 @@ int main(int argc, char *argv[]) {
     }
 
     sony::devicecenter::DeviceCenterController controller(nullptr, std::move(service));
+    sony::devicecenter::TrayController tray(controller);
+    // Without a tray there is nowhere to come back from, so a hidden start
+    // and close-to-tray only make sense when the icon actually exists.
+    const bool startHidden = parser.isSet(minimizedOption) && tray.isAvailable();
+    app.setQuitOnLastWindowClosed(!tray.isAvailable());
+    QObject::connect(&tray, &sony::devicecenter::TrayController::quitRequested, &app, &QCoreApplication::quit);
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("controller", &controller);
+    engine.rootContext()->setContextProperty("trayAvailable", tray.isAvailable());
+    engine.rootContext()->setContextProperty("startHidden", startHidden);
 
     const QUrl url(QStringLiteral("qrc:/qml/Main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
@@ -64,6 +78,7 @@ int main(int argc, char *argv[]) {
     }, Qt::QueuedConnection);
 
     engine.load(url);
+    if (!engine.rootObjects().isEmpty()) tray.setWindow(qobject_cast<QWindow*>(engine.rootObjects().first()));
 
     return app.exec();
 }

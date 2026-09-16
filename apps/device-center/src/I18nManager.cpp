@@ -147,6 +147,10 @@ void I18nManager::_initTranslations() {
     en["license"]                     = "License";
     en["license_value"]               = "MIT Open Source";
     en["github_sponsorship"]          = "GitHub & Sponsorship";
+    en["tray_show"]                   = "Open Sony Device Center";
+    en["tray_quit"]                   = "Quit";
+    en["minimize_to_tray"]            = "Keep Running in the Tray";
+    en["minimize_to_tray_desc"]       = "Closing the window hides it to the tray instead of quitting.";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -252,6 +256,10 @@ void I18nManager::_initTranslations() {
     pt["license"]                     = "Licença";
     pt["license_value"]               = "Código Aberto MIT";
     pt["github_sponsorship"]          = "GitHub e Apoio";
+    pt["tray_show"]                   = "Abrir Sony Device Center";
+    pt["tray_quit"]                   = "Sair";
+    pt["minimize_to_tray"]            = "Manter na Bandeja";
+    pt["minimize_to_tray_desc"]       = "Fechar a janela a esconde na bandeja em vez de sair.";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -357,6 +365,10 @@ void I18nManager::_initTranslations() {
     es["license"]                     = "Licencia";
     es["license_value"]               = "Código Abierto MIT";
     es["github_sponsorship"]          = "GitHub y Patrocinio";
+    es["tray_show"]                   = "Abrir Sony Device Center";
+    es["tray_quit"]                   = "Salir";
+    es["minimize_to_tray"]            = "Mantener en la Bandeja";
+    es["minimize_to_tray_desc"]       = "Cerrar la ventana la oculta en la bandeja en lugar de salir.";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -462,6 +474,10 @@ void I18nManager::_initTranslations() {
     de["license"]                     = "Lizenz";
     de["license_value"]               = "MIT Open Source";
     de["github_sponsorship"]          = "GitHub & Sponsoring";
+    de["tray_show"]                   = "Sony Device Center öffnen";
+    de["tray_quit"]                   = "Beenden";
+    de["minimize_to_tray"]            = "Im Infobereich weiterlaufen";
+    de["minimize_to_tray_desc"]       = "Schließen des Fensters minimiert in den Infobereich statt zu beenden.";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -567,6 +583,10 @@ void I18nManager::_initTranslations() {
     fr["license"]                     = "Licence";
     fr["license_value"]               = "Open source MIT";
     fr["github_sponsorship"]          = "GitHub et parrainage";
+    fr["tray_show"]                   = "Ouvrir Sony Device Center";
+    fr["tray_quit"]                   = "Quitter";
+    fr["minimize_to_tray"]            = "Garder dans la zone de notification";
+    fr["minimize_to_tray_desc"]       = "Fermer la fenêtre la masque dans la zone de notification au lieu de quitter.";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -672,6 +692,10 @@ void I18nManager::_initTranslations() {
     ja["license"]                     = "ライセンス";
     ja["license_value"]               = "MIT オープンソース";
     ja["github_sponsorship"]          = "GitHub とスポンサー";
+    ja["tray_show"]                   = "Sony Device Center を開く";
+    ja["tray_quit"]                   = "終了";
+    ja["minimize_to_tray"]            = "トレイで実行し続ける";
+    ja["minimize_to_tray_desc"]       = "ウィンドウを閉じると終了せずトレイに隠れます。";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -777,6 +801,10 @@ void I18nManager::_initTranslations() {
     ru["license"]                     = "Лицензия";
     ru["license_value"]               = "Открытый код, MIT";
     ru["github_sponsorship"]          = "GitHub и поддержка";
+    ru["tray_show"]                   = "Открыть Sony Device Center";
+    ru["tray_quit"]                   = "Выход";
+    ru["minimize_to_tray"]            = "Сворачивать в трей";
+    ru["minimize_to_tray_desc"]       = "Закрытие окна прячет его в трей, а не завершает приложение.";
 }
 
 } // namespace sony::devicecenter

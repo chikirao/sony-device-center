@@ -28,6 +28,7 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
     : QObject(parent) {
     QSettings settings("SonyBridge", "SonyDeviceCenter");
     _currentLanguage = settings.value("language", "en").toString();
+    _minimizeToTray = settings.value("minimizeToTray", true).toBool();
     _backend = new DeviceBackend(std::move(service));
     _backend->moveToThread(&_worker);
     connect(&_worker, &QThread::started, _backend, &DeviceBackend::start);
@@ -216,7 +217,7 @@ void DeviceCenterController::setAutostart(bool enable) {
             out << "Type=Application\n";
             out << "Name=Sony Device Center\n";
             out << "Comment=Unofficial open-source companion for Sony WH/WF/LinkBuds audio devices\n";
-            out << "Exec=" << QCoreApplication::applicationFilePath() << "\n";
+            out << "Exec=" << QCoreApplication::applicationFilePath() << " --minimized\n";
             out << "Icon=sony-device-center\n";
             out << "Terminal=false\n";
             out << "Categories=Audio;AudioVideo;Settings;\n";
@@ -229,12 +230,20 @@ void DeviceCenterController::setAutostart(bool enable) {
     QSettings bootSettings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     if (enable) {
         QString appPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
-        bootSettings.setValue("SonyDeviceCenter", "\"" + appPath + "\"");
+        bootSettings.setValue("SonyDeviceCenter", "\"" + appPath + "\" --minimized");
     } else {
         bootSettings.remove("SonyDeviceCenter");
     }
 #endif
     emit autostartChanged();
+}
+
+bool DeviceCenterController::minimizeToTray() const { return _minimizeToTray; }
+void DeviceCenterController::setMinimizeToTray(bool enable) {
+    if (_minimizeToTray == enable) return;
+    _minimizeToTray = enable;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("minimizeToTray", enable);
+    emit minimizeToTrayChanged();
 }
 
 QString DeviceCenterController::appVersion() const {

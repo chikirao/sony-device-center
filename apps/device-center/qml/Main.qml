@@ -9,8 +9,17 @@ ApplicationWindow {
     height: 780
     minimumWidth: 980
     minimumHeight: 660
-    visible: true
+    visible: !startHidden
     title: "Sony Device Center — " + controller.deviceName
+
+    // Closing hides the window when a tray icon exists to bring it back;
+    // quitting for real is the tray menu's job.
+    onClosing: function(close) {
+        if (trayAvailable && controller.minimizeToTray) {
+            close.accepted = false
+            window.hide()
+        }
+    }
     color: bg
 
     footer: Rectangle {
@@ -2000,6 +2009,59 @@ ApplicationWindow {
                                 NeoSwitch {
                                     confirmedChecked: controller.autostart
                                     onToggled: controller.setAutostart(checked)
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: window.line
+                                visible: trayAvailable
+                            }
+
+                            // Row: minimise to tray (only offered when a tray exists)
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 16
+                                visible: trayAvailable
+
+                                Rectangle {
+                                    Layout.preferredWidth: 38
+                                    Layout.preferredHeight: 38
+                                    radius: 11
+                                    color: Qt.rgba(window.accent.r, window.accent.g, window.accent.b, 0.14)
+                                    border.width: 1
+                                    border.color: Qt.rgba(window.accent.r, window.accent.g, window.accent.b, 0.35)
+
+                                    Glyph {
+                                        anchors.centerIn: parent
+                                        path: window.icons.headphones
+                                        size: 18
+                                        color: window.accentSoft
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 3
+                                    Text {
+                                        textFormat: Text.PlainText
+                                        text: window.tr("minimize_to_tray")
+                                        color: window.txt
+                                        font.pixelSize: 14
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Text {
+                                        textFormat: Text.PlainText
+                                        text: window.tr("minimize_to_tray_desc")
+                                        color: window.txtDim
+                                        font.pixelSize: 12
+                                    }
+                                }
+
+                                NeoSwitch {
+                                    confirmedChecked: controller.minimizeToTray
+                                    onToggled: controller.setMinimizeToTray(checked)
                                 }
                             }
 
