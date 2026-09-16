@@ -61,17 +61,17 @@ aqt install-qt windows desktop 6.10.0 win64_msvc2022_64 --outputdir D:\Qt
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=D:\Qt.10.0\msvc2022_64
   -DBUILD_TESTING=ON -DSONY_REQUIRE_QT=ON`. Сабмодуль `Client/imgui` нужен
   legacy-клиенту, без него конфигурация падает.
-- `build` сначала собирает **один** объект `qrc_qml.cpp.obj` в один поток, и
-  только потом всё остальное параллельно. В `qml.qrc` упакован 21 МБ
-  PNG-картинок устройств → 110 МБ C++-файл; при параллельной компиляции MSVC
-  падает с `C1060: out of heap space`. (Постоянный фикс — в roadmap.)
+- Картинки устройств в `Client/resources/devices` держим не больше 800 px
+  (`python scripts/shrink-device-images.py` после добавления новых): они
+  упаковываются в exe через `qml.qrc`, и с оригиналами по 1.5 МБ MSVC падал
+  с `C1060: out of heap space`.
 - Окружение MSVC берётся из `vcvars64.bat`. `Launch-VsDevShell.ps1` на этой
   машине не находит `vswhere` и не добавляет `rc.exe` — не использовать.
 
 Ninja сам понимает, какие файлы изменились. Правка `.cpp` — пересобирается
 один файл и линкуется exe. Правка `.h` — пересобирается всё, что его
 включает. Правка `.qml` — QML упакован в exe через `qml.qrc`, поэтому тоже
-нужна пересборка (пересобирается тот самый тяжёлый `qrc_qml.cpp`, ~1 мин).
+нужна пересборка (пересобирается `qrc_qml.cpp`, ~15 с).
 
 `Release` вместо `Debug` — намеренно: Debug-сборка Qt-приложения заметно
 медленнее стартует, а отладчиком мы почти не пользуемся. Когда понадобится
@@ -176,7 +176,7 @@ GUI поднимает встроенный симулятор WH-1000XM5 пря
 - **`Qt6Config.cmake not found`** — не передан `CMAKE_PREFIX_PATH` или
   другая версия/путь Qt.
 - **`cl` / `rc` не найден** — запускать через `scripts\win-dev.ps1`, не через Launch-VsDevShell.
-- **`C1060: compiler is out of heap space`** — сборка `qrc_qml.cpp` параллельно; скрипт собирает его отдельно.
+- **`C1060: compiler is out of heap space`** — в `qml.qrc` попали слишком большие картинки; прогнать `scripts/shrink-device-images.py`.
 - **`Cannot find source file: imgui/imgui.cpp`** — не скачан сабмодуль: `git submodule update --init --recursive`.
 - **Exe запускается и сразу закрывается** — не хватает Qt DLL; п. 3.
 - **Белое/пустое окно, в консоли `module "QtQuick.Shapes" is not installed`** —

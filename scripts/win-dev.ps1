@@ -30,12 +30,6 @@ $env:PATH = "$Qt\bin;$VsRoot\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\
 Set-Location $Root
 
 function Invoke-Build {
-    # qrc_qml.cpp embeds ~21 MB of device PNGs as one C++ array. Compiled in
-    # parallel with everything else, MSVC runs out of heap (C1060). Build
-    # that one object alone first, then let the rest go wide.
-    $qrcObj = 'apps/device-center/CMakeFiles/sony-device-center.dir/sony-device-center_autogen/EWIEGA46WW/qrc_qml.cpp.obj'
-    & ninja -C $Build -j 1 $qrcObj
-    if ($LASTEXITCODE -ne 0) { throw 'qrc build failed' }
     & cmake --build $Build --parallel
     if ($LASTEXITCODE -ne 0) { throw 'build failed' }
 }
