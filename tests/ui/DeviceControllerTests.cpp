@@ -81,21 +81,32 @@ private slots:
         QCOMPARE(lastLevel, 15);
         QVERIFY2(noiseWrites <= 3, qPrintable(QString("expected the drag to coalesce, got %1 writes").arg(noiseWrites)));
     }
-    void ambientFromNoiseCancellingStartsAtTheLowestLevel() {
-        // In NC mode the device reports ambient level 0; asking for ambient
-        // with that value must not be rejected as out of range.
+    void ambientLevelSurvivesNoiseCancelling() {
+        // Outside ambient mode the protocol reports level 0. The controller
+        // must keep the last real level so "back to ambient" restores it
+        // instead of asking for 0 (rejected) or 1 (wrong).
         auto simulated = core::createSimulatedDevice();
         auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
         service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        // The level is a persisted user setting; put it back afterwards.
+        const auto previousLevel = QSettings("SonyBridge", "SonyDeviceCenter").value("ambientLevel", 10);
         DeviceCenterController controller(nullptr, service);
         QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
         QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
-        QCOMPARE(controller.ambientLevel(), 0);
-        controller.setAmbient(controller.ambientLevel(), false);
-        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
-        QVERIFY2(controller.lastError().isEmpty(), qPrintable(controller.lastError()));
+        auto settle = [&] { QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000); QVERIFY2(controller.lastError().isEmpty(), qPrintable(controller.lastError())); };
+        controller.setAmbient(14, false); settle();
         QCOMPARE(controller.noiseControlMode(), QString("ambient"));
-        QCOMPARE(controller.ambientLevel(), 1);
+        QCOMPARE(controller.ambientLevel(), 14);
+        controller.setAnc(true); settle();
+        QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
+        QVERIFY2(controller.ambientLevel() == 14, "remembered while the device reports 0");
+        controller.setAmbient(controller.ambientLevel(), false); settle();
+        QCOMPARE(controller.noiseControlMode(), QString("ambient"));
+        QCOMPARE(controller.ambientLevel(), 14);
+        // Persisted, so an app restart starts from it too.
+        QSettings settings("SonyBridge", "SonyDeviceCenter");
+        QCOMPARE(settings.value("ambientLevel").toInt(), 14);
+        settings.setValue("ambientLevel", previousLevel);
     }
     void trayIconReflectsBatteryAndConnection() {
         // Rendering is pure: no tray needed, so it runs headless too.

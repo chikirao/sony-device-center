@@ -38,6 +38,7 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
     _notifyConnection = settings.value("notifyConnection", true).toBool();
     _notifyCharged = settings.value("notifyCharged", false).toBool();
     _lowBatteryThreshold = settings.value("lowBatteryThreshold", 20).toInt();
+    _ambientLevel = std::clamp(settings.value("ambientLevel", 10).toInt(), 1, 20);
     _backend = new DeviceBackend(std::move(service));
     _backend->moveToThread(&_worker);
     connect(&_worker, &QThread::started, _backend, &DeviceBackend::start);
@@ -110,7 +111,14 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     _batteryCase = batteryValid ? battery.value("case").toInt(-1) : -1;
     const auto nc = s.value("noiseControl").toObject();
     _noiseControlMode = _connected && valid("noiseControl") ? nc.value("mode").toString() : "unknown";
-    _ambientLevel = nc.value("ambientLevel").toInt(); _focusOnVoice = nc.value("focusOnVoice").toBool();
+    _focusOnVoice = nc.value("focusOnVoice").toBool();
+    // Outside ambient mode the protocol reports level 0. Keep the last real
+    // level instead, so switching back to ambient restores it rather than
+    // dropping to 1; it is persisted because the device does not keep it.
+    if (const int reported = nc.value("ambientLevel").toInt(); reported > 0 && reported != _ambientLevel) {
+        _ambientLevel = reported;
+        QSettings("SonyBridge", "SonyDeviceCenter").setValue("ambientLevel", reported);
+    }
     const auto eq = s.value("equalizer").toObject();
     _equalizerPreset = valid("equalizer") ? eq.value("preset").toInt() : -1;
     _equalizerPresetName = valid("equalizer") ? eq.value("presetName").toString() : "Unknown";
@@ -217,10 +225,9 @@ QVariantList DeviceCenterController::pairedDevices() const { return _pairedDevic
 
 void DeviceCenterController::setAnc(bool enabled) { _send("anc", {{"enabled",enabled}}); }
 void DeviceCenterController::setAmbient(int level, bool voice) {
-    // While noise cancelling is on the device reports an ambient level of 0,
-    // which the protocol layer rejects; switching to ambient from that state
-    // starts at the lowest real level. 20 is the maximum on every model.
-    level = std::clamp(level, 1, 20);
+    // 0 means "whatever it was": the remembered level. 20 is the maximum on
+    // every model.
+    level = std::clamp(level > 0 ? level : _ambientLevel, 1, 20);
     _send("ambient", {{"level",level},{"focusOnVoice",voice}});
 }
 void DeviceCenterController::setNoiseControlOff() { setAnc(false); }
