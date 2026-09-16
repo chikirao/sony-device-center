@@ -114,8 +114,11 @@ Suggested / сцены — Фаза «будущее»; Save as Custom — би�
   вариативный, оси веса и размера точки, ближе всего к макетам); запасные —
   DotGothic16 (есть кириллица), Sixtyfour (крупные числа), Silkscreen
   (мелкие подписи). Файл + `OFL.txt` в `assets/fonts/`, `FontLoader` в QML.
-  **Не использовать** FontStruct-шрифты вроде «Nothing Font (5x7)»: их EULA
-  запрещает распространение и встраивание в редактируемые форматы.
+  Для основного текста в пару — **Space Grotesk** (OFL). **Не использовать**
+  FontStruct-шрифты вроде «Nothing Font (5x7)» (EULA запрещает
+  распространение) и выгрузки фирменных шрифтов Nothing (Ndot-55/57,
+  NType-82, репозиторий xeji01/nothingfont) — они проприетарные, «All Rights
+  Reserved», лицензии нет.
 - [ ] **Переключатель темы** в Settings + следование системе
   (`Qt.styleHints.colorScheme`).
 - [ ] Все новые строки — через `window.tr` и `scripts/i18n-add-keys.py`.
