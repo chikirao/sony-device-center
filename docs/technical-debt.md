@@ -10,6 +10,10 @@ no hardware verification or release publication is implied by the automated test
    button changes, battery refresh, and commands on XM3/XM5 hardware. V1 battery,
    NC and EQ readback is decoded and verified on an XM4; the XM3 still needs a
    re-test on the same path, and V1 DSEE / auto power-off remain unimplemented.
+   V1 Speak-to-Chat (XM4 Smart Talking Mode, `F6 05` plus config `FC 05`
+   Standard timeout) is wired; hardware on a WH-1000XM4 confirmed enable and
+   that a talking session closes after ~30s. The timeout picker is still a
+   nice-to-have (see UI section).
    XM6 EQ/read timeouts and MDR-1000X connectivity remain unresolved. Decode the
    reported captures and add literal packet fixtures before changing model claims.
    ACK receipt still cannot establish that an EQ change had an audible effect.
@@ -26,6 +30,12 @@ no hardware verification or release publication is implied by the automated test
    already running when sonyd starts, or third-party software can still compete
    for RFCOMM. Add a per-device process lock or an ownership broker before claiming
    global exclusion.
+5. **Pairing / connecting-mode window (XM4 hardware).** Powering the headset off
+   and holding the power button to enter pairing/connecting mode loses the race
+   to `DeviceService` auto-reconnect. Retries start at 1s and keep grabbing
+   RFCOMM, so the cans never stay in that mode unless `sonyd` is killed first.
+   Reported while testing Speak-to-Chat on a WH-1000XM4. Needs a pause-on-power-off
+   or an explicit pairing-mode hold-off, not a tighter backoff.
 
 ## Service and IPC follow-up
 
@@ -71,9 +81,11 @@ no hardware verification or release publication is implied by the automated test
 
 ## UI, packaging, and maintenance
 
-- Add interactive QML tests for switch/slider rollback, rapid actions, device
-  switching, and daemon disappearance/version mismatch. Current Qt tests cover
-  controller/worker behavior, and the smoke test checks QML loading.
+- Speak-to-Chat timeout and sensitivity (nice-to-have). The on/off toggle
+  always writes Standard (~30s). Headphones Connect also exposes ~15s, ~1 min,
+  and "do not close automatically." Those are already on the wire as `FC 05`
+  timeout `0x00` / `0x01` / `0x02` / `0x03` (plus Auto/High/Low sensitivity).
+  Surface them in the GUI and IPC later; do not default to `0x03`.
 - Improve per-feature unknown/stale/error presentation beyond the current metadata,
   battery/noise/codec labels, feature descriptions, and error footer. Show separate
   left/right/case batteries and richer read-error details where useful.
