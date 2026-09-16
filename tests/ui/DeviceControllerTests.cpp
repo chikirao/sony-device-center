@@ -81,6 +81,22 @@ private slots:
         QCOMPARE(lastLevel, 15);
         QVERIFY2(noiseWrites <= 3, qPrintable(QString("expected the drag to coalesce, got %1 writes").arg(noiseWrites)));
     }
+    void ambientFromNoiseCancellingStartsAtTheLowestLevel() {
+        // In NC mode the device reports ambient level 0; asking for ambient
+        // with that value must not be rejected as out of range.
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
+        QCOMPARE(controller.ambientLevel(), 0);
+        controller.setAmbient(controller.ambientLevel(), false);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QVERIFY2(controller.lastError().isEmpty(), qPrintable(controller.lastError()));
+        QCOMPARE(controller.noiseControlMode(), QString("ambient"));
+        QCOMPARE(controller.ambientLevel(), 1);
+    }
     void trayIconReflectsBatteryAndConnection() {
         // Rendering is pure: no tray needed, so it runs headless too.
         auto pixel = [](const QIcon& icon, int x, int y) { return icon.pixmap(64, 64).toImage().pixelColor(x, y); };

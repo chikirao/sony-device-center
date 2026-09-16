@@ -216,7 +216,13 @@ bool DeviceCenterController::hasAdaptiveVolume() const { return _capabilities.va
 QVariantList DeviceCenterController::pairedDevices() const { return _pairedDevices; }
 
 void DeviceCenterController::setAnc(bool enabled) { _send("anc", {{"enabled",enabled}}); }
-void DeviceCenterController::setAmbient(int level, bool voice) { _send("ambient", {{"level",level},{"focusOnVoice",voice}}); }
+void DeviceCenterController::setAmbient(int level, bool voice) {
+    // While noise cancelling is on the device reports an ambient level of 0,
+    // which the protocol layer rejects; switching to ambient from that state
+    // starts at the lowest real level. 20 is the maximum on every model.
+    level = std::clamp(level, 1, 20);
+    _send("ambient", {{"level",level},{"focusOnVoice",voice}});
+}
 void DeviceCenterController::setNoiseControlOff() { setAnc(false); }
 void DeviceCenterController::setEqualizerPreset(int preset) { _send("eqPreset", {{"preset",preset}}); }
 void DeviceCenterController::setEqualizerCustom(int bass, const QVariantList& bands) {

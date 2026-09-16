@@ -70,8 +70,8 @@ void TrayController::_buildMenu() {
     }
     connect(_noiseCancelling, &QAction::triggered, &_controller, [this] { _controller.setAnc(true); });
     connect(_ambient, &QAction::triggered, &_controller, [this] {
-        // Re-apply the level the device last reported; 1 is the lowest valid one.
-        _controller.setAmbient(std::max(1, _controller.ambientLevel()), _controller.focusOnVoice());
+        // Re-apply the level the device last reported; the controller clamps it.
+        _controller.setAmbient(_controller.ambientLevel(), _controller.focusOnVoice());
     });
     connect(_off, &QAction::triggered, &_controller, [this] { _controller.setNoiseControlOff(); });
 
