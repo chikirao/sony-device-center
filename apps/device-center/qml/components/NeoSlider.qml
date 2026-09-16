@@ -9,9 +9,11 @@ Slider {
     id: sl
     property real confirmedValue: 0
     value: confirmedValue
+    // Re-attach the binding once the device confirms, but never under the
+    // user's finger: a poll arriving mid-drag would yank the handle back.
     Connections {
         target: controller
-        function onStateChanged() { sl.value = Qt.binding(function() { return sl.confirmedValue }) }
+        function onStateChanged() { if (!sl.pressed) sl.value = Qt.binding(function() { return sl.confirmedValue }) }
     }
     implicitHeight: 26
     hoverEnabled: true

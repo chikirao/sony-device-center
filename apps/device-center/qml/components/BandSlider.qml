@@ -34,7 +34,7 @@ ColumnLayout {
         value: band.value
         Connections {
             target: controller
-            function onStateChanged() { vs.value = Qt.binding(function() { return band.value }) }
+            function onStateChanged() { if (!vs.pressed) vs.value = Qt.binding(function() { return band.value }) }
         }
         implicitWidth: 34
         hoverEnabled: true

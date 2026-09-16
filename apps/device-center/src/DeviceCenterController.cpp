@@ -10,6 +10,7 @@
 #include "sony/transport/PlatformTransport.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
@@ -24,8 +25,12 @@
 
 namespace sony::devicecenter {
 
-DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<core::IDeviceService> service)
+DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<core::IDeviceService> service,
+                                               const QString& historyDir)
     : QObject(parent) {
+    _history = std::make_unique<BatteryHistory>(
+        historyDir.isEmpty() ? QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) : historyDir);
+    connect(_history.get(), &BatteryHistory::changed, this, &DeviceCenterController::batteryHistoryChanged);
     QSettings settings("SonyBridge", "SonyDeviceCenter");
     _currentLanguage = settings.value("language", "en").toString();
     _minimizeToTray = settings.value("minimizeToTray", true).toBool();
@@ -33,6 +38,7 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
     _notifyConnection = settings.value("notifyConnection", true).toBool();
     _notifyCharged = settings.value("notifyCharged", false).toBool();
     _lowBatteryThreshold = settings.value("lowBatteryThreshold", 20).toInt();
+    _ambientLevel = std::clamp(settings.value("ambientLevel", 10).toInt(), 1, 20);
     _backend = new DeviceBackend(std::move(service));
     _backend->moveToThread(&_worker);
     connect(&_worker, &QThread::started, _backend, &DeviceBackend::start);
@@ -86,6 +92,8 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     if (s.contains("address")) _deviceAddress = s.value("address").toString();
     if (!s.contains("features")) {
         _batteryLevel = _batteryLeft = _batteryRight = _batteryCase = -1; _noiseControlMode = "unknown";
+        _isCharging = false;
+        _history->observe(QDateTime::currentMSecsSinceEpoch(), false, -1, false);
         emit stateChanged(); return;
     }
     _features = s.value("features").toObject().toVariantMap();
@@ -103,7 +111,14 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     _batteryCase = batteryValid ? battery.value("case").toInt(-1) : -1;
     const auto nc = s.value("noiseControl").toObject();
     _noiseControlMode = _connected && valid("noiseControl") ? nc.value("mode").toString() : "unknown";
-    _ambientLevel = nc.value("ambientLevel").toInt(); _focusOnVoice = nc.value("focusOnVoice").toBool();
+    _focusOnVoice = nc.value("focusOnVoice").toBool();
+    // Outside ambient mode the protocol reports level 0. Keep the last real
+    // level instead, so switching back to ambient restores it rather than
+    // dropping to 1; it is persisted because the device does not keep it.
+    if (const int reported = nc.value("ambientLevel").toInt(); reported > 0 && reported != _ambientLevel) {
+        _ambientLevel = reported;
+        QSettings("SonyBridge", "SonyDeviceCenter").setValue("ambientLevel", reported);
+    }
     const auto eq = s.value("equalizer").toObject();
     _equalizerPreset = valid("equalizer") ? eq.value("preset").toInt() : -1;
     _equalizerPresetName = valid("equalizer") ? eq.value("presetName").toString() : "Unknown";
@@ -111,6 +126,11 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     _dsee = s.value("dsee").toBool(); _speakToChat = s.value("speakToChat").toBool();
     _adaptiveVolume = s.value("adaptiveVolume").toBool(); _autoPowerOff = s.value("autoPowerOff").toInt();
     _codec = _connected && valid("codec") ? s.value("codec").toString("Unknown") : "Unknown";
+    // The log follows the selected device and only writes on actual changes.
+    // Early snapshots carry no address yet; the log keeps its device rather
+    // than closing and reopening (which would restart the discharge session).
+    if (!_deviceAddress.isEmpty() && _history->device() != _deviceAddress) _history->setDevice(_deviceAddress);
+    _history->observe(QDateTime::currentMSecsSinceEpoch(), _connected, _batteryLevel, _isCharging);
     emit stateChanged(); emit capabilitiesChanged();
 }
 
@@ -123,6 +143,32 @@ int DeviceCenterController::batteryLeft() const { return _batteryLeft; }
 int DeviceCenterController::batteryRight() const { return _batteryRight; }
 int DeviceCenterController::batteryCase() const { return _batteryCase; }
 bool DeviceCenterController::hasDualBattery() const { return _batteryLeft >= 0 || _batteryRight >= 0; }
+int DeviceCenterController::batteryMinutesLeft() const {
+    if (!_connected || _isCharging) return -1;
+    const auto e = _history->estimate(QDateTime::currentMSecsSinceEpoch());
+    return e.valid ? static_cast<int>(e.remainingMs / 60000) : -1;
+}
+QString DeviceCenterController::batteryTimeLeft() const {
+    const int minutes = batteryMinutesLeft();
+    return minutes < 0 ? QString() : formatDuration(minutes);
+}
+double DeviceCenterController::batteryDischargeRate() const {
+    if (!_connected || _isCharging) return 0.0;
+    const auto e = _history->estimate(QDateTime::currentMSecsSinceEpoch());
+    return e.valid ? e.percentPerHour : 0.0;
+}
+double DeviceCenterController::batterySessionStart() const {
+    if (!_connected || _isCharging) return 0.0;
+    return static_cast<double>(_history->estimate(QDateTime::currentMSecsSinceEpoch()).sessionStartMs);
+}
+QVariantList DeviceCenterController::batterySamples(double sinceMs) const {
+    return _history->samplesSince(static_cast<qint64>(sinceMs));
+}
+QString DeviceCenterController::formatDuration(int minutes) const {
+    minutes = std::max(0, minutes);
+    if (minutes < 60) return t("duration_minutes").arg(minutes);
+    return t("duration_hours_minutes").arg(minutes / 60).arg(minutes % 60);
+}
 QString DeviceCenterController::noiseControlMode() const { return _noiseControlMode; }
 int DeviceCenterController::ambientLevel() const { return _ambientLevel; }
 bool DeviceCenterController::focusOnVoice() const { return _focusOnVoice; }
@@ -178,7 +224,12 @@ bool DeviceCenterController::hasAdaptiveVolume() const { return _capabilities.va
 QVariantList DeviceCenterController::pairedDevices() const { return _pairedDevices; }
 
 void DeviceCenterController::setAnc(bool enabled) { _send("anc", {{"enabled",enabled}}); }
-void DeviceCenterController::setAmbient(int level, bool voice) { _send("ambient", {{"level",level},{"focusOnVoice",voice}}); }
+void DeviceCenterController::setAmbient(int level, bool voice) {
+    // 0 means "whatever it was": the remembered level. 20 is the maximum on
+    // every model.
+    level = std::clamp(level > 0 ? level : _ambientLevel, 1, 20);
+    _send("ambient", {{"level",level},{"focusOnVoice",voice}});
+}
 void DeviceCenterController::setNoiseControlOff() { setAnc(false); }
 void DeviceCenterController::setEqualizerPreset(int preset) { _send("eqPreset", {{"preset",preset}}); }
 void DeviceCenterController::setEqualizerCustom(int bass, const QVariantList& bands) {

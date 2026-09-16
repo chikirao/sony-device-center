@@ -182,7 +182,7 @@ Rectangle {
         // Navigation with a sliding indicator
         Item {
             Layout.fillWidth: true
-            Layout.preferredHeight: 6 * 44 + 5 * 6
+            Layout.preferredHeight: 7 * 44 + 6 * 6
 
             // The indicator floats; items don't each carry their own.
             Rectangle {
@@ -215,7 +215,8 @@ Rectangle {
                     { idx: 2, key: "nav_equalizer",       glyph: appWindow.icons.sliders },
                     { idx: 3, key: "nav_audio_features",  glyph: appWindow.icons.sparkle },
                     { idx: 4, key: "nav_device_switcher", glyph: appWindow.icons.swap },
-                    { idx: 5, key: "nav_settings",        glyph: appWindow.icons.settings }
+                    { idx: 5, key: "nav_battery",         glyph: appWindow.icons.battery },
+                    { idx: 6, key: "nav_settings",        glyph: appWindow.icons.settings }
                 ]
 
                 delegate: Item {

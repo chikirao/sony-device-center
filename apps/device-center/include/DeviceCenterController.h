@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "BatteryHistory.h"
 #include "sony/core/IDeviceService.h"
 #include "sony/core/IpcClient.h"
 
@@ -33,6 +34,12 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(int batteryRight READ batteryRight NOTIFY stateChanged)
     Q_PROPERTY(int batteryCase READ batteryCase NOTIFY stateChanged)
     Q_PROPERTY(bool hasDualBattery READ hasDualBattery NOTIFY stateChanged)
+    // Time-left estimate from the current discharge session. Minutes are -1
+    // and the text empty while there is not enough data (or while charging).
+    Q_PROPERTY(int batteryMinutesLeft READ batteryMinutesLeft NOTIFY stateChanged)
+    Q_PROPERTY(QString batteryTimeLeft READ batteryTimeLeft NOTIFY stateChanged)
+    Q_PROPERTY(double batteryDischargeRate READ batteryDischargeRate NOTIFY stateChanged)
+    Q_PROPERTY(double batterySessionStart READ batterySessionStart NOTIFY stateChanged)
     Q_PROPERTY(QString noiseControlMode READ noiseControlMode NOTIFY stateChanged)
     Q_PROPERTY(int ambientLevel READ ambientLevel NOTIFY stateChanged)
     Q_PROPERTY(bool focusOnVoice READ focusOnVoice NOTIFY stateChanged)
@@ -67,7 +74,10 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(QVariantList availableLanguages READ availableLanguages CONSTANT)
 
 public:
-    explicit DeviceCenterController(QObject* parent = nullptr, std::shared_ptr<core::IDeviceService> service = {});
+    // historyDir: where per-device battery logs live; defaults to
+    // AppLocalDataLocation. Tests point it at a temporary directory.
+    explicit DeviceCenterController(QObject* parent = nullptr, std::shared_ptr<core::IDeviceService> service = {},
+                                    const QString& historyDir = {});
     ~DeviceCenterController() override;
 
     bool busy() const { return _busy; }
@@ -85,6 +95,15 @@ public:
     [[nodiscard]] int batteryRight() const;
     [[nodiscard]] int batteryCase() const;
     [[nodiscard]] bool hasDualBattery() const;
+    [[nodiscard]] int batteryMinutesLeft() const;
+    [[nodiscard]] QString batteryTimeLeft() const;
+    [[nodiscard]] double batteryDischargeRate() const;
+    [[nodiscard]] double batterySessionStart() const;
+    // Logged samples at or after sinceMs (Unix ms), oldest first.
+    Q_INVOKABLE QVariantList batterySamples(double sinceMs) const;
+    // "5 h 20 min" in the current language; minutes only under an hour.
+    Q_INVOKABLE QString formatDuration(int minutes) const;
+    BatteryHistory& batteryHistory() { return *_history; }
     [[nodiscard]] QString noiseControlMode() const;
     [[nodiscard]] int ambientLevel() const;
     [[nodiscard]] bool focusOnVoice() const;
@@ -145,6 +164,7 @@ public:
 
 signals:
     void stateChanged();
+    void batteryHistoryChanged();
     void capabilitiesChanged();
     void pairedDevicesChanged();
     void autostartChanged();
@@ -156,6 +176,7 @@ private:
     void _applySnapshot(const QByteArray& data);
     void _send(const QString& method, const QJsonObject& params = {});
     QList<QPair<QString, QJsonObject>> _pending;
+    std::unique_ptr<BatteryHistory> _history;
     QThread _worker;
     DeviceBackend* _backend{nullptr};
     quint64 _generation{0};

@@ -272,6 +272,7 @@ applies changes and raises notifications.
 ```bash
 sonyd --simulated                 # daemon + sonyctl + GUI over IPC (Linux/macOS)
 sony-device-center --simulated    # the GUI alone, in-process; works on Windows too
+sony-device-center --simulated --simulated-history   # plus a synthetic week of battery history
 ```
 
 ---

@@ -163,6 +163,24 @@ void I18nManager::_initTranslations() {
     en["notify_disconnected"]             = "Headphones disconnected";
     en["notify_charged"]                  = "Fully charged";
     en["notify_low_battery"]              = "Battery at %1%";
+    en["nav_battery"]                     = "Battery";
+    en["battery_eyebrow"]                 = "Charge over time";
+    en["battery_title"]                   = "Battery History";
+    en["battery_subtitle"]                = "Charge level over the last day or week, and how long the current charge should last.";
+    en["battery_range_24h"]               = "24 h";
+    en["battery_range_7d"]                = "7 days";
+    en["time_left"]                       = "Time left";
+    en["battery_time_left_short"]         = "~%1 left";
+    en["duration_hours_minutes"]          = "%1 h %2 min";
+    en["duration_minutes"]                = "%1 min";
+    en["battery_rate"]                    = "Discharge rate";
+    en["battery_rate_value"]              = "%1% per hour";
+    en["battery_session"]                 = "Current session";
+    en["battery_session_since"]           = "Discharging since %1";
+    en["battery_no_data"]                 = "No history yet. Points appear as the headphones report their charge.";
+    en["battery_estimate_hint"]           = "The estimate uses the discharge rate since the charger came off; it needs a few percent of use before it shows.";
+    en["battery_legend_discharging"]      = "Discharging";
+    en["battery_now"]                     = "Now";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -284,6 +302,24 @@ void I18nManager::_initTranslations() {
     pt["notify_disconnected"]             = "Fone desconectado";
     pt["notify_charged"]                  = "Totalmente carregado";
     pt["notify_low_battery"]              = "Bateria em %1%";
+    pt["nav_battery"]                     = "Bateria";
+    pt["battery_eyebrow"]                 = "Carga ao longo do tempo";
+    pt["battery_title"]                   = "Histórico da bateria";
+    pt["battery_subtitle"]                = "Nível de carga no último dia ou semana e quanto tempo a carga atual deve durar.";
+    pt["battery_range_24h"]               = "24 h";
+    pt["battery_range_7d"]                = "7 dias";
+    pt["time_left"]                       = "Tempo restante";
+    pt["battery_time_left_short"]         = "~%1 restantes";
+    pt["duration_hours_minutes"]          = "%1 h %2 min";
+    pt["duration_minutes"]                = "%1 min";
+    pt["battery_rate"]                    = "Taxa de descarga";
+    pt["battery_rate_value"]              = "%1% por hora";
+    pt["battery_session"]                 = "Sessão atual";
+    pt["battery_session_since"]           = "Descarregando desde %1";
+    pt["battery_no_data"]                 = "Ainda sem histórico. Os pontos aparecem conforme os fones informam a carga.";
+    pt["battery_estimate_hint"]           = "A estimativa usa a taxa de descarga desde que o carregador foi desconectado; precisa de alguns por cento de uso antes de aparecer.";
+    pt["battery_legend_discharging"]      = "Descarregando";
+    pt["battery_now"]                     = "Agora";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -405,6 +441,24 @@ void I18nManager::_initTranslations() {
     es["notify_disconnected"]             = "Auriculares desconectados";
     es["notify_charged"]                  = "Carga completa";
     es["notify_low_battery"]              = "Batería al %1%";
+    es["nav_battery"]                     = "Batería";
+    es["battery_eyebrow"]                 = "Carga a lo largo del tiempo";
+    es["battery_title"]                   = "Historial de batería";
+    es["battery_subtitle"]                = "Nivel de carga del último día o semana y cuánto debería durar la carga actual.";
+    es["battery_range_24h"]               = "24 h";
+    es["battery_range_7d"]                = "7 días";
+    es["time_left"]                       = "Tiempo restante";
+    es["battery_time_left_short"]         = "~%1 restantes";
+    es["duration_hours_minutes"]          = "%1 h %2 min";
+    es["duration_minutes"]                = "%1 min";
+    es["battery_rate"]                    = "Velocidad de descarga";
+    es["battery_rate_value"]              = "%1% por hora";
+    es["battery_session"]                 = "Sesión actual";
+    es["battery_session_since"]           = "Descargando desde %1";
+    es["battery_no_data"]                 = "Aún no hay historial. Los puntos aparecen a medida que los auriculares informan su carga.";
+    es["battery_estimate_hint"]           = "La estimación usa la velocidad de descarga desde que se desconectó el cargador; necesita unos puntos de uso antes de mostrarse.";
+    es["battery_legend_discharging"]      = "Descargando";
+    es["battery_now"]                     = "Ahora";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -526,6 +580,24 @@ void I18nManager::_initTranslations() {
     de["notify_disconnected"]             = "Kopfhörer getrennt";
     de["notify_charged"]                  = "Vollständig geladen";
     de["notify_low_battery"]              = "Akku bei %1 %";
+    de["nav_battery"]                     = "Akku";
+    de["battery_eyebrow"]                 = "Ladung im Zeitverlauf";
+    de["battery_title"]                   = "Akkuverlauf";
+    de["battery_subtitle"]                = "Ladestand des letzten Tages oder der letzten Woche und wie lange die aktuelle Ladung noch reichen sollte.";
+    de["battery_range_24h"]               = "24 h";
+    de["battery_range_7d"]                = "7 Tage";
+    de["time_left"]                       = "Restzeit";
+    de["battery_time_left_short"]         = "noch ~%1";
+    de["duration_hours_minutes"]          = "%1 Std. %2 Min.";
+    de["duration_minutes"]                = "%1 Min.";
+    de["battery_rate"]                    = "Entladerate";
+    de["battery_rate_value"]              = "%1 % pro Stunde";
+    de["battery_session"]                 = "Aktuelle Sitzung";
+    de["battery_session_since"]           = "Entlädt seit %1";
+    de["battery_no_data"]                 = "Noch kein Verlauf. Punkte erscheinen, sobald die Kopfhörer ihren Ladestand melden.";
+    de["battery_estimate_hint"]           = "Die Schätzung nutzt die Entladerate seit dem Abstecken des Ladegeräts; sie erscheint erst nach ein paar Prozent Nutzung.";
+    de["battery_legend_discharging"]      = "Entladen";
+    de["battery_now"]                     = "Jetzt";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -647,6 +719,24 @@ void I18nManager::_initTranslations() {
     fr["notify_disconnected"]             = "Casque déconnecté";
     fr["notify_charged"]                  = "Charge terminée";
     fr["notify_low_battery"]              = "Batterie à %1 %";
+    fr["nav_battery"]                     = "Batterie";
+    fr["battery_eyebrow"]                 = "Charge dans le temps";
+    fr["battery_title"]                   = "Historique de la batterie";
+    fr["battery_subtitle"]                = "Niveau de charge du dernier jour ou de la dernière semaine, et autonomie estimée de la charge actuelle.";
+    fr["battery_range_24h"]               = "24 h";
+    fr["battery_range_7d"]                = "7 jours";
+    fr["time_left"]                       = "Autonomie restante";
+    fr["battery_time_left_short"]         = "~%1 restantes";
+    fr["duration_hours_minutes"]          = "%1 h %2 min";
+    fr["duration_minutes"]                = "%1 min";
+    fr["battery_rate"]                    = "Vitesse de décharge";
+    fr["battery_rate_value"]              = "%1 % par heure";
+    fr["battery_session"]                 = "Session en cours";
+    fr["battery_session_since"]           = "En décharge depuis %1";
+    fr["battery_no_data"]                 = "Pas encore d'historique. Les points apparaissent à mesure que le casque signale sa charge.";
+    fr["battery_estimate_hint"]           = "L'estimation repose sur la vitesse de décharge depuis le débranchement du chargeur ; elle n'apparaît qu'après quelques pour cent d'utilisation.";
+    fr["battery_legend_discharging"]      = "Décharge";
+    fr["battery_now"]                     = "Maintenant";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -768,6 +858,24 @@ void I18nManager::_initTranslations() {
     ja["notify_disconnected"]             = "ヘッドホンが切断されました";
     ja["notify_charged"]                  = "充電が完了しました";
     ja["notify_low_battery"]              = "バッテリー残量 %1%";
+    ja["nav_battery"]                     = "バッテリー";
+    ja["battery_eyebrow"]                 = "充電の推移";
+    ja["battery_title"]                   = "バッテリー履歴";
+    ja["battery_subtitle"]                = "過去1日または1週間の充電レベルと、現在の充電で使える推定時間。";
+    ja["battery_range_24h"]               = "24時間";
+    ja["battery_range_7d"]                = "7日間";
+    ja["time_left"]                       = "残り時間";
+    ja["battery_time_left_short"]         = "残り約%1";
+    ja["duration_hours_minutes"]          = "%1時間%2分";
+    ja["duration_minutes"]                = "%1分";
+    ja["battery_rate"]                    = "放電速度";
+    ja["battery_rate_value"]              = "毎時%1%";
+    ja["battery_session"]                 = "現在のセッション";
+    ja["battery_session_since"]           = "%1から放電中";
+    ja["battery_no_data"]                 = "履歴はまだありません。ヘッドホンが充電レベルを報告すると点が表示されます。";
+    ja["battery_estimate_hint"]           = "推定は充電器を外してからの放電速度に基づきます。表示には数%の使用が必要です。";
+    ja["battery_legend_discharging"]      = "放電";
+    ja["battery_now"]                     = "現在";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -889,6 +997,24 @@ void I18nManager::_initTranslations() {
     ru["notify_disconnected"]             = "Наушники отключены";
     ru["notify_charged"]                  = "Полностью заряжены";
     ru["notify_low_battery"]              = "Заряд %1%";
+    ru["nav_battery"]                     = "Батарея";
+    ru["battery_eyebrow"]                 = "Заряд по времени";
+    ru["battery_title"]                   = "История батареи";
+    ru["battery_subtitle"]                = "Уровень заряда за последние сутки или неделю и сколько ещё должно хватить текущего заряда.";
+    ru["battery_range_24h"]               = "24 ч";
+    ru["battery_range_7d"]                = "7 дней";
+    ru["time_left"]                       = "Осталось";
+    ru["battery_time_left_short"]         = "≈ %1 осталось";
+    ru["duration_hours_minutes"]          = "%1 ч %2 мин";
+    ru["duration_minutes"]                = "%1 мин";
+    ru["battery_rate"]                    = "Скорость разряда";
+    ru["battery_rate_value"]              = "%1% в час";
+    ru["battery_session"]                 = "Текущая сессия";
+    ru["battery_session_since"]           = "Разряжается с %1";
+    ru["battery_no_data"]                 = "Истории пока нет. Точки появятся, когда наушники сообщат уровень заряда.";
+    ru["battery_estimate_hint"]           = "Оценка строится по скорости разряда с момента отключения от зарядки; для неё нужно несколько процентов использования.";
+    ru["battery_legend_discharging"]      = "Разряд";
+    ru["battery_now"]                     = "Сейчас";
 }
 
 } // namespace sony::devicecenter

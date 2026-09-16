@@ -54,6 +54,10 @@ ViewPage {
                     } else {
                         chips.push({ k: appWindow.tr("battery"), v: pct(controller.batteryLevel) })
                     }
+                    // Estimate from the battery log; a dash until it has enough to go on.
+                    chips.push({ k: appWindow.tr("time_left"), v: !controller.connected ? "\u2014"
+                                  : controller.isCharging ? appWindow.tr("charging")
+                                  : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : "\u2014" })
                     chips.push({ k: appWindow.tr("mode"), v: controller.noiseControlMode === "unknown" ? appWindow.tr("unknown") : controller.noiseControlMode === "cancelling" ? appWindow.tr("mode_anc")
                                   : controller.noiseControlMode === "ambient" ? appWindow.tr("mode_ambient") : appWindow.tr("mode_off") })
                     return chips

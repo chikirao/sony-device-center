@@ -28,7 +28,7 @@ public:
 class DeviceControllerTests : public QObject {
     Q_OBJECT
 private slots:
-    void initTestCase() { QQuickStyle::setStyle("Basic"); }
+    void initTestCase() { QQuickStyle::setStyle("Basic"); QStandardPaths::setTestModeEnabled(true); }
     void extractedPagesLoad_data() {
         QTest::addColumn<QString>("model");
         QTest::addColumn<QString>("language");
@@ -66,7 +66,7 @@ private slots:
         QVERIFY(window);
         controller.setLanguage(language);
         window->resize(size);
-        for (int page = 0; page < 6; ++page) {
+        for (int page = 0; page < 7; ++page) {
             QVERIFY(window->setProperty("navIndex", page));
             const auto screenshotDirectory = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
             QTest::qWait(screenshotDirectory.isEmpty() ? 30 : 400);
@@ -133,6 +133,33 @@ private slots:
         QCOMPARE(lastLevel, 15);
         QVERIFY2(noiseWrites <= 3, qPrintable(QString("expected the drag to coalesce, got %1 writes").arg(noiseWrites)));
     }
+    void ambientLevelSurvivesNoiseCancelling() {
+        // Outside ambient mode the protocol reports level 0. The controller
+        // must keep the last real level so "back to ambient" restores it
+        // instead of asking for 0 (rejected) or 1 (wrong).
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        // The level is a persisted user setting; put it back afterwards.
+        const auto previousLevel = QSettings("SonyBridge", "SonyDeviceCenter").value("ambientLevel", 10);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
+        auto settle = [&] { QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000); QVERIFY2(controller.lastError().isEmpty(), qPrintable(controller.lastError())); };
+        controller.setAmbient(14, false); settle();
+        QCOMPARE(controller.noiseControlMode(), QString("ambient"));
+        QCOMPARE(controller.ambientLevel(), 14);
+        controller.setAnc(true); settle();
+        QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
+        QVERIFY2(controller.ambientLevel() == 14, "remembered while the device reports 0");
+        controller.setAmbient(controller.ambientLevel(), false); settle();
+        QCOMPARE(controller.noiseControlMode(), QString("ambient"));
+        QCOMPARE(controller.ambientLevel(), 14);
+        // Persisted, so an app restart starts from it too.
+        QSettings settings("SonyBridge", "SonyDeviceCenter");
+        QCOMPARE(settings.value("ambientLevel").toInt(), 14);
+        settings.setValue("ambientLevel", previousLevel);
+    }
     void trayIconReflectsBatteryAndConnection() {
         // Rendering is pure: no tray needed, so it runs headless too.
         auto pixel = [](const QIcon& icon, int x, int y) { return icon.pixmap(64, 64).toImage().pixelColor(x, y); };
@@ -180,6 +207,53 @@ private slots:
         QTest::qWait(50);
         QCOMPARE(notifications.messageCount(), 4);
         QVERIFY(notifications.lastMessage().contains(controller.t("notify_disconnected")));
+    }
+    void batteryLogFollowsTheSimulatedDevice() {
+        QTemporaryDir dir;
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service, dir.path());
+        QSignalSpy history(&controller, &DeviceCenterController::batteryHistoryChanged);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy() && controller.batteryLevel() == 87, 5000);
+        auto& log = controller.batteryHistory();
+        QCOMPARE(log.device(), QString::fromStdString(simulated.address));
+        // Polling twice a second adds nothing while the level holds.
+        QTest::qWait(1200);
+        QCOMPARE(log.samples().size(), 1);
+        QCOMPARE(log.samples()[0].event, BatteryHistory::Event::Connected);
+        QCOMPARE(log.samples()[0].level, 87);
+        QCOMPARE(controller.batteryMinutesLeft(), -1);
+        QCOMPARE(controller.batteryTimeLeft(), QString());
+
+        simulated.transport->setBattery(86, false);
+        QTRY_COMPARE_WITH_TIMEOUT(log.samples().size(), 2, 3000);
+        QCOMPARE(log.samples()[1].level, 86);
+        QVERIFY2(controller.batteryMinutesLeft() == -1, "seconds of data are not an estimate");
+        simulated.transport->setBattery(86, true);
+        QTRY_COMPARE_WITH_TIMEOUT(log.samples().size(), 3, 3000);
+        QVERIFY(log.samples()[2].charging);
+        QCOMPARE(controller.batteryDischargeRate(), 0.0);
+        QVERIFY(history.count() >= 3);
+        QVERIFY(QFile::exists(dir.path() + "/battery-history/CC-98-8B-00-11-22.json"));
+
+        service->activeDevice()->powerOff();
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.isConnected(), 5000);
+        QTRY_COMPARE_WITH_TIMEOUT(log.samples().size(), 4, 3000);
+        QCOMPARE(log.samples()[3].event, BatteryHistory::Event::Disconnected);
+    }
+    void durationsAreLocalised() {
+        auto service = std::make_shared<SlowService>();
+        DeviceCenterController controller(nullptr, service);
+        // The language is a persisted user setting; put it back afterwards.
+        const auto previous = controller.currentLanguage();
+        controller.setLanguage("en");
+        QCOMPARE(controller.formatDuration(320), QString("5 h 20 min"));
+        QCOMPARE(controller.formatDuration(45), QString("45 min"));
+        controller.setLanguage("ru");
+        QCOMPARE(controller.formatDuration(320), QString::fromUtf8("5 ч 20 мин"));
+        controller.setLanguage(previous);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 2000);
     }
     void failedActionPreservesConfirmedValue() {
         auto transport = std::make_shared<ReplyTransport>();

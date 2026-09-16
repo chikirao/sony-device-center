@@ -108,6 +108,7 @@ ApplicationWindow {
         swap:       "M4 8.5h13l-3.4-3.4 M20 15.5H7l3.4 3.4",
         power:      "M12 3.5v8 M6.6 6.6a7.6 7.6 0 1 0 10.8 0",
         bolt:       "M13.2 2.5L4.8 13.4h6.3l-1.3 8.1 8.4-10.9h-6.3z",
+        battery:    "M3 7.5h13a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2z M21.5 10.5v3 M5 10.5v3 M8.5 10.5v3",
         bluetooth:  "M7.5 7.5L16.5 13.4 12 17V3.6l4.5 3.6-9 6",
         chevron:    "M5 9l7 7 7-7",
         settings:   "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
@@ -150,8 +151,10 @@ ApplicationWindow {
         // ------------------------------------------------------
         // CONTENT
         // ------------------------------------------------------
+        // Not disabled while a command is in flight: disabling the tree drops
+        // the mouse grab, which cut every slider drag short after its first
+        // value. Repeated input coalesces in the controller instead.
         StackLayout {
-            enabled: !controller.busy
             Layout.fillWidth: true
             Layout.fillHeight: true
             currentIndex: window.navIndex
@@ -182,7 +185,12 @@ ApplicationWindow {
             DeviceSwitcher { appWindow: window }
 
             // ==================================================
-            // 6 · SETTINGS
+            // 6 · BATTERY
+            // ==================================================
+            Battery { appWindow: window }
+
+            // ==================================================
+            // 7 · SETTINGS
             // ==================================================
             Settings { appWindow: window }
         }
