@@ -51,9 +51,12 @@
   серое offline), меню NC / Ambient / Off / Speak-to-Chat / Выключить /
   Открыть / Выход, закрытие окна → трей (настройка), автозапуск с
   `--minimized`. Приложение переведено на `QApplication` + QtWidgets.
-- [ ] **Системные уведомления** (`QSystemTrayIcon::showMessage`, на Windows —
-  toast). События: низкий заряд (порог настраиваемый), подключено /
-  отключено, зарядка завершена. Каждое отключаемо.
+- [x] **Системные уведомления** (`NotificationController`). Низкий заряд
+  (порог 10–30%, повтор на 10%), подключено/отключено, зарядка завершена;
+  каждое отключаемо в Settings. На Windows — нативные WinRT toast'ы
+  (`WindowsToast.cpp`, регистрация AppUserModelID в HKCU), потому что
+  balloon-уведомления `QSystemTrayIcon::showMessage` Windows 11 молча
+  отбрасывает; на других платформах — balloon через трей.
 - [ ] **Глобальные хоткеи.** Переключить NC↔Ambient, Off, Speak-to-Chat.
   В Qt нет кроссплатформенного API — на Windows `RegisterHotKey`, на
   Linux/X11 `XGrabKey`, на Wayland только через портал. Начать с Windows.

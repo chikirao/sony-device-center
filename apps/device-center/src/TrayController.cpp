@@ -1,5 +1,6 @@
 #include "TrayController.h"
 #include "DeviceCenterController.h"
+#include "WindowsToast.h"
 
 #include <QAction>
 #include <QActionGroup>
@@ -164,6 +165,13 @@ QIcon TrayController::renderIcon(int level, bool charging, bool connected, int s
     p.setPen(QColor(known ? kText : kTextDim));
     p.drawText(QRectF(0, 0, size, size), Qt::AlignCenter, known ? QString::number(level) : QStringLiteral("–"));
     return QIcon(pixmap);
+}
+
+void TrayController::showMessage(const QString& title, const QString& body) {
+    if (!_tray) return;
+    // Native toasts where available; the tray balloon is the portable fallback.
+    if (WindowsToast::show(title, body)) return;
+    _tray->showMessage(title, body, QSystemTrayIcon::Information, 6000);
 }
 
 void TrayController::toggleWindow() {

@@ -4,10 +4,13 @@
 #include <QQmlContext>
 #include <QQuickStyle>
 #include <QIcon>
+#include <QTimer>
 #include <QWindow>
 
 #include "DeviceCenterController.h"
 #include "TrayController.h"
+#include "NotificationController.h"
+#include "WindowsToast.h"
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
 
@@ -15,6 +18,7 @@ int main(int argc, char *argv[]) {
     // QApplication rather than QGuiApplication: the tray icon and its menu
     // come from QtWidgets. The QML side is unaffected.
     QApplication app(argc, argv);
+    sony::devicecenter::WindowsToast::registerApplication();
 
     // Main.qml customises background/handle/indicator on its controls. The
     // native "Windows" and "macOS" styles Qt picks by default there refuse
@@ -55,10 +59,18 @@ int main(int argc, char *argv[]) {
         auto simulatedService = std::make_shared<sony::core::DeviceService>(simulated.transport, simulated.discovery);
         simulatedService->startAutoConnect(simulated.address);
         service = std::move(simulatedService);
+        // Drain the simulated battery 1% every 3 s so the tray, the ring and
+        // the low-battery notification can be watched without waiting hours.
+        auto* drain = new QTimer(&app);
+        QObject::connect(drain, &QTimer::timeout, &app, [transport = simulated.transport, level = 87]() mutable {
+            if (level > 0) transport->setBattery(--level, false);
+        });
+        drain->start(3000);
     }
 
     sony::devicecenter::DeviceCenterController controller(nullptr, std::move(service));
     sony::devicecenter::TrayController tray(controller);
+    sony::devicecenter::NotificationController notifications(controller, tray);
     // Without a tray there is nowhere to come back from, so a hidden start
     // and close-to-tray only make sense when the icon actually exists.
     const bool startHidden = parser.isSet(minimizedOption) && tray.isAvailable();

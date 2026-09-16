@@ -33,6 +33,9 @@ public:
 public slots:
     void toggleWindow();
     void showWindow();
+    // Desktop notification through the tray (a toast on Windows). No-op
+    // without a tray.
+    void showMessage(const QString& title, const QString& body);
 
 signals:
     void quitRequested();

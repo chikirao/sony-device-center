@@ -23,6 +23,10 @@ public:
 
     size_t send(std::span<const std::byte> data) override;
 
+    // Changes the simulated charge and pushes the unsolicited battery
+    // notification a real headset would send.
+    void setBattery(int level, bool charging);
+
 private:
     void handle(const std::vector<uint8_t>& request);
     void reply(std::vector<uint8_t> payload);

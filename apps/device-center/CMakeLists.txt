@@ -36,6 +36,10 @@ add_executable(sony-device-center
     include/I18nManager.h
     src/TrayController.cpp
     include/TrayController.h
+    src/NotificationController.cpp
+    include/NotificationController.h
+    src/WindowsToast.cpp
+    include/WindowsToast.h
     qml.qrc
 )
 
@@ -120,6 +124,10 @@ if(WIN32)
     target_sources(sony-device-center PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/../../packaging/windows/sony-device-center.rc")
 
+    # C++/WinRT (toast notifications) resolves activation factories through
+    # the umbrella library.
+    target_link_libraries(sony-device-center PRIVATE WindowsApp)
+
     # A bare .exe cannot start without the Qt DLLs and QML module tree beside
     # it, so let windeployqt populate the install prefix at install time.
     get_target_property(_qt_qmake Qt6::qmake IMPORTED_LOCATION)
@@ -150,8 +158,13 @@ if(BUILD_TESTING)
             src/DeviceCenterController.cpp include/DeviceCenterController.h
             src/DeviceBackend.cpp include/DeviceBackend.h
             src/I18nManager.cpp include/I18nManager.h
-            src/TrayController.cpp include/TrayController.h)
+            src/TrayController.cpp include/TrayController.h
+            src/NotificationController.cpp include/NotificationController.h
+            src/WindowsToast.cpp include/WindowsToast.h)
         target_include_directories(sony-ui-tests PRIVATE include)
+        if(WIN32)
+            target_link_libraries(sony-ui-tests PRIVATE WindowsApp)
+        endif()
         target_compile_definitions(sony-ui-tests PRIVATE SONY_DEVICE_CENTER_VERSION="${SonyDeviceCenter_VERSION}")
         target_link_libraries(sony-ui-tests PRIVATE Qt6::Test Qt6::Gui Qt6::Widgets sony-core)
         add_test(NAME "device-controller-worker-integration" COMMAND sony-ui-tests)

@@ -1,6 +1,7 @@
 #include <QtTest>
 #include "DeviceCenterController.h"
 #include "TrayController.h"
+#include "NotificationController.h"
 #include <QImage>
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
@@ -87,6 +88,41 @@ private slots:
         QCOMPARE(pixel(low, 32, 3).name(), QColor("#FF5A5F").name());
         QCOMPARE(pixel(gone, 32, 3).name(), QColor("#3A3D48").name());
         QCOMPARE(pixel(TrayController::renderIcon(50, true, true), 32, 3).name(), QColor("#7C8CFF").name());
+    }
+    void notificationsFireOnceAtEachEdge() {
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        controller.setNotifyCharged(true);
+        controller.setLowBatteryThreshold(20);
+        TrayController tray(controller);
+        NotificationController notifications(controller, tray);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy() && controller.batteryLevel() == 87, 5000);
+        // Starting next to connected headphones is a baseline, not an event.
+        QCOMPARE(notifications.messageCount(), 0);
+
+        auto settle = [&](int level) { QTRY_COMPARE_WITH_TIMEOUT(controller.batteryLevel(), level, 3000); QTest::qWait(50); };
+        simulated.transport->setBattery(18, false); settle(18);
+        QCOMPARE(notifications.messageCount(), 1);
+        QVERIFY(notifications.lastMessage().contains("18"));
+        simulated.transport->setBattery(17, false); settle(17);
+        QVERIFY2(notifications.messageCount() == 1, "still low: must not repeat");
+        simulated.transport->setBattery(9, false); settle(9);
+        QVERIFY2(notifications.messageCount() == 2, "critical step announces again");
+        QVERIFY(notifications.lastMessage().contains("9"));
+        simulated.transport->setBattery(100, true); settle(100);
+        QCOMPARE(notifications.messageCount(), 3);
+        QVERIFY(notifications.lastMessage().contains(controller.t("notify_charged")));
+        QTest::qWait(1200);
+        QVERIFY2(notifications.messageCount() == 3, "charged: polling must not repeat it");
+
+        controller.setNotifyConnection(true);
+        service->activeDevice()->powerOff();
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.isConnected(), 5000);
+        QTest::qWait(50);
+        QCOMPARE(notifications.messageCount(), 4);
+        QVERIFY(notifications.lastMessage().contains(controller.t("notify_disconnected")));
     }
     void failedActionPreservesConfirmedValue() {
         auto transport = std::make_shared<ReplyTransport>();
