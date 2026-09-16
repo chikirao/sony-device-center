@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QDateTime>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
@@ -49,13 +50,18 @@ int main(int argc, char *argv[]) {
     QCommandLineOption simulatedModelOption("simulated-model",
         "Model name for --simulated; WF-* and LinkBuds names simulate earbuds with left/right/case batteries.", "name");
     parser.addOption(simulatedModelOption);
+    QCommandLineOption simulatedHistoryOption("simulated-history",
+        "With --simulated: replace the battery log with a synthetic week of use so the chart and the estimate are populated.");
+    parser.addOption(simulatedHistoryOption);
     QCommandLineOption minimizedOption("minimized", "Start hidden in the system tray (used by autostart).");
     parser.addOption(minimizedOption);
     parser.process(app);
 
     std::shared_ptr<sony::core::IDeviceService> service;
+    QString simulatedAddress;
     if (parser.isSet(simulatedOption) || parser.isSet(simulatedModelOption)) {
         auto simulated = sony::core::createSimulatedDevice(parser.value(simulatedModelOption).toStdString());
+        simulatedAddress = QString::fromStdString(simulated.address);
         auto simulatedService = std::make_shared<sony::core::DeviceService>(simulated.transport, simulated.discovery);
         simulatedService->startAutoConnect(simulated.address);
         service = std::move(simulatedService);
@@ -69,6 +75,12 @@ int main(int argc, char *argv[]) {
     }
 
     sony::devicecenter::DeviceCenterController controller(nullptr, std::move(service));
+    if (parser.isSet(simulatedHistoryOption) && !simulatedAddress.isEmpty()) {
+        // Seeded before the first snapshot arrives; the controller then finds
+        // the log already open for the simulator's address.
+        controller.batteryHistory().setDevice(simulatedAddress);
+        controller.batteryHistory().seedDemoData(QDateTime::currentMSecsSinceEpoch());
+    }
     sony::devicecenter::TrayController tray(controller);
     sony::devicecenter::NotificationController notifications(controller, tray);
     // Without a tray there is nowhere to come back from, so a hidden start

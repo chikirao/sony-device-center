@@ -138,6 +138,7 @@ ApplicationWindow {
         swap:       "M4 8.5h13l-3.4-3.4 M20 15.5H7l3.4 3.4",
         power:      "M12 3.5v8 M6.6 6.6a7.6 7.6 0 1 0 10.8 0",
         bolt:       "M13.2 2.5L4.8 13.4h6.3l-1.3 8.1 8.4-10.9h-6.3z",
+        battery:    "M3 7.5h13a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2z M21.5 10.5v3 M5 10.5v3 M8.5 10.5v3",
         bluetooth:  "M7.5 7.5L16.5 13.4 12 17V3.6l4.5 3.6-9 6",
         chevron:    "M5 9l7 7 7-7",
         settings:   "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
@@ -402,9 +403,11 @@ ApplicationWindow {
         id: sl
         property real confirmedValue: 0
         value: confirmedValue
+        // Re-attach the binding once the device confirms, but never under the
+        // user's finger: a poll arriving mid-drag would yank the handle back.
         Connections {
             target: controller
-            function onStateChanged() { sl.value = Qt.binding(function() { return sl.confirmedValue }) }
+            function onStateChanged() { if (!sl.pressed) sl.value = Qt.binding(function() { return sl.confirmedValue }) }
         }
         implicitHeight: 26
         hoverEnabled: true
@@ -477,7 +480,7 @@ ApplicationWindow {
             value: band.value
             Connections {
                 target: controller
-                function onStateChanged() { vs.value = Qt.binding(function() { return band.value }) }
+                function onStateChanged() { if (!vs.pressed) vs.value = Qt.binding(function() { return band.value }) }
             }
             implicitWidth: 34
             hoverEnabled: true
@@ -766,7 +769,7 @@ ApplicationWindow {
                 // Navigation with a sliding indicator
                 Item {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 6 * 44 + 5 * 6
+                    Layout.preferredHeight: 7 * 44 + 6 * 6
 
                     // The indicator floats; items don't each carry their own.
                     Rectangle {
@@ -799,7 +802,8 @@ ApplicationWindow {
                             { idx: 2, key: "nav_equalizer",       glyph: window.icons.sliders },
                             { idx: 3, key: "nav_audio_features",  glyph: window.icons.sparkle },
                             { idx: 4, key: "nav_device_switcher", glyph: window.icons.swap },
-                            { idx: 5, key: "nav_settings",        glyph: window.icons.settings }
+                            { idx: 5, key: "nav_battery",         glyph: window.icons.battery },
+                            { idx: 6, key: "nav_settings",        glyph: window.icons.settings }
                         ]
 
                         delegate: Item {
@@ -901,8 +905,10 @@ ApplicationWindow {
         // ------------------------------------------------------
         // CONTENT
         // ------------------------------------------------------
+        // Not disabled while a command is in flight: disabling the tree drops
+        // the mouse grab, which cut every slider drag short after its first
+        // value. Repeated input coalesces in the controller instead.
         StackLayout {
-            enabled: !controller.busy
             Layout.fillWidth: true
             Layout.fillHeight: true
             currentIndex: window.navIndex
@@ -959,6 +965,10 @@ ApplicationWindow {
                                 } else {
                                     chips.push({ k: window.tr("battery"), v: pct(controller.batteryLevel) })
                                 }
+                                // Estimate from the battery log; a dash until it has enough to go on.
+                                chips.push({ k: window.tr("time_left"), v: !controller.connected ? "\u2014"
+                                              : controller.isCharging ? window.tr("charging")
+                                              : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : "\u2014" })
                                 chips.push({ k: window.tr("mode"), v: controller.noiseControlMode === "unknown" ? window.tr("unknown") : controller.noiseControlMode === "cancelling" ? window.tr("mode_anc")
                                               : controller.noiseControlMode === "ambient" ? window.tr("mode_ambient") : window.tr("mode_off") })
                                 return chips
@@ -1930,7 +1940,340 @@ ApplicationWindow {
             }
 
             // ==================================================
-            // 6 · SETTINGS
+            // 6 · BATTERY
+            // ==================================================
+            ViewPage {
+                id: batteryPage
+                // Window shown by the chart: 24 hours or 7 days.
+                property int rangeHours: 24
+                readonly property var locale: Qt.locale(controller.currentLanguage)
+
+                function formatSessionStart(ms) {
+                    var d = new Date(ms)
+                    var sameDay = d.toDateString() === new Date().toDateString()
+                    return locale.toString(d, sameDay ? "HH:mm" : "ddd HH:mm")
+                }
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 36
+                    spacing: 22
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 10
+
+                        ColumnLayout {
+                            spacing: 5
+                            Eyebrow { text: window.tr("battery_eyebrow") }
+                            Text {
+                                textFormat: Text.PlainText
+                                text: window.tr("battery_title")
+                                color: window.txt
+                                font.pixelSize: 28
+                                font.weight: Font.DemiBold
+                                font.letterSpacing: -0.6
+                            }
+                            Text {
+                                textFormat: Text.PlainText
+                                text: window.tr("battery_subtitle")
+                                color: window.txtDim
+                                font.pixelSize: 13
+                            }
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        PillButton {
+                            compact: true
+                            text: window.tr("battery_range_24h")
+                            active: batteryPage.rangeHours === 24
+                            onClicked: batteryPage.rangeHours = 24
+                        }
+                        PillButton {
+                            compact: true
+                            text: window.tr("battery_range_7d")
+                            active: batteryPage.rangeHours === 24 * 7
+                            onClicked: batteryPage.rangeHours = 24 * 7
+                        }
+                    }
+
+                    // Live numbers. The estimate is honest: "—" until the
+                    // session has enough data, and the charging label while
+                    // the level is going up.
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+
+                        Repeater {
+                            model: {
+                                var dash = "—"
+                                var level = controller.connected && controller.batteryLevel >= 0 ? controller.batteryLevel + "%" : dash
+                                var left = !controller.connected ? dash
+                                         : controller.isCharging ? window.tr("charging")
+                                         : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : dash
+                                var rate = controller.batteryDischargeRate > 0
+                                         ? window.tr("battery_rate_value").arg(controller.batteryDischargeRate.toFixed(1)) : dash
+                                var session = controller.batterySessionStart > 0
+                                         ? window.tr("battery_session_since").arg(batteryPage.formatSessionStart(controller.batterySessionStart)) : dash
+                                return [
+                                    { k: window.tr("battery"), v: level, accent: controller.isCharging },
+                                    { k: window.tr("time_left"), v: left, accent: false },
+                                    { k: window.tr("battery_rate"), v: rate, accent: false },
+                                    { k: window.tr("battery_session"), v: session, accent: false }
+                                ]
+                            }
+
+                            delegate: Rectangle {
+                                id: batteryStat
+                                required property var modelData
+                                Layout.fillWidth: true
+                                implicitHeight: 64
+                                radius: 14
+                                color: window.surface
+                                border.width: 1
+                                border.color: window.line
+
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 16
+                                    anchors.rightMargin: 16
+                                    anchors.topMargin: 12
+                                    spacing: 3
+                                    Eyebrow { text: batteryStat.modelData.k }
+                                    Text {
+                                        textFormat: Text.PlainText
+                                        Layout.fillWidth: true
+                                        text: batteryStat.modelData.v
+                                        color: batteryStat.modelData.accent ? window.accentSoft : window.txt
+                                        font.pixelSize: 16
+                                        font.weight: Font.DemiBold
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Card {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        radius: 20
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 10
+
+                            RowLayout {
+                                spacing: 16
+                                Repeater {
+                                    model: [
+                                        { label: window.tr("battery_legend_discharging"), tint: window.success },
+                                        { label: window.tr("charging"), tint: window.accentSoft }
+                                    ]
+                                    delegate: RowLayout {
+                                        required property var modelData
+                                        spacing: 6
+                                        Rectangle {
+                                            Layout.preferredWidth: 8
+                                            Layout.preferredHeight: 8
+                                            radius: 4
+                                            color: modelData.tint
+                                        }
+                                        Text {
+                                            textFormat: Text.PlainText
+                                            text: modelData.label
+                                            color: window.txtDim
+                                            font.pixelSize: 11
+                                        }
+                                    }
+                                }
+                                Item { Layout.fillWidth: true }
+                            }
+
+                            // The chart itself. Plain Canvas: no QtCharts
+                            // dependency, and the drawing is a hundred lines.
+                            Canvas {
+                                id: batteryChart
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                property var samples: []
+                                readonly property real padL: 38
+                                readonly property real padR: 18
+                                readonly property real padT: 14
+                                readonly property real padB: 28
+
+                                function reload() {
+                                    var now = Date.now()
+                                    samples = controller.batterySamples(now - batteryPage.rangeHours * 3600 * 1000)
+                                    requestPaint()
+                                }
+
+                                Component.onCompleted: reload()
+                                onVisibleChanged: if (visible) reload()
+                                onWidthChanged: requestPaint()
+                                onHeightChanged: requestPaint()
+                                Connections {
+                                    target: batteryPage
+                                    function onRangeHoursChanged() { batteryChart.reload() }
+                                }
+                                Connections {
+                                    target: controller
+                                    function onBatteryHistoryChanged() { batteryChart.reload() }
+                                    function onLanguageChanged() { batteryChart.requestPaint() }
+                                }
+                                // "Now" keeps moving even when nothing is logged.
+                                Timer {
+                                    interval: 60 * 1000
+                                    repeat: true
+                                    running: batteryChart.visible
+                                    onTriggered: batteryChart.reload()
+                                }
+
+                                onPaint: {
+                                    var ctx = getContext("2d")
+                                    ctx.reset()
+                                    var w = width - padL - padR
+                                    var h = height - padT - padB
+                                    if (w <= 0 || h <= 0) return
+                                    var now = Date.now()
+                                    var range = batteryPage.rangeHours * 3600 * 1000
+                                    var t0 = now - range
+                                    var X = function(t) { return padL + (t - t0) / range * w }
+                                    var Y = function(level) { return padT + (1 - level / 100) * h }
+                                    var rgba = function(c, a) { return Qt.rgba(c.r, c.g, c.b, a).toString() }
+
+                                    ctx.font = "10px sans-serif"
+                                    ctx.textBaseline = "middle"
+
+                                    // Horizontal grid with percentages.
+                                    ctx.lineWidth = 1
+                                    for (var p = 0; p <= 100; p += 25) {
+                                        var y = Math.round(Y(p)) + 0.5
+                                        ctx.strokeStyle = p === 0 ? window.lineHi.toString() : window.line.toString()
+                                        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + w, y); ctx.stroke()
+                                        ctx.fillStyle = window.txtFaint.toString()
+                                        ctx.textAlign = "right"
+                                        ctx.fillText(p + "%", padL - 8, y)
+                                    }
+
+                                    // Vertical ticks: every 6 hours on the day
+                                    // view, each midnight on the week view.
+                                    ctx.textAlign = "center"
+                                    ctx.textBaseline = "top"
+                                    var week = batteryPage.rangeHours > 24
+                                    var tick = new Date(t0)
+                                    if (week) tick.setHours(0, 0, 0, 0); else tick.setMinutes(0, 0, 0)
+                                    for (var guard = 0; guard < 200; ++guard) {
+                                        if (week) tick.setDate(tick.getDate() + 1); else tick.setHours(tick.getHours() + 1)
+                                        var tt = tick.getTime()
+                                        if (tt > now) break
+                                        if (!week && tick.getHours() % 6 !== 0) continue
+                                        var x = Math.round(X(tt)) + 0.5
+                                        ctx.strokeStyle = window.line.toString()
+                                        ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + h); ctx.stroke()
+                                        ctx.fillStyle = window.txtFaint.toString()
+                                        ctx.fillText(batteryPage.locale.toString(tick, week ? "ddd d" : "HH:mm"), x, padT + h + 8)
+                                    }
+                                    ctx.fillStyle = window.txtDim.toString()
+                                    ctx.textAlign = "right"
+                                    ctx.fillText(window.tr("battery_now"), padL + w, padT + h + 8)
+
+                                    // Split the log into runs of one colour:
+                                    // a disconnect ends a run, a change of the
+                                    // charging flag starts a new one from the
+                                    // previous point so the line stays joined.
+                                    var runs = []
+                                    var run = null
+                                    for (var i = 0; i < samples.length; ++i) {
+                                        var s = samples[i]
+                                        if (s.level < 0) continue
+                                        if (s.event === "disconnected") {
+                                            if (run) { run.pts.push(s); runs.push(run); run = null }
+                                            continue
+                                        }
+                                        if (!run || run.charging !== s.charging) {
+                                            var prev = run ? run.pts[run.pts.length - 1] : null
+                                            if (run) runs.push(run)
+                                            run = { charging: s.charging, pts: prev ? [prev] : [] }
+                                        }
+                                        run.pts.push(s)
+                                    }
+                                    var endPoint = null
+                                    if (run) {
+                                        var last = run.pts[run.pts.length - 1]
+                                        if (controller.connected) {
+                                            endPoint = { t: now, level: last.level }
+                                            run.pts.push(endPoint)
+                                        }
+                                        runs.push(run)
+                                    }
+
+                                    ctx.save()
+                                    ctx.beginPath(); ctx.rect(padL, padT - 4, w, h + 8); ctx.clip()
+                                    ctx.lineWidth = 2
+                                    ctx.lineJoin = "round"
+                                    ctx.lineCap = "round"
+                                    for (var r = 0; r < runs.length; ++r) {
+                                        var pts = runs[r].pts
+                                        if (pts.length < 2) continue
+                                        var tint = runs[r].charging ? window.accentSoft : window.success
+                                        // Soft fill down to the axis, then the line on top.
+                                        ctx.beginPath()
+                                        ctx.moveTo(X(pts[0].t), Y(0))
+                                        for (var k = 0; k < pts.length; ++k) ctx.lineTo(X(pts[k].t), Y(pts[k].level))
+                                        ctx.lineTo(X(pts[pts.length - 1].t), Y(0))
+                                        ctx.closePath()
+                                        ctx.fillStyle = rgba(tint, 0.10)
+                                        ctx.fill()
+                                        ctx.beginPath()
+                                        ctx.moveTo(X(pts[0].t), Y(pts[0].level))
+                                        for (var m = 1; m < pts.length; ++m) ctx.lineTo(X(pts[m].t), Y(pts[m].level))
+                                        ctx.strokeStyle = tint.toString()
+                                        ctx.stroke()
+                                    }
+                                    ctx.restore()
+
+                                    if (endPoint) {
+                                        var tintNow = controller.isCharging ? window.accentSoft : window.success
+                                        ctx.beginPath()
+                                        ctx.arc(X(endPoint.t), Y(endPoint.level), 4, 0, Math.PI * 2)
+                                        ctx.fillStyle = tintNow.toString()
+                                        ctx.fill()
+                                        ctx.beginPath()
+                                        ctx.arc(X(endPoint.t), Y(endPoint.level), 7, 0, Math.PI * 2)
+                                        ctx.strokeStyle = rgba(tintNow, 0.35)
+                                        ctx.lineWidth = 2
+                                        ctx.stroke()
+                                    }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    visible: batteryChart.samples.length === 0
+                                    textFormat: Text.PlainText
+                                    text: window.tr("battery_no_data")
+                                    color: window.txtFaint
+                                    font.pixelSize: 13
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        textFormat: Text.PlainText
+                        Layout.fillWidth: true
+                        text: window.tr("battery_estimate_hint")
+                        color: window.txtFaint
+                        font.pixelSize: 12
+                        wrapMode: Text.Wrap
+                    }
+                }
+            }
+
+            // ==================================================
+            // 7 · SETTINGS
             // ==================================================
             ViewPage {
                 // More cards than fit the minimum window height, so this
