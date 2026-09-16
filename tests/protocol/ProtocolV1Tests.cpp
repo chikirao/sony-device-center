@@ -11,13 +11,19 @@ using sony::test::ReplyingFakeTransport;
 
 namespace {
 
-// First DataMdr payload the host transmitted (ACK frames are skipped).
-std::vector<uint8_t> firstRequestPayload(const FakeTransport& fake) {
+// DataMdr payloads the host transmitted, in order (ACK frames are skipped).
+std::vector<std::vector<uint8_t>> dataRequestPayloads(const FakeTransport& fake) {
+    std::vector<std::vector<uint8_t>> payloads;
     for (const auto& frameBytes : fake.sentFrames()) {
         auto decoded = FrameCodec::decode(frameBytes);
-        if (decoded.type == DataType::DataMdr) return decoded.payload;
+        if (decoded.type == DataType::DataMdr) payloads.push_back(decoded.payload);
     }
-    return {};
+    return payloads;
+}
+
+std::vector<uint8_t> firstRequestPayload(const FakeTransport& fake) {
+    auto payloads = dataRequestPayloads(fake);
+    return payloads.empty() ? std::vector<uint8_t>{} : payloads.front();
 }
 
 void queueReply(FakeTransport& fake, std::vector<uint8_t> payload) {
@@ -240,6 +246,90 @@ TEST_CASE("ProtocolV1: sends VPT and sound position commands", "[protocol][v1]")
     REQUIRE(posFrame.payload == std::vector<uint8_t>{0x48, 0x02, 0x01});
 }
 
+TEST_CASE("ProtocolV1: reads and writes Speak-to-Chat via Smart Talking Mode", "[protocol][v1]")
+{
+    // V1 uses inquired type 0x05 (SMART_TALKING_MODE), not V2's 0x0c, and the
+    // enable byte is not inverted. These literals are the independent source of
+    // truth; a V2 copy-paste will fail them.
+
+    SECTION("GET f6 05, on when value at [3] is nonzero even if [2] is zero")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        queueReply(fake, {0xf7, 0x05, 0x00, 0x01});
+        REQUIRE(v1.getSpeakToChat() == true);
+        REQUIRE(firstRequestPayload(fake) == std::vector<uint8_t>{0xf6, 0x05});
+    }
+
+    SECTION("GET treats a zero value at [3] as off")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        queueReply(fake, {0xf7, 0x05, 0x00, 0x00});
+        REQUIRE(v1.getSpeakToChat() == false);
+    }
+
+    SECTION("GET still reads enable from [3] when the middle byte is 0x01")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        queueReply(fake, {0xf7, 0x05, 0x01, 0x00});
+        REQUIRE(v1.getSpeakToChat() == false);
+    }
+
+    SECTION("GET treats payload[2] == 0x02 as an active talking session, not off")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        queueReply(fake, {0xf7, 0x05, 0x02, 0x00});
+        REQUIRE(v1.getSpeakToChat() == true);
+    }
+
+    SECTION("GET rejects a truncated reply")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        queueReply(fake, {0xf7, 0x05, 0x00});
+        REQUIRE_THROWS_AS(v1.getSpeakToChat(), SonyException);
+    }
+
+    SECTION("SET enable writes Standard timeout then the non-inverted on bit")
+    {
+        ReplyingFakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        fake.queueReply({ SonyFrame{ .type = DataType::Ack, .sequence = 0 } });
+        fake.queueReply({ SonyFrame{ .type = DataType::Ack, .sequence = 1 } });
+        v1.setSpeakToChat(true);
+        REQUIRE(dataRequestPayloads(fake) == std::vector<std::vector<uint8_t>>{
+            {0xfc, 0x05, 0x00, 0x00, 0x00, 0x01},
+            {0xf8, 0x05, 0x01, 0x01},
+        });
+
+        fake.queueReply({ SonyFrame{ .type = DataType::Ack, .sequence = 2 } });
+        v1.setSpeakToChat(false);
+        REQUIRE(dataRequestPayloads(fake).back() == std::vector<uint8_t>{0xf8, 0x05, 0x01, 0x00});
+        REQUIRE(dataRequestPayloads(fake).size() == 3);
+    }
+}
+
 TEST_CASE("ProtocolV1: unsupported features throw Unsupported", "[protocol][v1]")
 {
     FakeTransport fake;
@@ -250,7 +340,6 @@ TEST_CASE("ProtocolV1: unsupported features throw Unsupported", "[protocol][v1]"
 
     REQUIRE_THROWS_AS(v1.getDsee(), SonyException);
     REQUIRE_THROWS_AS(v1.setDsee(true), SonyException);
-    REQUIRE_THROWS_AS(v1.getSpeakToChat(), SonyException);
     REQUIRE_THROWS_AS(v1.getAdaptiveVolume(), SonyException);
     REQUIRE_THROWS_AS(v1.getAutoPowerOff(), SonyException);
     REQUIRE(fake.sentCount() == 0);
