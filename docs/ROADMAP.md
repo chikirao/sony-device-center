@@ -113,9 +113,13 @@ Suggested / сцены — Фаза «будущее»; Save as Custom — би�
   **Space Grotesk** для всего остального текста. Оба OFL (совместимо с MIT,
   можно класть в репозиторий и в установщик), оба на Google Fonts. Файлы +
   `OFL.txt` в `assets/fonts/`, грузить через `FontLoader` в QML; Doto —
-  вариативный, использовать оси веса и размера точки. Проверить, что у Doto
-  есть кириллица для русских заголовков; если нет — заголовки dot-matrix
-  оставить латиницей/цифрами, а текст брать из Space Grotesk. **Не использовать**
+  Кириллицы в Doto нет — используем **Doto RU Draft** (наше неофициальное
+  расширение: 66 русских букв поверх оригинала, OFL 1.1, статические
+  Regular/Bold/Black, сборка `build.py` + `patterns.json`). Проверено
+  2026-09-16: покрывает все строки en/pt_BR/es/de/fr/ru; для японского
+  (кана/кандзи) — fallback на Space Grotesk/системный, Qt делает сам.
+  Класть в `assets/fonts/DotoRU/` (три .ttf + OFL.txt + README.md, без
+  woff2) и `assets/fonts/SpaceGrotesk/`. **Не использовать**
   FontStruct-шрифты вроде «Nothing Font (5x7)» (EULA запрещает
   распространение) и выгрузки фирменных шрифтов Nothing (Ndot-55/57,
   NType-82, репозиторий xeji01/nothingfont) — они проприетарные, «All Rights
