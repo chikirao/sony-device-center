@@ -23,6 +23,11 @@ public:
 class DeviceControllerTests : public QObject {
     Q_OBJECT
 private slots:
+    void initTestCase() {
+        // Controllers built with the default history directory must not
+        // write into the real per-user data folder.
+        QStandardPaths::setTestModeEnabled(true);
+    }
     void startupDoesNotBlockGui() {
         auto service = std::make_shared<SlowService>();
         QElapsedTimer elapsed; elapsed.start();
@@ -123,6 +128,53 @@ private slots:
         QTest::qWait(50);
         QCOMPARE(notifications.messageCount(), 4);
         QVERIFY(notifications.lastMessage().contains(controller.t("notify_disconnected")));
+    }
+    void batteryLogFollowsTheSimulatedDevice() {
+        QTemporaryDir dir;
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service, dir.path());
+        QSignalSpy history(&controller, &DeviceCenterController::batteryHistoryChanged);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy() && controller.batteryLevel() == 87, 5000);
+        auto& log = controller.batteryHistory();
+        QCOMPARE(log.device(), QString::fromStdString(simulated.address));
+        // Polling twice a second adds nothing while the level holds.
+        QTest::qWait(1200);
+        QCOMPARE(log.samples().size(), 1);
+        QCOMPARE(log.samples()[0].event, BatteryHistory::Event::Connected);
+        QCOMPARE(log.samples()[0].level, 87);
+        QCOMPARE(controller.batteryMinutesLeft(), -1);
+        QCOMPARE(controller.batteryTimeLeft(), QString());
+
+        simulated.transport->setBattery(86, false);
+        QTRY_COMPARE_WITH_TIMEOUT(log.samples().size(), 2, 3000);
+        QCOMPARE(log.samples()[1].level, 86);
+        QVERIFY2(controller.batteryMinutesLeft() == -1, "seconds of data are not an estimate");
+        simulated.transport->setBattery(86, true);
+        QTRY_COMPARE_WITH_TIMEOUT(log.samples().size(), 3, 3000);
+        QVERIFY(log.samples()[2].charging);
+        QCOMPARE(controller.batteryDischargeRate(), 0.0);
+        QVERIFY(history.count() >= 3);
+        QVERIFY(QFile::exists(dir.path() + "/battery-history/CC-98-8B-00-11-22.json"));
+
+        service->activeDevice()->powerOff();
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.isConnected(), 5000);
+        QTRY_COMPARE_WITH_TIMEOUT(log.samples().size(), 4, 3000);
+        QCOMPARE(log.samples()[3].event, BatteryHistory::Event::Disconnected);
+    }
+    void durationsAreLocalised() {
+        auto service = std::make_shared<SlowService>();
+        DeviceCenterController controller(nullptr, service);
+        // The language is a persisted user setting; put it back afterwards.
+        const auto previous = controller.currentLanguage();
+        controller.setLanguage("en");
+        QCOMPARE(controller.formatDuration(320), QString("5 h 20 min"));
+        QCOMPARE(controller.formatDuration(45), QString("45 min"));
+        controller.setLanguage("ru");
+        QCOMPARE(controller.formatDuration(320), QString::fromUtf8("5 ч 20 мин"));
+        controller.setLanguage(previous);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 2000);
     }
     void failedActionPreservesConfirmedValue() {
         auto transport = std::make_shared<ReplyTransport>();

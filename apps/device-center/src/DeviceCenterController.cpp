@@ -10,6 +10,7 @@
 #include "sony/transport/PlatformTransport.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
@@ -24,8 +25,12 @@
 
 namespace sony::devicecenter {
 
-DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<core::IDeviceService> service)
+DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<core::IDeviceService> service,
+                                               const QString& historyDir)
     : QObject(parent) {
+    _history = std::make_unique<BatteryHistory>(
+        historyDir.isEmpty() ? QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) : historyDir);
+    connect(_history.get(), &BatteryHistory::changed, this, &DeviceCenterController::batteryHistoryChanged);
     QSettings settings("SonyBridge", "SonyDeviceCenter");
     _currentLanguage = settings.value("language", "en").toString();
     _minimizeToTray = settings.value("minimizeToTray", true).toBool();
@@ -86,6 +91,8 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     if (s.contains("address")) _deviceAddress = s.value("address").toString();
     if (!s.contains("features")) {
         _batteryLevel = _batteryLeft = _batteryRight = _batteryCase = -1; _noiseControlMode = "unknown";
+        _isCharging = false;
+        _history->observe(QDateTime::currentMSecsSinceEpoch(), false, -1, false);
         emit stateChanged(); return;
     }
     _features = s.value("features").toObject().toVariantMap();
@@ -111,6 +118,11 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     _dsee = s.value("dsee").toBool(); _speakToChat = s.value("speakToChat").toBool();
     _adaptiveVolume = s.value("adaptiveVolume").toBool(); _autoPowerOff = s.value("autoPowerOff").toInt();
     _codec = _connected && valid("codec") ? s.value("codec").toString("Unknown") : "Unknown";
+    // The log follows the selected device and only writes on actual changes.
+    // Early snapshots carry no address yet; the log keeps its device rather
+    // than closing and reopening (which would restart the discharge session).
+    if (!_deviceAddress.isEmpty() && _history->device() != _deviceAddress) _history->setDevice(_deviceAddress);
+    _history->observe(QDateTime::currentMSecsSinceEpoch(), _connected, _batteryLevel, _isCharging);
     emit stateChanged(); emit capabilitiesChanged();
 }
 
@@ -123,6 +135,32 @@ int DeviceCenterController::batteryLeft() const { return _batteryLeft; }
 int DeviceCenterController::batteryRight() const { return _batteryRight; }
 int DeviceCenterController::batteryCase() const { return _batteryCase; }
 bool DeviceCenterController::hasDualBattery() const { return _batteryLeft >= 0 || _batteryRight >= 0; }
+int DeviceCenterController::batteryMinutesLeft() const {
+    if (!_connected || _isCharging) return -1;
+    const auto e = _history->estimate(QDateTime::currentMSecsSinceEpoch());
+    return e.valid ? static_cast<int>(e.remainingMs / 60000) : -1;
+}
+QString DeviceCenterController::batteryTimeLeft() const {
+    const int minutes = batteryMinutesLeft();
+    return minutes < 0 ? QString() : formatDuration(minutes);
+}
+double DeviceCenterController::batteryDischargeRate() const {
+    if (!_connected || _isCharging) return 0.0;
+    const auto e = _history->estimate(QDateTime::currentMSecsSinceEpoch());
+    return e.valid ? e.percentPerHour : 0.0;
+}
+double DeviceCenterController::batterySessionStart() const {
+    if (!_connected || _isCharging) return 0.0;
+    return static_cast<double>(_history->estimate(QDateTime::currentMSecsSinceEpoch()).sessionStartMs);
+}
+QVariantList DeviceCenterController::batterySamples(double sinceMs) const {
+    return _history->samplesSince(static_cast<qint64>(sinceMs));
+}
+QString DeviceCenterController::formatDuration(int minutes) const {
+    minutes = std::max(0, minutes);
+    if (minutes < 60) return t("duration_minutes").arg(minutes);
+    return t("duration_hours_minutes").arg(minutes / 60).arg(minutes % 60);
+}
 QString DeviceCenterController::noiseControlMode() const { return _noiseControlMode; }
 int DeviceCenterController::ambientLevel() const { return _ambientLevel; }
 bool DeviceCenterController::focusOnVoice() const { return _focusOnVoice; }

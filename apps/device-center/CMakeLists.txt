@@ -40,6 +40,8 @@ add_executable(sony-device-center
     include/NotificationController.h
     src/WindowsToast.cpp
     include/WindowsToast.h
+    src/BatteryHistory.cpp
+    include/BatteryHistory.h
     qml.qrc
 )
 
@@ -160,7 +162,8 @@ if(BUILD_TESTING)
             src/I18nManager.cpp include/I18nManager.h
             src/TrayController.cpp include/TrayController.h
             src/NotificationController.cpp include/NotificationController.h
-            src/WindowsToast.cpp include/WindowsToast.h)
+            src/WindowsToast.cpp include/WindowsToast.h
+            src/BatteryHistory.cpp include/BatteryHistory.h)
         target_include_directories(sony-ui-tests PRIVATE include)
         if(WIN32)
             target_link_libraries(sony-ui-tests PRIVATE WindowsApp)
@@ -176,6 +179,17 @@ if(BUILD_TESTING)
             set_tests_properties("device-controller-worker-integration" PROPERTIES
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
         endif()
+
+        # The battery log and its estimate are plain Qt Core, so they get a
+        # headless test binary of their own with no device or GUI involved.
+        add_executable(sony-battery-history-tests
+            ../../tests/ui/BatteryHistoryTests.cpp
+            src/BatteryHistory.cpp include/BatteryHistory.h)
+        target_include_directories(sony-battery-history-tests PRIVATE include)
+        target_compile_features(sony-battery-history-tests PRIVATE cxx_std_20)
+        target_link_libraries(sony-battery-history-tests PRIVATE Qt6::Test Qt6::Core)
+        add_test(NAME "battery-history" COMMAND sony-battery-history-tests)
+        set_tests_properties("battery-history" PROPERTIES TIMEOUT 25)
     endif()
 endif()
 
