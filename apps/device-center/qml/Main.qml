@@ -403,9 +403,11 @@ ApplicationWindow {
         id: sl
         property real confirmedValue: 0
         value: confirmedValue
+        // Re-attach the binding once the device confirms, but never under the
+        // user's finger: a poll arriving mid-drag would yank the handle back.
         Connections {
             target: controller
-            function onStateChanged() { sl.value = Qt.binding(function() { return sl.confirmedValue }) }
+            function onStateChanged() { if (!sl.pressed) sl.value = Qt.binding(function() { return sl.confirmedValue }) }
         }
         implicitHeight: 26
         hoverEnabled: true
@@ -478,7 +480,7 @@ ApplicationWindow {
             value: band.value
             Connections {
                 target: controller
-                function onStateChanged() { vs.value = Qt.binding(function() { return band.value }) }
+                function onStateChanged() { if (!vs.pressed) vs.value = Qt.binding(function() { return band.value }) }
             }
             implicitWidth: 34
             hoverEnabled: true
@@ -903,8 +905,10 @@ ApplicationWindow {
         // ------------------------------------------------------
         // CONTENT
         // ------------------------------------------------------
+        // Not disabled while a command is in flight: disabling the tree drops
+        // the mouse grab, which cut every slider drag short after its first
+        // value. Repeated input coalesces in the controller instead.
         StackLayout {
-            enabled: !controller.busy
             Layout.fillWidth: true
             Layout.fillHeight: true
             currentIndex: window.navIndex
