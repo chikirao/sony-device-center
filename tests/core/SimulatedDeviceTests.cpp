@@ -66,3 +66,18 @@ TEST_CASE("Simulated device applies writes and reports them back", "[core][simul
     device->refreshDsee();
     CHECK_FALSE(service.snapshot()->dsee);
 }
+
+TEST_CASE("Simulated device goes away after power off and stays away", "[core][simulated]") {
+    auto simulated = createSimulatedDevice();
+    DeviceService service(simulated.transport, simulated.discovery);
+    service.startAutoConnect(simulated.address);
+    service.tick();
+    REQUIRE(service.isConnected());
+
+    service.activeDevice()->powerOff();
+    REQUIRE(eventually([&] { service.tick(); return !service.isConnected(); }));
+    // Auto-connect keeps trying, but a switched-off headset does not answer.
+    for (int i = 0; i < 5; ++i) service.tick();
+    CHECK_FALSE(service.isConnected());
+    CHECK(service.connectionState() != "manually_disconnected");
+}

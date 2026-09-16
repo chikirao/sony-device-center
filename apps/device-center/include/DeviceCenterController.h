@@ -117,6 +117,7 @@ public:
     Q_INVOKABLE void setSpeakToChat(bool enabled);
     Q_INVOKABLE void setAdaptiveVolume(bool enabled);
     Q_INVOKABLE void setAutoPowerOff(int index);
+    Q_INVOKABLE void powerOff();
 
     Q_INVOKABLE void setAutostart(bool enable);
     Q_INVOKABLE void setLanguage(const QString& langCode);

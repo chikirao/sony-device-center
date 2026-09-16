@@ -117,6 +117,15 @@ void SimulatedDeviceTransport::handle(const std::vector<uint8_t>& p) {
         if (type == 0x01 && p.size() >= 3) _dsee = p[2] != 0;
         break;
 
+    case 0x24: // power set; type 03 = power off
+        if (type == 0x03 && p.size() >= 3 && p[2] == 0x01) {
+            // A switched-off headset is gone until the process restarts:
+            // drop the link and refuse reconnection so auto-connect keeps retrying.
+            setFailConnect(true, SonyErrorCode::TransportFailure);
+            simulateDisconnect();
+        }
+        break;
+
     case 0x26: // auto power-off query
         if (type == 0x05) reply({0x27, 0x05, _autoPowerOff[0], _autoPowerOff[1]});
         break;

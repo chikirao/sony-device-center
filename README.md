@@ -37,6 +37,7 @@ Sony locks headphone settings and telemetry behind their mobile-only apps (*Sony
 - 🗣️ **Focus on Voice** — Toggle speech-priority voice passthrough while suppressing low-frequency noise.
 - 🎛️ **Full Equalizer** — Switch between built-in presets (Bright, Excited, Vocal, Bass Boost, Treble Boost, etc.) or dial in custom 5-band frequencies and Clear Bass (-10 to +10).
 - ✨ **DSEE Extreme** — Enable or disable Sony's AI-based audio upscaling for compressed audio.
+- ⏻ **Power Off** — Switch the headphones off from the app or `sonyctl power off`.
 - 🔋 **Live Battery & Charging State** — Real-time telemetry for over-ear models, plus individual Left, Right, and Case battery levels for True Wireless (TWS) earbuds.
 - 🧩 **Advanced Audio Features** — Speak-to-Chat, Adaptive Volume, and Auto Power-Off timeouts (dynamically enabled based on device capability profiles).
 - 🧬 **Dual Protocol Support** — Automatically detects and communicates with both **Protocol V1** (legacy models) and **Protocol V2** (modern models with alternating-bit Stop-and-Wait ARQ).

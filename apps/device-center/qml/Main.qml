@@ -915,6 +915,17 @@ ApplicationWindow {
 
                         Item { Layout.fillWidth: true }
 
+                        // Power off. Red, compact, and only offered while the
+                        // link is up: after it the headset simply disappears.
+                        PillButton {
+                            visible: controller.connected
+                            text: window.tr("power_off")
+                            glyphPath: window.icons.power
+                            tint: window.danger
+                            compact: true
+                            onClicked: controller.powerOff()
+                        }
+
                         // Compact status chips
                         Repeater {
                             model: {

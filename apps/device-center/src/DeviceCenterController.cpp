@@ -183,6 +183,7 @@ void DeviceCenterController::setDsee(bool enabled) { _send("dsee", {{"enabled",e
 void DeviceCenterController::setSpeakToChat(bool enabled) { _send("speakToChat", {{"enabled",enabled}}); }
 void DeviceCenterController::setAdaptiveVolume(bool enabled) { _send("adaptiveVolume", {{"enabled",enabled}}); }
 void DeviceCenterController::setAutoPowerOff(int index) { _send("autoPowerOff", {{"index",index}}); }
+void DeviceCenterController::powerOff() { _send("powerOff"); }
 void DeviceCenterController::connectDevice(const QString& address, const QString& name) { _send("connect", {{"address",address},{"name",name}}); }
 void DeviceCenterController::disconnectDevice() { _send("disconnect"); }
 void DeviceCenterController::refreshDiscoveredDevices() {
