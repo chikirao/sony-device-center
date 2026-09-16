@@ -239,6 +239,8 @@ Suggested / сцены — Фаза «будущее»; Save as Custom — би�
 1. [x] Иконка exe — upstream PR #60 (ветка `upstream/win-exe-icon`).
 2. [x] `--simulated` для GUI + общий симулятор — upstream PR #61
    (`upstream/gui-simulated-mode`). Остальное ждёт его мержа.
+   Плюс upstream PR #62 (`upstream/core-test-timeout`) — фикс таймаута
+   дрожащего macOS-теста, из-за него у #60/#61 красный macOS.
 3. [ ] Power Off (V2 проверен на XM5, V1 по Gadgetbridge).
 4. [ ] Коалесценция слайдеров.
 5. [ ] Батарея L/R/кейс.
