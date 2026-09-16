@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -18,33 +19,20 @@ ViewPage {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 36
-        spacing: 22
+        anchors.margins: 32
+        anchors.topMargin: 22
+        spacing: 16
 
         RowLayout {
             Layout.fillWidth: true
             spacing: 10
 
-            ColumnLayout {
-                spacing: 5
-                Eyebrow { appWindow: batteryPage.appWindow; text: appWindow.tr("battery_eyebrow") }
-                Text {
-                    textFormat: Text.PlainText
-                    text: appWindow.tr("battery_title")
-                    color: appWindow.txt
-                    font.pixelSize: 28
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: -0.6
-                }
-                Text {
-                    textFormat: Text.PlainText
-                    text: appWindow.tr("battery_subtitle")
-                    color: appWindow.txtDim
-                    font.pixelSize: 13
-                }
+            SectionTitle { appWindow: batteryPage.appWindow;
+                Layout.fillWidth: true
+                eyebrow: appWindow.tr("battery_eyebrow")
+                title: appWindow.tr("battery_title")
+                subtitle: appWindow.tr("battery_subtitle")
             }
-
-            Item { Layout.fillWidth: true }
 
             PillButton { appWindow: batteryPage.appWindow;
                 compact: true
@@ -90,25 +78,33 @@ ViewPage {
                     id: batteryStat
                     required property var modelData
                     Layout.fillWidth: true
-                    implicitHeight: 64
-                    radius: 14
-                    color: appWindow.surface
+                    implicitHeight: 76
+                    radius: Theme.cardRadius
+                    color: Theme.surface
                     border.width: 1
-                    border.color: appWindow.line
+                    border.color: Theme.line
 
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.leftMargin: 16
                         anchors.rightMargin: 16
-                        anchors.topMargin: 12
-                        spacing: 3
+                        anchors.topMargin: 14
+                        spacing: 8
                         Eyebrow { appWindow: batteryPage.appWindow; text: batteryStat.modelData.k }
+                        // Short values go on the dot grid; sentences stay in type.
+                        DotText {
+                            visible: batteryStat.modelData.v.length <= 12
+                            text: batteryStat.modelData.v
+                            dot: 3.6
+                            maxWidth: batteryStat.width - 32
+                        }
                         Text {
+                            visible: batteryStat.modelData.v.length > 12
                             textFormat: Text.PlainText
                             Layout.fillWidth: true
                             text: batteryStat.modelData.v
-                            color: batteryStat.modelData.accent ? appWindow.accentSoft : appWindow.txt
-                            font.pixelSize: 16
+                            color: Theme.txt
+                            font.pixelSize: 15
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
                         }
@@ -120,7 +116,6 @@ ViewPage {
         Card { appWindow: batteryPage.appWindow;
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 20
 
             ColumnLayout {
                 anchors.fill: parent
@@ -131,8 +126,8 @@ ViewPage {
                     spacing: 16
                     Repeater {
                         model: [
-                            { label: appWindow.tr("battery_legend_discharging"), tint: appWindow.success },
-                            { label: appWindow.tr("charging"), tint: appWindow.accentSoft }
+                            { label: appWindow.tr("battery_legend_discharging"), tint: Theme.success },
+                            { label: appWindow.tr("charging"), tint: Theme.accentSoft }
                         ]
                         delegate: RowLayout {
                             required property var modelData
@@ -146,7 +141,7 @@ ViewPage {
                             Text {
                                 textFormat: Text.PlainText
                                 text: modelData.label
-                                color: appWindow.txtDim
+                                color: Theme.txtDim
                                 font.pixelSize: 11
                             }
                         }
@@ -213,9 +208,9 @@ ViewPage {
                         ctx.lineWidth = 1
                         for (var p = 0; p <= 100; p += 25) {
                             var y = Math.round(Y(p)) + 0.5
-                            ctx.strokeStyle = p === 0 ? appWindow.lineHi.toString() : appWindow.line.toString()
+                            ctx.strokeStyle = p === 0 ? Theme.lineHi.toString() : Theme.line.toString()
                             ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + w, y); ctx.stroke()
-                            ctx.fillStyle = appWindow.txtFaint.toString()
+                            ctx.fillStyle = Theme.txtFaint.toString()
                             ctx.textAlign = "right"
                             ctx.fillText(p + "%", padL - 8, y)
                         }
@@ -233,12 +228,12 @@ ViewPage {
                             if (tt > now) break
                             if (!week && tick.getHours() % 6 !== 0) continue
                             var x = Math.round(X(tt)) + 0.5
-                            ctx.strokeStyle = appWindow.line.toString()
+                            ctx.strokeStyle = Theme.line.toString()
                             ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + h); ctx.stroke()
-                            ctx.fillStyle = appWindow.txtFaint.toString()
+                            ctx.fillStyle = Theme.txtFaint.toString()
                             ctx.fillText(batteryPage.locale.toString(tick, week ? "ddd d" : "HH:mm"), x, padT + h + 8)
                         }
-                        ctx.fillStyle = appWindow.txtDim.toString()
+                        ctx.fillStyle = Theme.txtDim.toString()
                         ctx.textAlign = "right"
                         ctx.fillText(appWindow.tr("battery_now"), padL + w, padT + h + 8)
 
@@ -280,7 +275,7 @@ ViewPage {
                         for (var r = 0; r < runs.length; ++r) {
                             var pts = runs[r].pts
                             if (pts.length < 2) continue
-                            var tint = runs[r].charging ? appWindow.accentSoft : appWindow.success
+                            var tint = runs[r].charging ? Theme.accentSoft : Theme.success
                             // Soft fill down to the axis, then the line on top.
                             ctx.beginPath()
                             ctx.moveTo(X(pts[0].t), Y(0))
@@ -298,7 +293,7 @@ ViewPage {
                         ctx.restore()
 
                         if (endPoint) {
-                            var tintNow = controller.isCharging ? appWindow.accentSoft : appWindow.success
+                            var tintNow = controller.isCharging ? Theme.accentSoft : Theme.success
                             ctx.beginPath()
                             ctx.arc(X(endPoint.t), Y(endPoint.level), 4, 0, Math.PI * 2)
                             ctx.fillStyle = tintNow.toString()
@@ -316,7 +311,7 @@ ViewPage {
                         visible: batteryChart.samples.length === 0
                         textFormat: Text.PlainText
                         text: appWindow.tr("battery_no_data")
-                        color: appWindow.txtFaint
+                        color: Theme.txtFaint
                         font.pixelSize: 13
                     }
                 }
@@ -327,7 +322,7 @@ ViewPage {
             textFormat: Text.PlainText
             Layout.fillWidth: true
             text: appWindow.tr("battery_estimate_hint")
-            color: appWindow.txtFaint
+            color: Theme.txtFaint
             font.pixelSize: 12
             wrapMode: Text.Wrap
         }

@@ -32,21 +32,6 @@ ApplicationWindow {
     palette.highlight: Theme.accent
     palette.highlightedText: "#FFFFFF"
 
-    footer: Rectangle {
-        color: Theme.surface
-        height: statusText.implicitHeight + 24
-        Text {
-            id: statusText
-            anchors.fill: parent
-            anchors.margins: 12
-            textFormat: Text.PlainText
-            wrapMode: Text.Wrap
-            color: controller.lastError.length ? Theme.danger : Theme.txtDim
-            text: controller.lastError.length ? controller.lastError :
-                controller.busy ? window.tr("working") : window.tr("connection_prefix") + window.trState(controller.connectionState)
-        }
-    }
-
     property int navIndex: 0
 
     // Reactive i18n helper
@@ -85,6 +70,15 @@ ApplicationWindow {
         battery:    "M3 7.5h13a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2z M21.5 10.5v3 M5 10.5v3 M8.5 10.5v3",
         bluetooth:  "M7.5 7.5L16.5 13.4 12 17V3.6l4.5 3.6-9 6",
         chevron:    "M5 9l7 7 7-7",
+        chevronRight: "M9 5l7 7-7 7",
+        home:       "M3 11l9-8 9 8 M5 9.5V21h14V9.5 M10 21v-6h4v6",
+        waveform:   "M4 10v4 M8 7v10 M12 4v16 M16 7v10 M20 10v4",
+        gridDots:   "M6 6h.01 M12 6h.01 M18 6h.01 M6 12h.01 M12 12h.01 M18 12h.01 M6 18h.01 M12 18h.01 M18 18h.01",
+        ambient:    "M12.00 3.50m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M16.25 4.64m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M19.36 7.75m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M20.50 12.00m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M19.36 16.25m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M16.25 19.36m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M12.00 20.50m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M7.75 19.36m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M4.64 16.25m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M3.50 12.00m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M4.64 7.75m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0 M7.75 4.64m-.8 0a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0",
+        chat:       "M4 5h16v11H9l-5 4z",
+        volume:     "M4 10v4h4l5 4V6L8 10z M16 9a4 4 0 0 1 0 6 M19 6a8 8 0 0 1 0 12",
+        clock:      "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 8v5l3 2",
+        batteryUp:  "M9 2.5h6 M7 5.5h10a1.5 1.5 0 0 1 1.5 1.5v13a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V7A1.5 1.5 0 0 1 7 5.5z M8.5 11.5h7v7h-7z",
         settings:   "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
         globe:      "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z M2 12h20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
         github:     "M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22",
@@ -94,81 +88,75 @@ ApplicationWindow {
     })
 
     // ==========================================================
-    // ATMOSPHERE
-    // ==========================================================
-    Bloom { appWindow: window;
-        visible: !Theme.light
-        width: 760; height: 760
-        x: 140; y: -360
-        tint: Theme.accent
-        strength: 0.13
-    }
-    Bloom { appWindow: window;
-        visible: !Theme.light
-        width: 640; height: 640
-        x: window.width - 380
-        y: window.height - 340
-        tint: "#3B82F6"
-        strength: 0.10
-    }
-
-    // ==========================================================
     // SHELL
     // ==========================================================
     RowLayout {
         anchors.fill: parent
         spacing: 0
 
-        // ------------------------------------------------------
-        // SIDEBAR
-        // ------------------------------------------------------
         Sidebar { appWindow: window }
 
-        // ------------------------------------------------------
-        // CONTENT
-        // ------------------------------------------------------
-        // Not disabled while a command is in flight: disabling the tree drops
-        // the mouse grab, which cut every slider drag short after its first
-        // value. Repeated input coalesces in the controller instead.
-        StackLayout {
+        ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            currentIndex: window.navIndex
+            spacing: 0
 
-            // ==================================================
-            // 1 · OVERVIEW
-            // ==================================================
-            Overview { appWindow: window }
+            DeviceHeader { appWindow: window;
+                Layout.fillWidth: true
+                Layout.fillHeight: false
+                Layout.leftMargin: 32
+                Layout.rightMargin: 32
+                Layout.topMargin: 28
+            }
 
-            // ==================================================
-            // 2 · NOISE CONTROL
-            // ==================================================
-            NoiseControl { appWindow: window }
+            Rectangle { Layout.fillWidth: true; Layout.leftMargin: 32; Layout.rightMargin: 32; Layout.topMargin: 22; height: 1; color: Theme.line }
 
-            // ==================================================
-            // 3 · EQUALIZER
-            // ==================================================
-            Equalizer { appWindow: window }
+            // Not disabled while a command is in flight: disabling the tree drops
+            // the mouse grab, which cut every slider drag short after its first
+            // value. Repeated input coalesces in the controller instead.
+            StackLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                currentIndex: window.navIndex
 
-            // ==================================================
-            // 4 · AUDIO FEATURES
-            // ==================================================
-            Features { appWindow: window }
+                Overview { appWindow: window }
+                NoiseControl { appWindow: window }
+                Equalizer { appWindow: window }
+                Features { appWindow: window }
+                DeviceSwitcher { appWindow: window }
+                Battery { appWindow: window }
+                Settings { appWindow: window }
+            }
 
-            // ==================================================
-            // 5 · DEVICE SWITCHER
-            // ==================================================
-            DeviceSwitcher { appWindow: window }
-
-            // ==================================================
-            // 6 · BATTERY
-            // ==================================================
-            Battery { appWindow: window }
-
-            // ==================================================
-            // 7 · SETTINGS
-            // ==================================================
-            Settings { appWindow: window }
+            // Status strip. Errors are the only thing allowed to shout here.
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: false
+                Layout.leftMargin: 32
+                Layout.rightMargin: 32
+                Layout.bottomMargin: 14
+                Layout.topMargin: 6
+                spacing: 12
+                Text {
+                    id: statusText
+                    Layout.fillWidth: true
+                    textFormat: Text.PlainText
+                    elide: Text.ElideRight
+                    color: controller.lastError.length ? Theme.danger : Theme.txtFaint
+                    font.pixelSize: 9
+                    font.capitalization: Font.AllUppercase
+                    text: controller.lastError.length ? controller.lastError :
+                        controller.busy ? window.tr("working") : window.tr("connection_prefix") + window.trState(controller.connectionState)
+                }
+                Text {
+                    textFormat: Text.PlainText
+                    color: Theme.txtFaint
+                    font.pixelSize: 9
+                    font.capitalization: Font.AllUppercase
+                    text: controller.deviceAddress.length ? controller.deviceAddress : "v" + controller.appVersion
+                }
+                Rectangle { width: 28; height: 1; color: Theme.txtFaint }
+            }
         }
     }
 }

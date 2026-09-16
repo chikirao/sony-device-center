@@ -19,27 +19,16 @@ ViewPage {
 
     ColumnLayout {
         id: settingsColumn
-        x: 36; y: 36
-        width: parent.width - 72
-        spacing: 22
+        x: 32; y: 22
+        width: parent.width - 64
+        spacing: 16
 
-        ColumnLayout {
-            spacing: 5
-            Eyebrow { appWindow: root.appWindow; text: appWindow.tr("settings_eyebrow") }
-            Text {
-                textFormat: Text.PlainText
-                text: appWindow.tr("settings_title")
-                color: Theme.txt
-                font.pixelSize: 28
-                font.weight: Font.DemiBold
-                font.letterSpacing: -0.6
-            }
-            Text {
-                textFormat: Text.PlainText
-                text: appWindow.tr("settings_subtitle")
-                color: Theme.txtDim
-                font.pixelSize: 13
-            }
+        SectionTitle { appWindow: root.appWindow;
+            Layout.fillWidth: true
+            Layout.fillHeight: false
+            eyebrow: appWindow.tr("settings_eyebrow")
+            title: appWindow.tr("settings_title")
+            subtitle: appWindow.tr("settings_subtitle")
         }
 
         // Card 1: System & Interface Preferences
@@ -66,12 +55,23 @@ ViewPage {
                 RowLayout {
                     Layout.fillWidth: true
                     Text { text: appWindow.tr("theme"); color: Theme.txt; Layout.fillWidth: true }
-                    ComboBox {
+                    RowLayout {
                         objectName: "themeSelector"
-                        Layout.preferredWidth: 200
-                        model: [appWindow.tr("theme_dark"), appWindow.tr("theme_light"), appWindow.tr("theme_system")]
-                        currentIndex: ["dark", "light", "system"].indexOf(controller.themeMode)
-                        onActivated: controller.setThemeMode(["dark", "light", "system"][currentIndex])
+                        spacing: 6
+                        Repeater {
+                            model: [
+                                { mode: "light",  label: appWindow.tr("theme_light") },
+                                { mode: "dark",   label: appWindow.tr("theme_dark") },
+                                { mode: "system", label: appWindow.tr("theme_system") }
+                            ]
+                            delegate: PillButton { appWindow: root.appWindow;
+                                required property var modelData
+                                compact: true
+                                text: modelData.label
+                                active: controller.themeMode === modelData.mode
+                                onClicked: controller.setThemeMode(modelData.mode)
+                            }
+                        }
                     }
                 }
                 RowLayout {
@@ -109,7 +109,7 @@ ViewPage {
                     Rectangle {
                         Layout.preferredWidth: 38
                         Layout.preferredHeight: 38
-                        radius: 11
+                        radius: Theme.controlRadius
                         color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
                         border.width: 1
                         border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
@@ -162,7 +162,7 @@ ViewPage {
                     Rectangle {
                         Layout.preferredWidth: 38
                         Layout.preferredHeight: 38
-                        radius: 11
+                        radius: Theme.controlRadius
                         color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
                         border.width: 1
                         border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
@@ -213,7 +213,7 @@ ViewPage {
                     Rectangle {
                         Layout.preferredWidth: 38
                         Layout.preferredHeight: 38
-                        radius: 11
+                        radius: Theme.controlRadius
                         color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
                         border.width: 1
                         border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
@@ -268,7 +268,7 @@ ViewPage {
                         }
 
                         background: Rectangle {
-                            radius: 11
+                            radius: Theme.controlRadius
                             color: langCombo.hovered ? Theme.surfaceHi : Theme.surfaceSunk
                             border.width: 1
                             border.color: langCombo.hovered ? Theme.lineHi : Theme.line
@@ -384,7 +384,7 @@ ViewPage {
                         Rectangle {
                             Layout.preferredWidth: 38
                             Layout.preferredHeight: 38
-                            radius: 11
+                            radius: Theme.controlRadius
                             color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
                             border.width: 1
                             border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
@@ -421,7 +421,7 @@ ViewPage {
                             displayText: currentText + "%"
 
                             background: Rectangle {
-                                radius: 11
+                                radius: Theme.controlRadius
                                 color: thresholdCombo.hovered ? Theme.surfaceHi : Theme.surfaceSunk
                                 border.width: 1
                                 border.color: thresholdCombo.hovered ? Theme.lineHi : Theme.line
@@ -503,7 +503,7 @@ ViewPage {
                         Rectangle {
                             Layout.preferredHeight: 28
                             Layout.preferredWidth: verLabel.implicitWidth + 20
-                            radius: 14
+                            radius: Theme.cardRadius
                             color: Theme.surfaceSunk
                             border.width: 1
                             border.color: Theme.lineHi

@@ -118,21 +118,25 @@ Suggested / сцены — Фаза «будущее»; Save as Custom — би�
   (upstream #21).
 - [x] **Theme singleton.** Dark/light palettes, runtime system theme selection,
   persisted appearance settings, reduced motion and optional MSAA icon smoothing.
-- [ ] **Шрифты — решено:** **Doto** для чисел и dot-matrix заголовков,
-  **Space Grotesk** для всего остального текста. Оба OFL (совместимо с MIT,
-  можно класть в репозиторий и в установщик), оба на Google Fonts. Файлы +
-  `OFL.txt` в `assets/fonts/`, грузить через `FontLoader` в QML; Doto —
-  Кириллицы в Doto нет — используем **Doto RU Draft** (наше неофициальное
-  расширение: 66 русских букв поверх оригинала, OFL 1.1, статические
-  Regular/Bold/Black, сборка `build.py` + `patterns.json`). Проверено
-  2026-09-16: покрывает все строки en/pt_BR/es/de/fr/ru; для японского
-  (кана/кандзи) — fallback на Space Grotesk/системный, Qt делает сам.
-  Класть в `assets/fonts/DotoRU/` (три .ttf + OFL.txt + README.md, без
-  woff2) и `assets/fonts/SpaceGrotesk/`. **Не использовать**
-  FontStruct-шрифты вроде «Nothing Font (5x7)» (EULA запрещает
-  распространение) и выгрузки фирменных шрифтов Nothing (Ndot-55/57,
-  NType-82, репозиторий xeji01/nothingfont) — они проприетарные, «All Rights
-  Reserved», лицензии нет.
+- [x] **Шрифты.** Space Grotesk (OFL, `assets/fonts/SpaceGrotesk/`) —
+  основной шрифт, регистрируется в `main.cpp` и ставится шрифтом приложения;
+  кириллица и кана падают на системный шрифт по глифам, Qt делает это сам.
+  Точечный текст (имя устройства, режим, проценты, кодек) рисует свой
+  компонент `DotText` на Canvas по таблице 5×7 в `qml/DotGlyphs.js`:
+  латиница, цифры, кириллица, знаки; диакритика снимается нормализацией,
+  для остального (кана) — fallback на жирный Space Grotesk. Doto/«Doto RU
+  Draft» не понадобились: своя таблица покрывает русский и не тащит второй
+  шрифт. **Не использовать** FontStruct-шрифты вроде «Nothing Font (5x7)»
+  (EULA запрещает распространение) и выгрузки фирменных шрифтов Nothing
+  (Ndot-55/57, NType-82) — они проприетарные.
+- [x] **Оболочка по референсам.** Тёмный сайдбар + светлая рабочая область,
+  общий заголовок устройства с тремя чипами (кодек, батарея, режим), плоские
+  карточки с hairline-рамкой, чёрные активные кнопки, монохромная палитра в
+  обеих темах. Home / Sound Modes / Equalizer / Features собраны по макетам;
+  Battery, Devices, Settings переведены на те же компоненты.
+  Без увеличенного межбуквенного интервала — нигде.
+- [x] `SONY_UI_SCREENSHOTS=<dir>` — приложение само проходит все страницы,
+  сохраняет `pageN.png` и выходит (для ревью без мыши).
 - [x] **Theme selector in Settings**, including `Qt.styleHints.colorScheme`.
 - [ ] Все новые строки — через `window.tr` и `scripts/i18n-add-keys.py`.
 - [ ] Проверять на `--simulated` и `--simulated-model WF-1000XM5`, оба

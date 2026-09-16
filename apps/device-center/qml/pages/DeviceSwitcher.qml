@@ -9,26 +9,16 @@ ViewPage {
     id: root
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 36
+        anchors.margins: 32
+        anchors.topMargin: 22
         spacing: 22
 
-        ColumnLayout {
-            spacing: 5
-            Eyebrow { appWindow: root.appWindow; text: appWindow.tr("easy_switch") }
-            Text {
-                textFormat: Text.PlainText
-                text: appWindow.tr("paired_devices")
-                color: Theme.txt
-                font.pixelSize: 28
-                font.weight: Font.DemiBold
-                font.letterSpacing: -0.6
-            }
-            Text {
-                textFormat: Text.PlainText
-                text: appWindow.tr("paired_devices_desc")
-                color: Theme.txtDim
-                font.pixelSize: 13
-            }
+        SectionTitle { appWindow: root.appWindow;
+            Layout.fillWidth: true
+            Layout.fillHeight: false
+            eyebrow: appWindow.tr("easy_switch")
+            title: appWindow.tr("paired_devices")
+            subtitle: appWindow.tr("paired_devices_desc")
         }
 
         ColumnLayout {
@@ -61,7 +51,7 @@ ViewPage {
                         Rectangle {
                             Layout.preferredWidth: 48
                             Layout.preferredHeight: 48
-                            radius: 15
+                            radius: Theme.cardRadius
                             color: devCard.current ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.18) : Theme.surfaceSunk
                             border.width: 1
                             border.color: devCard.current ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5) : Theme.line

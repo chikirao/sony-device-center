@@ -2,227 +2,182 @@ import QtQuick
 import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Shapes
 import "../components"
 
 ViewPage {
     id: root
+
+    readonly property var modes: [
+        { mode: "cancelling", label: appWindow.tr("noise_cancelling"),  glyph: appWindow.icons.shield,  desc: appWindow.tr("nc_card_cancelling"), available: controller.hasAnc },
+        { mode: "ambient",    label: appWindow.tr("ambient_sound"),     glyph: appWindow.icons.ambient, desc: appWindow.tr("nc_card_ambient"),    available: controller.hasAmbient },
+        { mode: "off",        label: appWindow.tr("noise_control_off"), glyph: appWindow.icons.power,   desc: appWindow.tr("nc_card_off"),        available: true }
+    ]
+    readonly property int currentIndex: controller.noiseControlMode === "cancelling" ? 0 : controller.noiseControlMode === "ambient" ? 1 : controller.noiseControlMode === "off" ? 2 : -1
+
+    function apply(mode) {
+        if (mode === "cancelling") controller.setAnc(true)
+        else if (mode === "ambient") controller.setAmbient(controller.ambientLevel, controller.focusOnVoice)
+        else controller.setNoiseControlOff()
+    }
+
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 36
-        spacing: 24
+        anchors.margins: 32
+        anchors.topMargin: 22
+        spacing: 16
 
-        ColumnLayout {
-            spacing: 5
-            Eyebrow { appWindow: root.appWindow; text: appWindow.tr("isolation") }
-            Text {
-                textFormat: Text.PlainText
-                text: appWindow.tr("nav_noise_control")
-                color: Theme.txt
-                font.pixelSize: 28
-                font.weight: Font.DemiBold
-                font.letterSpacing: -0.6
-            }
-            Text {
-                textFormat: Text.PlainText
-                text: appWindow.tr("nc_page_desc")
-                color: Theme.txtDim
-                font.pixelSize: 13
+        SectionTitle { appWindow: root.appWindow;
+            Layout.fillWidth: true
+            Layout.fillHeight: false
+            eyebrow: appWindow.tr("isolation")
+            title: appWindow.tr("nav_noise_control")
+            subtitle: appWindow.tr("nc_page_desc")
+        }
+
+        // Three-way switch. One ink segment, the rest paper.
+        Card { appWindow: root.appWindow;
+            Layout.fillWidth: true
+            Layout.preferredHeight: 68
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 4
+                spacing: 4
+                Repeater {
+                    model: root.modes
+                    delegate: Rectangle {
+                        id: segment
+                        required property var modelData
+                        required property int index
+                        readonly property bool current: root.currentIndex === index
+                        visible: modelData.available
+                        enabled: controller.connected
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        radius: Theme.controlRadius
+                        color: current ? Theme.accent : segHover.hovered ? Theme.surfaceHi : "transparent"
+                        opacity: enabled ? 1 : 0.5
+                        Behavior on color { ColorAnimation { duration: Theme.tBase } }
+                        HoverHandler { id: segHover; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { onTapped: root.apply(segment.modelData.mode) }
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 10
+                            Glyph { appWindow: root.appWindow; path: segment.modelData.glyph; size: 20; weight: 1.7; color: segment.current ? Theme.accentText : Theme.txt }
+                            Text {
+                                textFormat: Text.PlainText
+                                text: segment.modelData.label
+                                color: segment.current ? Theme.accentText : Theme.txt
+                                font.pixelSize: 14
+                                font.weight: Font.Medium
+                                Behavior on color { ColorAnimation { duration: Theme.tFast } }
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        // Mode cards — big targets, honest states
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 132
-            spacing: 14
+            Layout.fillHeight: true
+            spacing: 16
 
-            Repeater {
-                model: [
-                    { mode: "cancelling", label: appWindow.tr("noise_cancelling"),  glyph: appWindow.icons.shield, desc: appWindow.tr("nc_card_cancelling"), tint: Theme.accent },
-                    { mode: "ambient",    label: appWindow.tr("ambient_sound"),     glyph: appWindow.icons.mic,    desc: appWindow.tr("nc_card_ambient"),    tint: Theme.ambientWarm },
-                    { mode: "off",        label: appWindow.tr("noise_control_off"), glyph: appWindow.icons.power,  desc: appWindow.tr("nc_card_off"),        tint: Theme.txtDim }
-                ]
-
-                delegate: Card { appWindow: root.appWindow;
-                    id: modeCard
-                    required property var modelData
-                    readonly property bool current: controller.noiseControlMode === modelData.mode
-
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    active: current
-                    hovered: modeHover.hovered
-                    scale: modeTap.pressed ? 0.975 : (modeHover.hovered ? 1.012 : 1.0)
-
-                    Behavior on scale {
-                        NumberAnimation { duration: Theme.duration(220); easing.type: Easing.OutBack; easing.overshoot: 1.8 }
-                    }
-
-                    HoverHandler { id: modeHover; cursorShape: Qt.PointingHandCursor }
-                    TapHandler {
-                        id: modeTap
-                        onTapped: {
-                            if (modeCard.modelData.mode === "cancelling") controller.setAnc(true)
-                            else if (modeCard.modelData.mode === "ambient") controller.setAmbient(controller.ambientLevel, controller.focusOnVoice)
-                            else controller.setNoiseControlOff()
-                        }
-                    }
-
-                    ColumnLayout {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: 20
-                        anchors.rightMargin: 20
-                        spacing: 12
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 10
-
-                            Rectangle {
-                                Layout.preferredWidth: 42
-                                Layout.preferredHeight: 42
-                                radius: 13
-                                color: modeCard.current
-                                     ? Qt.rgba(modeCard.modelData.tint.r, modeCard.modelData.tint.g, modeCard.modelData.tint.b, 0.18)
-                                     : Theme.surfaceSunk
-                                border.width: 1
-                                border.color: modeCard.current
-                                     ? Qt.rgba(modeCard.modelData.tint.r, modeCard.modelData.tint.g, modeCard.modelData.tint.b, 0.5)
-                                     : Theme.line
-                                Behavior on color { ColorAnimation { duration: Theme.tBase } }
-                                Behavior on border.color { ColorAnimation { duration: Theme.tBase } }
-
-                                Glyph { appWindow: root.appWindow;
-                                    anchors.centerIn: parent
-                                    path: modeCard.modelData.glyph
-                                    size: 21
-                                    color: modeCard.current ? modeCard.modelData.tint : Theme.txtFaint
-                                }
-                            }
-
-                            Item { Layout.fillWidth: true }
-
-                            // Active dot, animated in
-                            Rectangle {
-                                Layout.preferredWidth: 9
-                                Layout.preferredHeight: 9
-                                radius: 4.5
-                                color: modeCard.modelData.tint
-                                opacity: modeCard.current ? 1 : 0
-                                scale: modeCard.current ? 1 : 0.4
-                                Behavior on opacity { NumberAnimation { duration: Theme.tBase } }
-                                Behavior on scale { NumberAnimation { duration: Theme.duration(280); easing.type: Easing.OutBack; easing.overshoot: 3 } }
-                            }
-                        }
-
-                        ColumnLayout {
-                            spacing: 2
-                            Text {
-                                textFormat: Text.PlainText
-                                text: modeCard.modelData.label
-                                color: Theme.txt
-                                font.pixelSize: 15
-                                font.weight: Font.DemiBold
-                            }
-                            Text {
-                                textFormat: Text.PlainText
-                                text: modeCard.modelData.desc
-                                color: Theme.txtFaint
-                                font.pixelSize: 12
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Ambient detail
-        Card { appWindow: root.appWindow;
-            id: ambientCard
-            Layout.fillWidth: true
-            Layout.preferredHeight: 178
-            readonly property bool live: controller.noiseControlMode === "ambient"
-            opacity: live ? 1.0 : 0.42
-            enabled: live
-            Behavior on opacity { NumberAnimation { duration: Theme.tSlow; easing.type: Easing.OutQuad } }
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 22
-                spacing: 18
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    ColumnLayout {
-                        spacing: 2
-                        Eyebrow { appWindow: root.appWindow; text: appWindow.tr("ambient") }
-                        Text {
-                            textFormat: Text.PlainText
-                            text: appWindow.tr("sound_level")
-                            color: Theme.txt
-                            font.pixelSize: 15
-                            font.weight: Font.DemiBold
-                        }
-                    }
-                    Item { Layout.fillWidth: true }
-                    Rectangle {
-                        implicitWidth: 56
-                        implicitHeight: 34
-                        radius: 11
-                        color: Qt.rgba(Theme.ambientWarm.r, Theme.ambientWarm.g, Theme.ambientWarm.b, 0.16)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.ambientWarm.r, Theme.ambientWarm.g, Theme.ambientWarm.b, 0.5)
-                        Text {
-                            textFormat: Text.PlainText
-                            anchors.centerIn: parent
-                            text: Math.round(ambientSlider.value)
-                            color: Theme.ambientWarm
-                            font.pixelSize: 14
-                            font.weight: Font.DemiBold
-                        }
-                    }
-                }
-
-                NeoSlider { appWindow: root.appWindow;
-                    id: ambientSlider
-                    Layout.fillWidth: true
-                    from: 1; to: 20; stepSize: 1
-                    confirmedValue: controller.ambientLevel
-                    onMoved: controller.setAmbient(Math.round(value), voiceSwitch.checked)
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 12
-                    ColumnLayout {
+            // Ambient level
+            Card { appWindow: root.appWindow;
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: 1
+                visible: controller.hasAmbient
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 22
+                    spacing: 14
+                    RowLayout {
                         Layout.fillWidth: true
-                        spacing: 2
-                        Text {
-                            textFormat: Text.PlainText
-                            text: appWindow.tr("focus_on_voice")
-                            color: Theme.txt
-                            font.pixelSize: 13
-                            font.weight: Font.Medium
+                        Eyebrow { appWindow: root.appWindow; text: appWindow.tr("ambient_level"); Layout.fillWidth: true }
+                        DotText { text: String(Math.round(levelSlider.value)); dot: 4.5; color: Theme.txt }
+                    }
+                    NeoSlider { id: levelSlider; appWindow: root.appWindow;
+                        Layout.fillWidth: true
+                        from: 1; to: 20; stepSize: 1
+                        confirmedValue: controller.ambientLevel
+                        enabled: controller.connected
+                        onMoved: controller.setAmbient(Math.round(value), voiceSwitch.checked)
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.topMargin: -8
+                        Text { textFormat: Text.PlainText; text: "1"; color: Theme.txtDim; font.pixelSize: 11 }
+                        Item { Layout.fillWidth: true }
+                        Text { textFormat: Text.PlainText; text: "20"; color: Theme.txtDim; font.pixelSize: 11 }
+                    }
+                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.line; Layout.topMargin: 6 }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 14
+                        Rectangle {
+                            width: 40; height: 40; radius: 20
+                            color: Theme.surfaceHi
+                            border.width: 1
+                            border.color: Theme.line
+                            Glyph { appWindow: root.appWindow; anchors.centerIn: parent; path: appWindow.icons.mic; size: 18; color: Theme.txt; weight: 1.7 }
                         }
-                        Text {
-                            textFormat: Text.PlainText
-                            text: appWindow.tr("focus_on_voice_desc")
-                            color: Theme.txtFaint
-                            font.pixelSize: 11
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Text { textFormat: Text.PlainText; text: appWindow.tr("focus_on_voice"); color: Theme.txt; font.pixelSize: 14; font.weight: Font.DemiBold }
+                            Text { textFormat: Text.PlainText; text: appWindow.tr("focus_on_voice_desc"); color: Theme.txtDim; font.pixelSize: 12; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                        }
+                        NeoSwitch { id: voiceSwitch; appWindow: root.appWindow;
+                            confirmedChecked: controller.focusOnVoice
+                            enabled: controller.connected
+                            onToggled: controller.setAmbient(controller.ambientLevel, checked)
                         }
                     }
-                    NeoSwitch { appWindow: root.appWindow;
-                        id: voiceSwitch
-                        confirmedChecked: controller.focusOnVoice
-                        onToggled: controller.setAmbient(controller.ambientLevel, checked)
+                    Item { Layout.fillHeight: true }
+                }
+            }
+
+            // What the current mode does
+            Card { appWindow: root.appWindow;
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: 1
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 22
+                    spacing: 14
+                    Eyebrow { appWindow: root.appWindow; text: appWindow.tr("current_mode") }
+                    Rectangle {
+                        width: 72; height: 72; radius: 16
+                        color: Theme.surfaceHi
+                        border.width: 1
+                        border.color: Theme.line
+                        Glyph { appWindow: root.appWindow;
+                            anchors.centerIn: parent
+                            path: root.currentIndex < 0 ? appWindow.icons.info : root.modes[root.currentIndex].glyph
+                            size: 34; weight: 1.5; color: Theme.txt
+                        }
                     }
+                    Text {
+                        textFormat: Text.PlainText
+                        text: root.currentIndex < 0 ? appWindow.tr("unknown") : root.modes[root.currentIndex].label
+                        color: Theme.txt
+                        font.pixelSize: 22
+                        font.weight: Font.Bold
+                        font.letterSpacing: -0.4
+                    }
+                    Text {
+                        textFormat: Text.PlainText
+                        Layout.fillWidth: true
+                        text: root.currentIndex < 0 ? appWindow.tr("state_unknown_waiting") : root.modes[root.currentIndex].desc
+                        color: Theme.txtDim
+                        font.pixelSize: 13
+                        wrapMode: Text.Wrap
+                    }
+                    Item { Layout.fillHeight: true }
                 }
             }
         }
-
-        Item { Layout.fillHeight: true }
     }
 }

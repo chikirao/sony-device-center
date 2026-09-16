@@ -39,8 +39,8 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
         historyDir.isEmpty() ? QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) : historyDir);
     connect(_history.get(), &BatteryHistory::changed, this, &DeviceCenterController::batteryHistoryChanged);
     QSettings settings("SonyBridge", "SonyDeviceCenter");
-    _themeMode = settings.value("themeMode", "dark").toString();
-    if (_themeMode != "dark" && _themeMode != "light" && _themeMode != "system") _themeMode = "dark";
+    _themeMode = settings.value("themeMode", "light").toString();
+    if (_themeMode != "dark" && _themeMode != "light" && _themeMode != "system") _themeMode = "light";
     _iconAntialiasing = settings.value("iconAntialiasing", true).toBool();
     _animationsEnabled = settings.value("animationsEnabled", true).toBool();
 #ifdef Q_OS_WIN

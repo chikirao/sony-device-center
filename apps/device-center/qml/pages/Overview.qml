@@ -2,262 +2,346 @@ import QtQuick
 import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Shapes
 import "../components"
 
 ViewPage {
     id: root
+
+    readonly property string modeTitle: !controller.connected || controller.noiseControlMode === "unknown" ? appWindow.tr("unknown")
+        : controller.noiseControlMode === "cancelling" ? appWindow.tr("noise_cancelling")
+        : controller.noiseControlMode === "ambient" ? appWindow.tr("ambient_sound") : appWindow.tr("nc_title_off")
+    readonly property string modeDesc: !controller.connected || controller.noiseControlMode === "unknown" ? appWindow.tr("state_unknown_waiting")
+        : controller.noiseControlMode === "cancelling" ? appWindow.tr("nc_desc_cancelling")
+        : controller.noiseControlMode === "ambient" ? appWindow.tr("nc_desc_ambient").arg(controller.ambientLevel) : appWindow.tr("nc_desc_off")
+    readonly property int batteryPercent: !controller.connected ? -1
+        : controller.hasDualBattery ? Math.min(controller.batteryLeft < 0 ? 100 : controller.batteryLeft,
+                                               controller.batteryRight < 0 ? 100 : controller.batteryRight)
+        : controller.batteryLevel
+
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 36
-        spacing: 22
+        anchors.margins: 32
+        anchors.topMargin: 22
+        spacing: 16
 
-        // Header
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 10
-
-            ColumnLayout {
-                spacing: 5
-                Eyebrow { appWindow: root.appWindow; text: controller.connected ? appWindow.tr("connected_device") : appWindow.tr("offline") }
-                Text {
-                    textFormat: Text.PlainText
-                    text: controller.deviceName
-                    color: Theme.txt
-                    font.pixelSize: 30
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: -0.7
-                }
-            }
-
-            Item { Layout.fillWidth: true }
-
-            // Power off. Red, compact, and only offered while the
-            // link is up: after it the headset simply disappears.
-            PillButton { appWindow: root.appWindow;
-                visible: controller.connected
-                text: appWindow.tr("power_off")
-                glyphPath: appWindow.icons.power
-                tint: Theme.danger
-                compact: true
-                onClicked: controller.powerOff()
-            }
-
-            // Compact status chips
-            Repeater {
-                model: {
-                    var pct = function(v) { return v >= 0 ? v + "%" : appWindow.tr("unknown") }
-                    var chips = [{ k: appWindow.tr("codec"), v: controller.codec }]
-                    if (controller.hasDualBattery) {
-                        chips.push({ k: "L", v: pct(controller.batteryLeft) })
-                        chips.push({ k: "R", v: pct(controller.batteryRight) })
-                        if (controller.batteryCase >= 0) chips.push({ k: appWindow.tr("battery_case"), v: pct(controller.batteryCase) })
-                    } else {
-                        chips.push({ k: appWindow.tr("battery"), v: pct(controller.batteryLevel) })
-                    }
-                    // Estimate from the battery log; a dash until it has enough to go on.
-                    chips.push({ k: appWindow.tr("time_left"), v: !controller.connected ? "\u2014"
-                                  : controller.isCharging ? appWindow.tr("charging")
-                                  : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : "\u2014" })
-                    chips.push({ k: appWindow.tr("mode"), v: controller.noiseControlMode === "unknown" ? appWindow.tr("unknown") : controller.noiseControlMode === "cancelling" ? appWindow.tr("mode_anc")
-                                  : controller.noiseControlMode === "ambient" ? appWindow.tr("mode_ambient") : appWindow.tr("mode_off") })
-                    return chips
-                }
-
-                delegate: Rectangle {
-                    id: statChip
-                    required property var modelData
-                    implicitWidth: chipCol.implicitWidth + 30
-                    implicitHeight: 54
-                    radius: 14
-                    color: Theme.surface
-                    border.width: 1
-                    border.color: Theme.line
-
-                    ColumnLayout {
-                        id: chipCol
-                        anchors.centerIn: parent
-                        spacing: 3
-                        Eyebrow { appWindow: root.appWindow;
-                            Layout.alignment: Qt.AlignHCenter
-                            text: statChip.modelData.k
-                        }
-                        Text {
-                            textFormat: Text.PlainText
-                            Layout.alignment: Qt.AlignHCenter
-                            text: statChip.modelData.v
-                            color: Theme.txt
-                            font.pixelSize: 14
-                            font.weight: Font.DemiBold
-                        }
-                    }
-                }
-            }
-        }
-
-        // Hero
+        // Hero: the mode you are in, and the thing on your head.
         Card { appWindow: root.appWindow;
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 24
             clip: true
 
             ColumnLayout {
-                anchors.centerIn: parent
-                spacing: 4
+                id: heroCopy
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.margins: 28
+                width: Math.max(300, parent.width * 0.5)
+                spacing: 0
 
-                // The aura belongs to the product, not the card.
-                // Centering it here keeps the rings off the labels.
-                Item {
-                    id: heroStage
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: 290
-                    Layout.preferredHeight: 290
-
-                    Bloom { appWindow: root.appWindow;
-                        anchors.centerIn: parent
-                        z: -1
-                        width: 470; height: 470
-                        tint: controller.noiseControlMode === "unknown" ? Theme.txtDim : controller.noiseControlMode === "cancelling" ? Theme.accent
-                            : controller.noiseControlMode === "ambient" ? Theme.ambientWarm
-                            : Theme.txtFaint
-                        strength: controller.noiseControlMode === "off" ? 0.05 : 0.18
-                        Behavior on strength { NumberAnimation { duration: Theme.tSlow } }
-                    }
-
-                    // Concentric rings. ANC pulls inward, Ambient opens outward.
-                    Repeater {
-                        model: 3
-                        delegate: Rectangle {
-                            id: auraRing
-                            required property int index
-                            readonly property bool inward: controller.noiseControlMode === "cancelling"
-                            readonly property bool live: controller.noiseControlMode !== "off"
-
-                            anchors.centerIn: parent
-                            z: -1
-                            width: 252 + index * 58
-                            height: width
-                            radius: width / 2
-                            color: "transparent"
-                            border.width: 1
-                            border.color: inward ? Theme.accent : Theme.ambientWarm
-                            opacity: 0
-                            visible: live
-
-                            SequentialAnimation {
-                                running: Theme.motionEnabled && !Theme.light && auraRing.live
-                                loops: Animation.Infinite
-                                PauseAnimation { duration: Theme.duration(auraRing.index * 700) }
-                                ParallelAnimation {
-                                    NumberAnimation {
-                                        target: auraRing; property: "opacity"
-                                        from: 0.0; to: 0.28
-                                        duration: Theme.duration(900); easing.type: Easing.OutQuad
-                                    }
-                                    NumberAnimation {
-                                        target: auraRing; property: "scale"
-                                        from: auraRing.inward ? 1.12 : 0.90
-                                        to: 1.0
-                                        duration: Theme.duration(900); easing.type: Easing.OutQuad
-                                    }
-                                }
-                                ParallelAnimation {
-                                    NumberAnimation {
-                                        target: auraRing; property: "opacity"
-                                        to: 0.0
-                                        duration: Theme.duration(1200); easing.type: Easing.InQuad
-                                    }
-                                    NumberAnimation {
-                                        target: auraRing; property: "scale"
-                                        to: auraRing.inward ? 0.88 : 1.14
-                                        duration: Theme.duration(1200); easing.type: Easing.InQuad
-                                    }
-                                }
-                                PauseAnimation { duration: Theme.duration(400) }
-                            }
-                        }
-                    }
-
-                    Image {
-                        anchors.fill: parent
-                        fillMode: Image.PreserveAspectFit
-                        source: "qrc:/" + controller.heroImagePath
-                        opacity: controller.connected ? 1.0 : 0.35
-                        scale: heroHover.hovered ? 1.06 : 1.0
-
-                        Behavior on scale { NumberAnimation { duration: Theme.duration(320); easing.type: Easing.OutCubic } }
-                        Behavior on opacity { NumberAnimation { duration: Theme.tSlow } }
-
-                        HoverHandler { id: heroHover }
-                    }
-                }
-
-                Text {
-                    textFormat: Text.PlainText
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 10
-                    text: controller.noiseControlMode === "unknown" ? appWindow.tr("unknown") : controller.noiseControlMode === "cancelling" ? appWindow.tr("noise_cancelling")
-                        : controller.noiseControlMode === "ambient" ? appWindow.tr("ambient_sound")
-                        : appWindow.tr("nc_title_off")
+                Eyebrow { appWindow: root.appWindow; text: appWindow.tr("sound_mode") }
+                DotText {
+                    objectName: "modeDots"
+                    Layout.topMargin: 16
+                    text: root.modeTitle
+                    dot: 6
+                    maxWidth: heroCopy.width
                     color: Theme.txt
-                    font.pixelSize: 18
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: -0.2
                 }
-
                 Text {
+                    Layout.topMargin: 14
+                    Layout.fillWidth: true
                     textFormat: Text.PlainText
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 2
-                    text: controller.noiseControlMode === "unknown" ? appWindow.tr("unknown") : controller.noiseControlMode === "cancelling" ? appWindow.tr("nc_desc_cancelling")
-                        : controller.noiseControlMode === "ambient" ? appWindow.tr("nc_desc_ambient").arg(controller.ambientLevel)
-                        : appWindow.tr("nc_desc_off")
-                    color: Theme.txtFaint
-                    font.pixelSize: 12
+                    text: root.modeDesc
+                    color: Theme.txtDim
+                    font.pixelSize: 16
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 3
+                    elide: Text.ElideRight
                 }
-
-                // Quick actions
+                Item { Layout.fillHeight: true }
                 RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 30
-                    spacing: 11
-
+                    spacing: 10
                     PillButton { appWindow: root.appWindow;
                         text: appWindow.tr("noise_cancelling")
                         glyphPath: appWindow.icons.shield
-                        tint: Theme.accent
+                        visible: controller.hasAnc
                         active: controller.noiseControlMode === "cancelling"
-                        onClicked: controller.setAnc(!active)
+                        enabled: controller.connected
+                        onClicked: controller.setAnc(true)
                     }
-
                     PillButton { appWindow: root.appWindow;
                         text: appWindow.tr("ambient")
-                        glyphPath: appWindow.icons.mic
-                        tint: Theme.ambientWarm
+                        glyphPath: appWindow.icons.ambient
+                        visible: controller.hasAmbient
                         active: controller.noiseControlMode === "ambient"
+                        enabled: controller.connected
                         onClicked: controller.setAmbient(controller.ambientLevel, controller.focusOnVoice)
                     }
-
                     PillButton { appWindow: root.appWindow;
                         text: appWindow.tr("noise_control_off")
                         glyphPath: appWindow.icons.power
-                        tint: Theme.txtDim
                         active: controller.noiseControlMode === "off"
+                        enabled: controller.connected
                         onClicked: controller.setNoiseControlOff()
                     }
                 }
+            }
 
-                // Secondary: a link to another screen, not a fourth mode.
-                PillButton { appWindow: root.appWindow;
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 12
-                    compact: true
-                    text: appWindow.tr("eq_chip") + appWindow.trPreset(controller.equalizerPreset)
-                    glyphPath: appWindow.icons.sliders
-                    onClicked: appWindow.navIndex = 2
+            // Product, framed by a dotted orbit and a pinch of type.
+            Item {
+                id: stage
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.margins: 8
+                width: parent.width - heroCopy.width - 56
+
+                Canvas {
+                    id: orbit
+                    anchors.fill: parent
+                    opacity: 0.55
+                    onWidthChanged: requestPaint()
+                    onHeightChanged: requestPaint()
+                    Connections { target: Theme; function onLightChanged() { orbit.requestPaint() } }
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.reset()
+                        var r = Math.min(width, height) * 0.46
+                        ctx.strokeStyle = Theme.lineHi
+                        ctx.lineWidth = 1.2
+                        ctx.setLineDash([2, 5])
+                        ctx.beginPath()
+                        ctx.arc(width * 0.52, height * 0.5, r, Math.PI * 0.55, Math.PI * 1.75)
+                        ctx.stroke()
+                    }
+                }
+
+                Image {
+                    id: product
+                    anchors.centerIn: parent
+                    width: Math.min(parent.width * 0.7, parent.height * 0.92)
+                    height: width
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
+                    source: "qrc:/" + controller.heroImagePath
+                    opacity: controller.connected ? 1.0 : 0.4
+                    scale: productHover.hovered ? 1.04 : 1.0
+                    Behavior on scale { NumberAnimation { duration: Theme.duration(320); easing.type: Easing.OutCubic } }
+                    Behavior on opacity { NumberAnimation { duration: Theme.tSlow } }
+                    HoverHandler { id: productHover }
+                }
+
+                // Dot grid, top right.
+                Grid {
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 24
+                    columns: 4
+                    spacing: 7
+                    Repeater {
+                        model: 20
+                        Rectangle { width: 3; height: 3; radius: 1.5; color: Theme.lineHi }
+                    }
+                }
+
+                Text {
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.margins: 26
+                    width: 92
+                    textFormat: Text.PlainText
+                    text: appWindow.tr("hero_tagline")
+                    color: Theme.txtDim
+                    font.pixelSize: 9
+                    font.capitalization: Font.AllUppercase
+                    lineHeight: 1.5
+                    wrapMode: Text.Wrap
+                    horizontalAlignment: Text.AlignLeft
                 }
             }
         }
+
+        // Vitals
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.preferredHeight: 158
+            spacing: 16
+
+            // Battery & connection
+            Card { appWindow: root.appWindow;
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: 6
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 12
+                    CardTitle { appWindow: root.appWindow; text: appWindow.tr("battery_connection"); onClicked: appWindow.navIndex = 5 }
+                    RowLayout {
+                        Layout.fillHeight: true
+                        spacing: 18
+                        ColumnLayout {
+                            id: batteryColumn
+                            spacing: 12
+                            Layout.preferredWidth: 104
+                            Layout.maximumWidth: 104
+                            DotText {
+                                text: root.batteryPercent >= 0 ? root.batteryPercent + "%" : "—"
+                                dot: 4.5
+                                maxWidth: batteryColumn.width
+                                color: root.batteryPercent >= 0 && root.batteryPercent <= 20 ? Theme.danger : Theme.txt
+                            }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 5
+                                radius: 2.5
+                                color: Theme.surfaceSunk
+                                Rectangle {
+                                    width: parent.width * Math.max(0, root.batteryPercent) / 100
+                                    height: parent.height
+                                    radius: parent.radius
+                                    color: root.batteryPercent >= 0 && root.batteryPercent <= 20 ? Theme.danger : Theme.accent
+                                    Behavior on width { NumberAnimation { duration: Theme.duration(600); easing.type: Easing.OutCubic } }
+                                }
+                            }
+                            Item { Layout.fillHeight: true }
+                        }
+                        Rectangle { width: 1; Layout.fillHeight: true; color: Theme.line }
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            VitalRow { appWindow: root.appWindow;
+                                glyph: appWindow.icons.bluetooth
+                                title: controller.connected ? appWindow.tr("connected") : appWindow.tr("disconnected")
+                                detail: controller.connected ? appWindow.tr("stable_connection") : appWindow.trState(controller.connectionState)
+                            }
+                            VitalRow { appWindow: root.appWindow;
+                                glyph: appWindow.icons.waveform
+                                title: controller.connected && controller.codec.length ? controller.codec : "—"
+                                detail: appWindow.tr("high_quality_audio")
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Battery history
+            Card { appWindow: root.appWindow;
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: 5
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 12
+                    CardTitle { appWindow: root.appWindow; text: appWindow.tr("battery_title"); onClicked: appWindow.navIndex = 5 }
+                    RowLayout {
+                        Layout.fillHeight: true
+                        spacing: 18
+                        Stat { appWindow: root.appWindow;
+                            label: appWindow.tr("time_left")
+                            value: !controller.connected ? "—" : controller.isCharging ? appWindow.tr("charging")
+                                 : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : "—"
+                            note: controller.batterySessionStart > 0 && !controller.isCharging
+                                ? appWindow.tr("battery_session_since").arg(Qt.formatTime(new Date(controller.batterySessionStart), "HH:mm")) : ""
+                        }
+                        Rectangle { width: 1; Layout.fillHeight: true; color: Theme.line }
+                        Stat { appWindow: root.appWindow;
+                            label: appWindow.tr("battery_rate")
+                            value: controller.connected && controller.batteryDischargeRate > 0 ? controller.batteryDischargeRate.toFixed(1) + "%" : "—"
+                            note: controller.connected && controller.batteryDischargeRate > 0 ? appWindow.tr("per_hour") : ""
+                        }
+                    }
+                }
+            }
+
+            // Quick actions
+            Card { appWindow: root.appWindow;
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: 4
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 10
+                    CardTitle { appWindow: root.appWindow; text: appWindow.tr("quick_actions"); showChevron: false }
+                    PillButton { appWindow: root.appWindow;
+                        Layout.fillWidth: true
+                        compact: true
+                        text: appWindow.tr("open_equalizer")
+                        glyphPath: appWindow.icons.sliders
+                        onClicked: appWindow.navIndex = 2
+                    }
+                    PillButton { appWindow: root.appWindow;
+                        Layout.fillWidth: true
+                        compact: true
+                        text: controller.connected ? appWindow.tr("power_off") : appWindow.tr("nav_device_switcher")
+                        glyphPath: controller.connected ? appWindow.icons.power : appWindow.icons.swap
+                        onClicked: { if (controller.connected) controller.powerOff(); else appWindow.navIndex = 4 }
+                    }
+                    Item { Layout.fillHeight: true }
+                }
+            }
+        }
+    }
+
+    component CardTitle: RowLayout {
+        id: cardTitle
+        required property var appWindow
+        property string text: ""
+        property bool showChevron: true
+        signal clicked()
+        Layout.fillWidth: true
+        Text {
+            textFormat: Text.PlainText
+            Layout.fillWidth: true
+            text: cardTitle.text
+            color: Theme.txt
+            font.pixelSize: 14
+            font.weight: Font.DemiBold
+        }
+        Glyph { appWindow: cardTitle.appWindow; visible: cardTitle.showChevron; path: appWindow.icons.chevronRight; size: 16; color: Theme.txtDim }
+        TapHandler { enabled: cardTitle.showChevron; onTapped: cardTitle.clicked() }
+        HoverHandler { enabled: cardTitle.showChevron; cursorShape: Qt.PointingHandCursor }
+    }
+
+    component VitalRow: RowLayout {
+        id: vital
+        required property var appWindow
+        property string glyph: ""
+        property string title: ""
+        property string detail: ""
+        spacing: 12
+        Rectangle {
+            width: 34; height: 34; radius: 17
+            color: Theme.surfaceHi
+            border.width: 1
+            border.color: Theme.line
+            Glyph { appWindow: vital.appWindow; anchors.centerIn: parent; path: vital.glyph; size: 16; color: Theme.txt; weight: 1.7 }
+        }
+        ColumnLayout {
+            spacing: 2
+            Layout.fillWidth: true
+            Text { textFormat: Text.PlainText; text: vital.title; color: Theme.txt; font.pixelSize: 12; font.weight: Font.DemiBold; elide: Text.ElideRight; Layout.fillWidth: true }
+            Text { textFormat: Text.PlainText; text: vital.detail; color: Theme.txtDim; font.pixelSize: 11; elide: Text.ElideRight; Layout.fillWidth: true }
+        }
+    }
+
+    component Stat: ColumnLayout {
+        id: stat
+        required property var appWindow
+        property string label: ""
+        property string value: ""
+        property string note: ""
+        Layout.fillWidth: true
+        Layout.alignment: Qt.AlignTop
+        spacing: 8
+        Text { textFormat: Text.PlainText; text: stat.label; color: Theme.txtDim; font.pixelSize: 11 }
+        DotText { text: stat.value; dot: 4.2; maxWidth: stat.width; color: Theme.txt }
+        Text { textFormat: Text.PlainText; visible: text !== ""; text: stat.note; color: Theme.txtDim; font.pixelSize: 11; elide: Text.ElideRight; Layout.fillWidth: true }
+        Item { Layout.fillHeight: true }
     }
 }

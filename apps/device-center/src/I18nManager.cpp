@@ -189,6 +189,21 @@ void I18nManager::_initTranslations() {
     en["animations"]                      = "Animations";
     en["animations_desc"]                 = "Page transitions and display effects. System reduced motion takes priority.";
     en["icon_antialiasing"]               = "Smooth icons";
+    en["sound_mode"]                      = "Sound mode";
+    en["hero_tagline"]                    = "Music fits a quieter world";
+    en["battery_connection"]              = "Battery & Connection";
+    en["stable_connection"]               = "Stable connection";
+    en["high_quality_audio"]              = "High-quality audio";
+    en["quick_actions"]                   = "Quick actions";
+    en["open_equalizer"]                  = "Open Equalizer";
+    en["current_mode"]                    = "Current mode";
+    en["five_band"]                       = "5-band equalizer";
+    en["active_preset"]                   = "Active preset";
+    en["wireless_headphones"]             = "Wireless noise cancelling headphones";
+    en["wireless_earbuds"]                = "Wireless noise cancelling earbuds";
+    en["upscaling"]                       = "Upscaling";
+    en["eq_bands_hint"]                   = "Drag a band to shape your own curve.";
+    en["per_hour"]                        = "per hour";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -336,6 +351,21 @@ void I18nManager::_initTranslations() {
     pt["animations"]                      = "Animações";
     pt["animations_desc"]                 = "Transições e efeitos visuais. A redução de movimento do sistema tem prioridade.";
     pt["icon_antialiasing"]               = "Suavizar ícones";
+    pt["sound_mode"]                      = "Modo de som";
+    pt["hero_tagline"]                    = "A música combina com um mundo mais silencioso";
+    pt["battery_connection"]              = "Bateria e conexão";
+    pt["stable_connection"]               = "Conexão estável";
+    pt["high_quality_audio"]              = "Áudio de alta qualidade";
+    pt["quick_actions"]                   = "Ações rápidas";
+    pt["open_equalizer"]                  = "Abrir equalizador";
+    pt["current_mode"]                    = "Modo atual";
+    pt["five_band"]                       = "Equalizador de 5 bandas";
+    pt["active_preset"]                   = "Predefinição ativa";
+    pt["wireless_headphones"]             = "Fones sem fio com cancelamento de ruído";
+    pt["wireless_earbuds"]                = "Fones intra-auriculares sem fio com cancelamento de ruído";
+    pt["upscaling"]                       = "Upscaling";
+    pt["eq_bands_hint"]                   = "Arraste uma banda para criar sua própria curva.";
+    pt["per_hour"]                        = "por hora";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -483,6 +513,21 @@ void I18nManager::_initTranslations() {
     es["animations"]                      = "Animaciones";
     es["animations_desc"]                 = "Transiciones y efectos visuales. Reducir movimiento del sistema tiene prioridad.";
     es["icon_antialiasing"]               = "Suavizar iconos";
+    es["sound_mode"]                      = "Modo de sonido";
+    es["hero_tagline"]                    = "La música encaja en un mundo más silencioso";
+    es["battery_connection"]              = "Batería y conexión";
+    es["stable_connection"]               = "Conexión estable";
+    es["high_quality_audio"]              = "Audio de alta calidad";
+    es["quick_actions"]                   = "Acciones rápidas";
+    es["open_equalizer"]                  = "Abrir ecualizador";
+    es["current_mode"]                    = "Modo actual";
+    es["five_band"]                       = "Ecualizador de 5 bandas";
+    es["active_preset"]                   = "Preajuste activo";
+    es["wireless_headphones"]             = "Auriculares inalámbricos con cancelación de ruido";
+    es["wireless_earbuds"]                = "Auriculares intraurales inalámbricos con cancelación de ruido";
+    es["upscaling"]                       = "Mejora de audio";
+    es["eq_bands_hint"]                   = "Arrastra una banda para crear tu propia curva.";
+    es["per_hour"]                        = "por hora";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -630,6 +675,21 @@ void I18nManager::_initTranslations() {
     de["animations"]                      = "Animationen";
     de["animations_desc"]                 = "Seitenübergänge und Anzeigeeffekte. Reduzierte Bewegung im System hat Vorrang.";
     de["icon_antialiasing"]               = "Kantenglättung für Symbole";
+    de["sound_mode"]                      = "Klangmodus";
+    de["hero_tagline"]                    = "Musik passt in eine leisere Welt";
+    de["battery_connection"]              = "Akku & Verbindung";
+    de["stable_connection"]               = "Stabile Verbindung";
+    de["high_quality_audio"]              = "Audio in hoher Qualität";
+    de["quick_actions"]                   = "Schnellaktionen";
+    de["open_equalizer"]                  = "Equalizer öffnen";
+    de["current_mode"]                    = "Aktueller Modus";
+    de["five_band"]                       = "5-Band-Equalizer";
+    de["active_preset"]                   = "Aktive Voreinstellung";
+    de["wireless_headphones"]             = "Kabellose Noise-Cancelling-Kopfhörer";
+    de["wireless_earbuds"]                = "Kabellose Noise-Cancelling-Ohrhörer";
+    de["upscaling"]                       = "Upscaling";
+    de["eq_bands_hint"]                   = "Ziehe ein Band, um deine eigene Kurve zu formen.";
+    de["per_hour"]                        = "pro Stunde";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -777,6 +837,21 @@ void I18nManager::_initTranslations() {
     fr["animations"]                      = "Animations";
     fr["animations_desc"]                 = "Transitions et effets visuels. La réduction des animations du système est prioritaire.";
     fr["icon_antialiasing"]               = "Lisser les icônes";
+    fr["sound_mode"]                      = "Mode sonore";
+    fr["hero_tagline"]                    = "La musique s'accorde à un monde plus calme";
+    fr["battery_connection"]              = "Batterie et connexion";
+    fr["stable_connection"]               = "Connexion stable";
+    fr["high_quality_audio"]              = "Audio haute qualité";
+    fr["quick_actions"]                   = "Actions rapides";
+    fr["open_equalizer"]                  = "Ouvrir l'égaliseur";
+    fr["current_mode"]                    = "Mode actuel";
+    fr["five_band"]                       = "Égaliseur 5 bandes";
+    fr["active_preset"]                   = "Préréglage actif";
+    fr["wireless_headphones"]             = "Casque sans fil à réduction de bruit";
+    fr["wireless_earbuds"]                = "Écouteurs sans fil à réduction de bruit";
+    fr["upscaling"]                       = "Suréchantillonnage";
+    fr["eq_bands_hint"]                   = "Faites glisser une bande pour tracer votre propre courbe.";
+    fr["per_hour"]                        = "par heure";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -924,6 +999,21 @@ void I18nManager::_initTranslations() {
     ja["animations"]                      = "アニメーション";
     ja["animations_desc"]                 = "ページ遷移と表示効果。システムの視差効果を減らす設定が優先されます。";
     ja["icon_antialiasing"]               = "アイコンのアンチエイリアス";
+    ja["sound_mode"]                      = "サウンドモード";
+    ja["hero_tagline"]                    = "静かな世界に音楽を";
+    ja["battery_connection"]              = "バッテリーと接続";
+    ja["stable_connection"]               = "安定した接続";
+    ja["high_quality_audio"]              = "高音質オーディオ";
+    ja["quick_actions"]                   = "クイック操作";
+    ja["open_equalizer"]                  = "イコライザーを開く";
+    ja["current_mode"]                    = "現在のモード";
+    ja["five_band"]                       = "5バンドイコライザー";
+    ja["active_preset"]                   = "現在のプリセット";
+    ja["wireless_headphones"]             = "ワイヤレスノイズキャンセリングヘッドホン";
+    ja["wireless_earbuds"]                = "ワイヤレスノイズキャンセリングイヤホン";
+    ja["upscaling"]                       = "アップスケーリング";
+    ja["eq_bands_hint"]                   = "バンドをドラッグして独自のカーブを作成します。";
+    ja["per_hour"]                        = "1時間あたり";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1071,6 +1161,21 @@ void I18nManager::_initTranslations() {
     ru["animations"]                      = "Анимации";
     ru["animations_desc"]                 = "Переходы страниц и эффекты табло. Системное уменьшение анимаций имеет приоритет.";
     ru["icon_antialiasing"]               = "Сглаживание иконок";
+    ru["sound_mode"]                      = "Режим звука";
+    ru["hero_tagline"]                    = "Музыке к лицу тишина";
+    ru["battery_connection"]              = "Батарея и связь";
+    ru["stable_connection"]               = "Стабильное соединение";
+    ru["high_quality_audio"]              = "Звук высокого качества";
+    ru["quick_actions"]                   = "Быстрые действия";
+    ru["open_equalizer"]                  = "Открыть эквалайзер";
+    ru["current_mode"]                    = "Текущий режим";
+    ru["five_band"]                       = "5-полосный эквалайзер";
+    ru["active_preset"]                   = "Текущий пресет";
+    ru["wireless_headphones"]             = "Беспроводные наушники с шумоподавлением";
+    ru["wireless_earbuds"]                = "Беспроводные вкладыши с шумоподавлением";
+    ru["upscaling"]                       = "Улучшение звука";
+    ru["eq_bands_hint"]                   = "Потяните полосу, чтобы задать свою кривую.";
+    ru["per_hour"]                        = "в час";
 }
 
 } // namespace sony::devicecenter

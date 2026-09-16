@@ -1,10 +1,8 @@
 import QtQuick
 import ".."
 import QtQuick.Controls
-import QtQuick.Layouts
-import QtQuick.Shapes
 
-// Custom switch. The stock one belongs to a different app.
+// Toggle. Ink track with a paper knob when on; sunk paper track when off.
 Switch {
     required property var appWindow
     id: sw
@@ -14,13 +12,13 @@ Switch {
         target: controller
         function onStateChanged() { sw.checked = Qt.binding(function() { return sw.confirmedChecked }) }
     }
-    implicitWidth: 50
-    implicitHeight: 28
+    implicitWidth: 46
+    implicitHeight: 26
     hoverEnabled: true
 
     indicator: Rectangle {
-        implicitWidth: 50
-        implicitHeight: 28
+        implicitWidth: 46
+        implicitHeight: 26
         radius: height / 2
         color: sw.checked ? Theme.accent : Theme.surfaceSunk
         border.width: 1
@@ -29,13 +27,13 @@ Switch {
         Behavior on border.color { ColorAnimation { duration: Theme.tBase } }
 
         Rectangle {
-            width: 20
-            height: 20
-            radius: 10
+            width: 18
+            height: 18
+            radius: 9
             y: 4
             x: sw.checked ? parent.width - width - 4 : 4
-            color: sw.checked ? "white" : Theme.txtFaint
-            Behavior on x { NumberAnimation { duration: Theme.duration(240); easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
+            color: sw.checked ? Theme.accentText : Theme.txtDim
+            Behavior on x { NumberAnimation { duration: Theme.duration(200); easing.type: Easing.OutCubic } }
             Behavior on color { ColorAnimation { duration: Theme.tBase } }
         }
     }

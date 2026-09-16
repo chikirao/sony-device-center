@@ -2,202 +2,246 @@ import QtQuick
 import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Shapes
 import "../components"
 
 ViewPage {
     id: root
+
+    readonly property var presets: [0x00, 0x16, 0x15, 0x14, 0x10, 0x11, 0x12, 0x13, 0x17, 0xa0]
+    readonly property bool available: controller.connected && controller.hasEqualizer
+
+    function band(i) {
+        return controller.equalizerBands && controller.equalizerBands[i] !== undefined ? controller.equalizerBands[i] : 0
+    }
+
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 36
-        spacing: 20
+        anchors.margins: 32
+        anchors.topMargin: 22
+        spacing: 16
 
-        ColumnLayout {
-            spacing: 5
-            Eyebrow { appWindow: root.appWindow; text: appWindow.tr("signature") }
-            Text {
-                textFormat: Text.PlainText
-                text: appWindow.tr("nav_equalizer")
-                color: Theme.txt
-                font.pixelSize: 28
-                font.weight: Font.DemiBold
-                font.letterSpacing: -0.6
-            }
-            Text {
-                textFormat: Text.PlainText
-                text: appWindow.tr("eq_page_desc")
-                color: Theme.txtDim
-                font.pixelSize: 13
-            }
-        }
-
-        // Presets — wrapping flow, not ten crushed columns
-        Flow {
-            Layout.fillWidth: true
-            spacing: 8
-
-            Repeater {
-                model: [
-                    { id: 0x00, name: appWindow.trPreset(0x00) },
-                    { id: 0x16, name: appWindow.trPreset(0x16) },
-                    { id: 0x15, name: appWindow.trPreset(0x15) },
-                    { id: 0x14, name: appWindow.trPreset(0x14) },
-                    { id: 0x10, name: appWindow.trPreset(0x10) },
-                    { id: 0x11, name: appWindow.trPreset(0x11) },
-                    { id: 0x12, name: appWindow.trPreset(0x12) },
-                    { id: 0x13, name: appWindow.trPreset(0x13) },
-                    { id: 0x17, name: appWindow.trPreset(0x17) },
-                    { id: 0xa0, name: appWindow.trPreset(0xa0) }
-                ]
-
-                delegate: Rectangle {
-                    id: chip
-                    required property var modelData
-                    readonly property bool current: controller.equalizerPreset === modelData.id
-
-                    width: chipText.implicitWidth + 30
-                    height: 38
-                    radius: 19
-                    color: current ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.18)
-                         : chipHover.hovered ? Theme.surfaceHi : Theme.surface
-                    border.width: 1
-                    border.color: current ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.7)
-                                : chipHover.hovered ? Theme.lineHi : Theme.line
-
-                    Behavior on color { ColorAnimation { duration: Theme.tFast } }
-                    Behavior on border.color { ColorAnimation { duration: Theme.tFast } }
-
-                    scale: chipTap.pressed ? 0.94 : (chipHover.hovered ? 1.04 : 1.0)
-                    Behavior on scale {
-                        NumberAnimation { duration: Theme.duration(200); easing.type: Easing.OutBack; easing.overshoot: 2.4 }
-                    }
-
-                    HoverHandler { id: chipHover; cursorShape: Qt.PointingHandCursor }
-                    TapHandler { id: chipTap; onTapped: controller.setEqualizerPreset(chip.modelData.id) }
-
-                    Text {
-                        textFormat: Text.PlainText
-                        id: chipText
-                        anchors.centerIn: parent
-                        text: chip.modelData.name
-                        color: chip.current ? Theme.txt : Theme.txtDim
-                        font.pixelSize: 12
-                        font.weight: chip.current ? Font.DemiBold : Font.Normal
-                        Behavior on color { ColorAnimation { duration: Theme.tFast } }
-                    }
-                }
-            }
-        }
-
-        // The five bands — the reason anyone opens this screen
+        // Title and presets share one sheet.
         Card { appWindow: root.appWindow;
             Layout.fillWidth: true
-            Layout.fillHeight: true
-
+            implicitHeight: presetCol.implicitHeight + 44
             ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 24
-                spacing: 14
-
-                RowLayout {
+                id: presetCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 22
+                spacing: 16
+                SectionTitle { appWindow: root.appWindow;
                     Layout.fillWidth: true
-                    Eyebrow { appWindow: root.appWindow; text: "5-Band · ±10 dB" }
-                    Item { Layout.fillWidth: true }
-                    Text {
-                        textFormat: Text.PlainText
-                        text: controller.equalizerPresetName
-                        color: Theme.accentSoft
-                        font.pixelSize: 12
-                        font.weight: Font.DemiBold
-                    }
+                    Layout.fillHeight: false
+                    title: appWindow.tr("nav_equalizer")
+                    subtitle: appWindow.tr("eq_page_desc")
                 }
-
-                RowLayout {
+                Flow {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    spacing: 4
-
+                    spacing: 8
                     Repeater {
-                        model: ["400", "1k", "2.5k", "6.3k", "16k"]
-
-                        delegate: BandSlider { appWindow: root.appWindow;
-                            id: bandItem
-                            required property int index
-                            required property var modelData
-
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-
-                            label: modelData
-                            value: (controller.equalizerBands && controller.equalizerBands[index] !== undefined)
-                                   ? controller.equalizerBands[index] : 0
-
-                            onMoved: function(v) {
-                                var next = []
-                                for (var i = 0; i < 5; ++i) {
-                                    next.push(i === bandItem.index
-                                        ? Math.round(v)
-                                        : ((controller.equalizerBands && controller.equalizerBands[i] !== undefined)
-                                            ? controller.equalizerBands[i] : 0))
-                                }
-                                controller.setEqualizerCustom(controller.clearBass, next)
-                            }
+                        model: root.presets
+                        delegate: PillButton { appWindow: root.appWindow;
+                            required property int modelData
+                            text: appWindow.trPreset(modelData)
+                            active: controller.equalizerPreset === modelData
+                            enabled: root.available
+                            compact: true
+                            onClicked: controller.setEqualizerPreset(modelData)
                         }
                     }
                 }
             }
         }
 
-        // Clear Bass
-        Card { appWindow: root.appWindow;
+        RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 96
+            Layout.fillHeight: true
+            spacing: 16
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 22
-                anchors.rightMargin: 22
-                spacing: 22
-
+            // The five bands — the reason anyone opens this screen.
+            Card { appWindow: root.appWindow;
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: 3
                 ColumnLayout {
-                    Layout.preferredWidth: 210
-                    spacing: 2
-                    Text {
-                        textFormat: Text.PlainText
-                        text: appWindow.tr("clear_bass")
-                        color: Theme.txt
-                        font.pixelSize: 15
-                        font.weight: Font.DemiBold
+                    anchors.fill: parent
+                    anchors.margins: 22
+                    spacing: 10
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Eyebrow { appWindow: root.appWindow; text: appWindow.tr("five_band"); Layout.fillWidth: true }
+                        Text { textFormat: Text.PlainText; text: "dB"; color: Theme.txtDim; font.pixelSize: 11 }
                     }
-                    Text {
-                        textFormat: Text.PlainText
-                        text: appWindow.tr("clear_bass_desc")
-                        color: Theme.txtFaint
-                        font.pixelSize: 11
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        spacing: 0
+                        // Scale
+                        ColumnLayout {
+                            Layout.fillHeight: true
+                            Layout.fillWidth: false
+                            Layout.topMargin: 26
+                            Layout.bottomMargin: 30
+                            Layout.rightMargin: 12
+                            Repeater {
+                                model: ["+10", "+5", "0", "-5", "-10"]
+                                delegate: Text {
+                                    required property string modelData
+                                    Layout.fillHeight: true
+                                    Layout.alignment: Qt.AlignRight
+                                    textFormat: Text.PlainText
+                                    text: modelData
+                                    color: Theme.txtDim
+                                    font.pixelSize: 11
+                                    horizontalAlignment: Text.AlignRight
+                                    verticalAlignment: Text.AlignTop
+                                }
+                            }
+                        }
+                        Repeater {
+                            model: ["400", "1k", "2.5k", "6.3k", "16k"]
+                            delegate: BandSlider { appWindow: root.appWindow;
+                                required property string modelData
+                                required property int index
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                label: modelData
+                                enabled: root.available
+                                value: root.band(index)
+                                onMoved: function(v) {
+                                    var next = []
+                                    for (var i = 0; i < 5; ++i) next.push(i === index ? Math.round(v) : root.band(i))
+                                    controller.setEqualizerCustom(controller.clearBass, next)
+                                }
+                            }
+                        }
                     }
                 }
+            }
 
-                NeoSlider { appWindow: root.appWindow;
+            ColumnLayout {
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                Layout.preferredWidth: 2
+                spacing: 16
+
+                // Clear Bass
+                Card { appWindow: root.appWindow;
                     Layout.fillWidth: true
-                    from: -10; to: 10; stepSize: 1
-                    confirmedValue: controller.clearBass
-                    onMoved: controller.setEqualizerCustom(Math.round(value), controller.equalizerBands)
+                    implicitHeight: bassCol.implicitHeight + 44
+                    visible: controller.hasClearBass
+                    ColumnLayout {
+                        id: bassCol
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 22
+                        spacing: 10
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Eyebrow { appWindow: root.appWindow; text: appWindow.tr("clear_bass"); Layout.fillWidth: true }
+                            Text { textFormat: Text.PlainText; text: "dB"; color: Theme.txtDim; font.pixelSize: 11 }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 18
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+                                NeoSlider { id: bassSlider; appWindow: root.appWindow;
+                                    Layout.fillWidth: true
+                                    from: -10; to: 10; stepSize: 1
+                                    confirmedValue: controller.clearBass
+                                    enabled: root.available
+                                    onMoved: controller.setEqualizerCustom(Math.round(value), controller.equalizerBands)
+                                }
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    Text { textFormat: Text.PlainText; text: "-10"; color: Theme.txtDim; font.pixelSize: 11 }
+                                    Item { Layout.fillWidth: true }
+                                    Text { textFormat: Text.PlainText; text: "+10"; color: Theme.txtDim; font.pixelSize: 11 }
+                                }
+                            }
+                            DotText {
+                                Layout.alignment: Qt.AlignTop
+                                text: (Math.round(bassSlider.value) > 0 ? "+" : "") + Math.round(bassSlider.value)
+                                dot: 5
+                                color: Theme.txt
+                            }
+                        }
+                    }
                 }
 
-                Rectangle {
-                    implicitWidth: 56
-                    implicitHeight: 34
-                    radius: 11
-                    color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.16)
-                    border.width: 1
-                    border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5)
-                    Text {
-                        textFormat: Text.PlainText
-                        anchors.centerIn: parent
-                        text: (controller.clearBass > 0 ? "+" : "") + controller.clearBass
-                        color: Theme.accentSoft
-                        font.pixelSize: 14
-                        font.weight: Font.DemiBold
+                // Active preset
+                Card { appWindow: root.appWindow;
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 22
+                        spacing: 14
+                        Eyebrow { appWindow: root.appWindow; text: appWindow.tr("active_preset") }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 14
+                            Rectangle {
+                                width: 52; height: 52; radius: 26
+                                color: Theme.surfaceHi
+                                border.width: 1
+                                border.color: Theme.line
+                                Glyph { appWindow: root.appWindow; anchors.centerIn: parent; path: appWindow.icons.waveform; size: 22; color: Theme.txt; weight: 1.7 }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                Text {
+                                    textFormat: Text.PlainText
+                                    Layout.fillWidth: true
+                                    text: root.available ? appWindow.trPreset(controller.equalizerPreset) : "—"
+                                    color: Theme.txt
+                                    font.pixelSize: 20
+                                    font.weight: Font.Bold
+                                    font.letterSpacing: -0.4
+                                    elide: Text.ElideRight
+                                }
+                                Text {
+                                    textFormat: Text.PlainText
+                                    Layout.fillWidth: true
+                                    text: root.available ? appWindow.tr("eq_bands_hint") : appWindow.tr("state_unknown_waiting")
+                                    color: Theme.txtDim
+                                    font.pixelSize: 12
+                                    wrapMode: Text.Wrap
+                                }
+                            }
+                        }
+                        // The curve, in numbers.
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+                            Repeater {
+                                model: 5
+                                delegate: Rectangle {
+                                    required property int index
+                                    Layout.fillWidth: true
+                                    height: 36
+                                    radius: Theme.controlRadius
+                                    color: Theme.surfaceHi
+                                    border.width: 1
+                                    border.color: Theme.line
+                                    Text {
+                                        anchors.centerIn: parent
+                                        textFormat: Text.PlainText
+                                        text: (root.band(index) > 0 ? "+" : "") + root.band(index)
+                                        color: root.band(index) === 0 ? Theme.txtDim : Theme.txt
+                                        font.pixelSize: 12
+                                        font.weight: Font.DemiBold
+                                    }
+                                }
+                            }
+                        }
+                        Item { Layout.fillHeight: true }
                     }
                 }
             }

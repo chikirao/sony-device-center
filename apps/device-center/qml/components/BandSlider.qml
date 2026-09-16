@@ -2,9 +2,8 @@ import QtQuick
 import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Shapes
 
-// Vertical EQ band. Fills outward from the zero line, because that's what it means.
+// Vertical EQ band: ink fills from the floor up to the knob.
 ColumnLayout {
     required property var appWindow
     id: band
@@ -12,13 +11,16 @@ ColumnLayout {
     property real value: 0
     signal moved(real v)
 
+    // A layout's maximum width is its widest child's; without this the
+    // column can never grow past the slider and the bands bunch up left.
+    Layout.maximumWidth: Number.POSITIVE_INFINITY
     spacing: 10
 
     Text {
         textFormat: Text.PlainText
         Layout.alignment: Qt.AlignHCenter
         text: (band.value > 0 ? "+" : "") + Math.round(band.value)
-        color: Math.round(band.value) === 0 ? Theme.txtFaint : Theme.accentSoft
+        color: Math.round(band.value) === 0 ? Theme.txtFaint : Theme.txt
         font.pixelSize: 12
         font.weight: Font.DemiBold
         Behavior on color { ColorAnimation { duration: Theme.tFast } }
@@ -48,44 +50,27 @@ ColumnLayout {
             height: vs.availableHeight
             radius: 3
             color: Theme.surfaceSunk
-            border.width: 1
-            border.color: Theme.line
-
-            // The zero line. Small detail, big legibility win.
             Rectangle {
-                width: 14
-                height: 1
-                x: -4
-                y: parent.height / 2
-                color: Theme.lineHi
-            }
-
-            Rectangle {
-                readonly property real p: 1 - vs.visualPosition
                 width: parent.width
-                y: parent.height * (1 - Math.max(0.5, p))
-                height: parent.height * Math.abs(p - 0.5)
+                y: vs.visualPosition * parent.height
+                height: parent.height - y
                 radius: 3
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: Theme.accentSoft }
-                    GradientStop { position: 1.0; color: Theme.accent }
-                }
+                color: Theme.accent
             }
         }
 
         handle: Rectangle {
             x: vs.leftPadding + vs.availableWidth / 2 - width / 2
             y: vs.topPadding + vs.visualPosition * (vs.availableHeight - height)
-            width: 20
-            height: 20
-            radius: 10
-            color: "white"
-            border.width: 2
-            border.color: Theme.accent
-            scale: vs.pressed ? 1.22 : (vs.hovered ? 1.1 : 1.0)
-            Behavior on scale {
-                NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutBack; easing.overshoot: 2.5 }
-            }
+            width: 22
+            height: 22
+            radius: 11
+            color: Theme.surfaceHi
+            border.width: 1
+            border.color: Theme.lineHi
+            scale: vs.pressed ? 1.12 : (vs.hovered ? 1.06 : 1.0)
+            Behavior on scale { NumberAnimation { duration: Theme.duration(140) } }
+            Rectangle { anchors.centerIn: parent; width: 8; height: 8; radius: 4; color: Theme.accent }
         }
     }
 
@@ -93,8 +78,7 @@ ColumnLayout {
         textFormat: Text.PlainText
         Layout.alignment: Qt.AlignHCenter
         text: band.label
-        color: Theme.txtFaint
-        font.pixelSize: 10
-        font.letterSpacing: 0.6
+        color: Theme.txtDim
+        font.pixelSize: 11
     }
 }

@@ -71,11 +71,11 @@ private slots:
         const auto previousAnimations = controller.animationsEnabled();
         controller.setThemeMode("light");
         QTest::qWait(20);
-        QCOMPARE(window->color(), QColor("#F5F5F5"));
+        QCOMPARE(window->color(), QColor("#EDEDED"));
         const auto output = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
         if (!output.isEmpty()) {
             QDir().mkpath(output);
-            window->setProperty("navIndex", 5);
+            window->setProperty("navIndex", 6);
             QTest::qWait(400);
             QVERIFY(window->grabWindow().save(QString("%1/light-%2-%3-%4.png").arg(output, model, language).arg(size.width())));
         }
@@ -85,7 +85,7 @@ private slots:
         controller.setIconAntialiasing(previousSmoothing);
         controller.setThemeMode("dark");
         QTest::qWait(20);
-        QCOMPARE(window->color(), QColor("#0A0B0F"));
+        QCOMPARE(window->color(), QColor("#0C0C0C"));
         controller.setAnimationsEnabled(false);
         QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("animationsEnabled").toBool(), false);
         controller.setThemeMode("invalid");

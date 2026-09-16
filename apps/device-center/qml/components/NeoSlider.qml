@@ -1,10 +1,8 @@
 import QtQuick
 import ".."
 import QtQuick.Controls
-import QtQuick.Layouts
-import QtQuick.Shapes
 
-// Horizontal slider with a gradient fill and a handle that reacts.
+// Horizontal slider: a thin sunk track, ink fill, paper knob.
 Slider {
     required property var appWindow
     id: sl
@@ -16,7 +14,7 @@ Slider {
         target: controller
         function onStateChanged() { if (!sl.pressed) sl.value = Qt.binding(function() { return sl.confirmedValue }) }
     }
-    implicitHeight: 26
+    implicitHeight: 28
     hoverEnabled: true
 
     background: Rectangle {
@@ -26,33 +24,25 @@ Slider {
         height: 6
         radius: 3
         color: Theme.surfaceSunk
-        border.width: 1
-        border.color: Theme.line
-
         Rectangle {
             width: sl.visualPosition * parent.width
             height: parent.height
             radius: 3
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: Theme.accent }
-                GradientStop { position: 1.0; color: Theme.accentSoft }
-            }
+            color: Theme.accent
         }
     }
 
     handle: Rectangle {
         x: sl.leftPadding + sl.visualPosition * (sl.availableWidth - width)
         y: sl.topPadding + sl.availableHeight / 2 - height / 2
-        width: 18
-        height: 18
-        radius: 9
-        color: "white"
-        border.width: 2
-        border.color: Theme.accent
-        scale: sl.pressed ? 1.25 : (sl.hovered ? 1.12 : 1.0)
-        Behavior on scale {
-            NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutBack; easing.overshoot: 2.5 }
-        }
+        width: 22
+        height: 22
+        radius: 11
+        color: Theme.surfaceHi
+        border.width: 1
+        border.color: Theme.lineHi
+        scale: sl.pressed ? 1.12 : (sl.hovered ? 1.06 : 1.0)
+        Behavior on scale { NumberAnimation { duration: Theme.duration(140) } }
+        Rectangle { anchors.centerIn: parent; width: 8; height: 8; radius: 4; color: Theme.accent }
     }
 }

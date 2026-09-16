@@ -2,212 +2,180 @@ import QtQuick
 import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Shapes
 import "../components"
 
 ViewPage {
     id: root
+
+    function availability(key) { return controller.featureStatus[key] }
+    function known(key) { var a = availability(key); return controller.connected && a && a.availability === "valid" }
+
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 36
-        spacing: 22
+        anchors.margins: 32
+        anchors.topMargin: 22
+        spacing: 16
 
-        ColumnLayout {
-            spacing: 5
-            Eyebrow { appWindow: root.appWindow; text: appWindow.tr("behaviour") }
-            Text {
-                textFormat: Text.PlainText
-                text: appWindow.tr("features_title")
-                color: Theme.txt
-                font.pixelSize: 28
-                font.weight: Font.DemiBold
-                font.letterSpacing: -0.6
-            }
-            Text {
-                textFormat: Text.PlainText
-                text: appWindow.tr("features_desc")
-                color: Theme.txtDim
-                font.pixelSize: 13
+        SectionTitle { appWindow: root.appWindow;
+            Layout.fillWidth: true
+            Layout.fillHeight: false
+            title: appWindow.tr("features_title")
+            subtitle: appWindow.tr("features_desc")
+        }
+
+        // Headline feature: the upscaler gets the wide row.
+        Card { appWindow: root.appWindow;
+            Layout.fillWidth: true
+            Layout.preferredHeight: 108
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 18
+                spacing: 20
+                Rectangle {
+                    width: 72; height: 72; radius: 14
+                    color: Theme.surfaceHi
+                    border.width: 1
+                    border.color: Theme.line
+                    Glyph { appWindow: root.appWindow; anchors.centerIn: parent; path: appWindow.icons.sparkle; size: 32; weight: 1.5; color: Theme.txt }
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+                    Eyebrow { appWindow: root.appWindow; text: appWindow.tr("upscaling") }
+                    Text { textFormat: Text.PlainText; text: "DSEE Extreme"; color: Theme.txt; font.pixelSize: 22; font.weight: Font.Bold; font.letterSpacing: -0.4 }
+                    Text {
+                        textFormat: Text.PlainText
+                        Layout.fillWidth: true
+                        text: !controller.hasDsee ? appWindow.tr("not_supported") : !root.known("dsee") ? appWindow.tr("state_unknown_waiting") : appWindow.tr("feat_dsee_desc")
+                        color: Theme.txtDim
+                        font.pixelSize: 12
+                        wrapMode: Text.Wrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
+                    }
+                }
+                Rectangle { width: 1; Layout.fillHeight: true; color: Theme.line }
+                RowLayout {
+                    spacing: 14
+                    Text { textFormat: Text.PlainText; text: controller.dsee ? appWindow.tr("active") : appWindow.tr("noise_control_off"); color: Theme.txt; font.pixelSize: 13; font.weight: Font.Medium }
+                    NeoSwitch { appWindow: root.appWindow;
+                        enabled: controller.hasDsee && controller.connected
+                        confirmedChecked: controller.dsee
+                        onToggled: controller.setDsee(checked)
+                    }
+                }
             }
         }
 
-        GridLayout {
+        // Feature tiles
+        RowLayout {
             Layout.fillWidth: true
-            columns: 2
-            rowSpacing: 14
-            columnSpacing: 14
-
+            Layout.fillHeight: false
+            Layout.preferredHeight: 168
+            spacing: 16
             Repeater {
                 model: [
-                    { key: "dsee",     title: "DSEE Extreme",    desc: appWindow.tr("feat_dsee_desc"),     glyph: appWindow.icons.sparkle },
-                    { key: "speak",    title: "Speak-to-Chat",   desc: appWindow.tr("feat_speak_desc"),    glyph: appWindow.icons.mic },
-                    { key: "adaptive", title: "Adaptive Volume", desc: appWindow.tr("feat_adaptive_desc"), glyph: appWindow.icons.sliders }
+                    { key: "speakToChat",   title: "Speak-to-Chat",   desc: appWindow.tr("feat_speak_desc"),    glyph: appWindow.icons.chat,   supported: controller.hasSpeakToChat,   on: controller.speakToChat },
+                    { key: "adaptiveVolume", title: "Adaptive Volume", desc: appWindow.tr("feat_adaptive_desc"), glyph: appWindow.icons.volume, supported: controller.hasAdaptiveVolume, on: controller.adaptiveVolume }
                 ]
-
                 delegate: Card { appWindow: root.appWindow;
-                    id: featCard
+                    id: tile
                     required property var modelData
-                    readonly property string featureKey: modelData.key === "speak" ? "speakToChat" : modelData.key === "adaptive" ? "adaptiveVolume" : "dsee"
-                    readonly property var availability: controller.featureStatus[featureKey]
-                    readonly property bool known: controller.connected && availability && availability.availability === "valid"
-                    readonly property bool supported: modelData.key === "dsee" ? controller.hasDsee : modelData.key === "speak" ? controller.hasSpeakToChat : controller.hasAdaptiveVolume
-                    enabled: supported && controller.connected
-                    readonly property bool on: modelData.key === "dsee" ? controller.dsee
-                                             : modelData.key === "speak" ? controller.speakToChat
-                                             : controller.adaptiveVolume
-
+                    readonly property bool ready: modelData.supported && root.known(modelData.key)
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 112
-                    hovered: featHover.hovered
-                    active: on
-                    HoverHandler { id: featHover }
-
-                    RowLayout {
+                    Layout.fillHeight: true
+                    ColumnLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 20
-                        anchors.rightMargin: 20
-                        spacing: 15
-
-                        Rectangle {
-                            Layout.preferredWidth: 44
-                            Layout.preferredHeight: 44
-                            radius: 14
-                            color: featCard.on ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.18) : Theme.surfaceSunk
-                            border.width: 1
-                            border.color: featCard.on ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5) : Theme.line
-                            Behavior on color { ColorAnimation { duration: Theme.tBase } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.tBase } }
-
-                            Glyph { appWindow: root.appWindow;
-                                anchors.centerIn: parent
-                                path: featCard.modelData.glyph
-                                size: 21
-                                color: featCard.on ? Theme.accentSoft : Theme.txtFaint
-                            }
-                        }
-
-                        ColumnLayout {
+                        anchors.margins: 18
+                        spacing: 8
+                        Glyph { appWindow: root.appWindow; path: tile.modelData.glyph; size: 26; weight: 1.6; color: Theme.txt }
+                        Text { textFormat: Text.PlainText; Layout.topMargin: 4; text: tile.modelData.title; color: Theme.txt; font.pixelSize: 15; font.weight: Font.DemiBold }
+                        Text {
+                            textFormat: Text.PlainText
                             Layout.fillWidth: true
-                            spacing: 3
-                            Text {
-                                textFormat: Text.PlainText
-                                text: featCard.modelData.title
-                                color: Theme.txt
-                                font.pixelSize: 15
-                                font.weight: Font.DemiBold
-                            }
-                            Text {
-                                textFormat: Text.PlainText
-                                Layout.fillWidth: true
-                                text: !featCard.supported ? appWindow.tr("not_supported") : !featCard.known ? appWindow.tr("state_unknown_waiting") : featCard.modelData.desc
-                                color: Theme.txtFaint
-                                font.pixelSize: 11
-                                wrapMode: Text.WordWrap
-                            }
+                            text: !tile.modelData.supported ? appWindow.tr("not_supported") : !tile.ready ? appWindow.tr("state_unknown_waiting") : tile.modelData.desc
+                            color: Theme.txtDim
+                            font.pixelSize: 12
+                            wrapMode: Text.Wrap
+                            maximumLineCount: 2
+                            elide: Text.ElideRight
                         }
-
-                        NeoSwitch { appWindow: root.appWindow;
-                            confirmedChecked: featCard.on
-                            onToggled: {
-                                if (featCard.modelData.key === "dsee") controller.setDsee(checked)
-                                else if (featCard.modelData.key === "speak") controller.setSpeakToChat(checked)
-                                else controller.setAdaptiveVolume(checked)
+                        Item { Layout.fillHeight: true }
+                        Rectangle { Layout.fillWidth: true; height: 1; color: Theme.line }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: tile.modelData.on ? appWindow.tr("active") : appWindow.tr("noise_control_off"); color: Theme.txt; font.pixelSize: 12; font.weight: Font.Medium }
+                            NeoSwitch { appWindow: root.appWindow;
+                                enabled: tile.modelData.supported && controller.connected
+                                confirmedChecked: tile.modelData.on
+                                onToggled: tile.modelData.key === "speakToChat" ? controller.setSpeakToChat(checked) : controller.setAdaptiveVolume(checked)
                             }
                         }
                     }
                 }
             }
+        }
 
-            // Auto power-off — a choice, not a toggle
-            Card { appWindow: root.appWindow;
-                Layout.fillWidth: true
-                Layout.preferredHeight: 112
-                hovered: powerHover.hovered
-                HoverHandler { id: powerHover }
+        // Auto power off: the wide row with a picker on the right.
+        Card { appWindow: root.appWindow;
+            Layout.fillWidth: true
+            Layout.preferredHeight: 84
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 18
+                spacing: 16
+                Rectangle {
+                    width: 48; height: 48; radius: 24
+                    color: Theme.surfaceHi
+                    border.width: 1
+                    border.color: Theme.line
+                    Glyph { appWindow: root.appWindow; anchors.centerIn: parent; path: appWindow.icons.clock; size: 22; weight: 1.6; color: Theme.txt }
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Text { textFormat: Text.PlainText; text: appWindow.tr("auto_power_off"); color: Theme.txt; font.pixelSize: 15; font.weight: Font.DemiBold }
+                    Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: appWindow.tr("auto_power_off_desc"); color: Theme.txtDim; font.pixelSize: 12; elide: Text.ElideRight }
+                }
+                ComboBox {
+                    id: powerCombo
+                    implicitWidth: 150
+                    implicitHeight: 40
+                    enabled: controller.connected
+                    model: [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_15min"), appWindow.tr("apo_30min"), appWindow.tr("apo_1h"), appWindow.tr("apo_3h")]
+                    currentIndex: root.known("autoPowerOff") ? controller.autoPowerOff : -1
+                    Connections {
+                        target: controller
+                        function onStateChanged() { powerCombo.currentIndex = Qt.binding(function() { return root.known("autoPowerOff") ? controller.autoPowerOff : -1 }) }
+                    }
+                    onActivated: controller.setAutoPowerOff(index)
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 20
-                    anchors.rightMargin: 20
-                    spacing: 15
-
-                    Rectangle {
-                        Layout.preferredWidth: 44
-                        Layout.preferredHeight: 44
-                        radius: 14
-                        color: Theme.surfaceSunk
+                    background: Rectangle {
+                        radius: Theme.controlRadius
+                        color: powerCombo.hovered ? Theme.surfaceHi : Theme.surface
                         border.width: 1
-                        border.color: Theme.line
-                        Glyph { appWindow: root.appWindow;
-                            anchors.centerIn: parent
-                            path: appWindow.icons.power
-                            size: 21
-                            color: Theme.txtFaint
-                        }
+                        border.color: powerCombo.hovered ? Theme.lineHi : Theme.line
+                        Behavior on color { ColorAnimation { duration: Theme.tFast } }
                     }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 3
-                        Text {
-                            textFormat: Text.PlainText
-                            text: appWindow.tr("auto_power_off")
-                            color: Theme.txt
-                            font.pixelSize: 15
-                            font.weight: Font.DemiBold
-                        }
-                        Text {
-                            textFormat: Text.PlainText
-                            Layout.fillWidth: true
-                            text: appWindow.tr("auto_power_off_desc")
-                            color: Theme.txtFaint
-                            font.pixelSize: 11
-                            wrapMode: Text.WordWrap
-                        }
+                    contentItem: Text {
+                        textFormat: Text.PlainText
+                        leftPadding: 14
+                        rightPadding: 30
+                        text: powerCombo.displayText
+                        color: Theme.txt
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
                     }
-
-                    ComboBox {
-                        id: powerCombo
-                        implicitWidth: 134
-                        implicitHeight: 38
-                        model: [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_15min"), appWindow.tr("apo_30min"), appWindow.tr("apo_1h"), appWindow.tr("apo_3h")]
-                        currentIndex: controller.featureStatus.autoPowerOff && controller.featureStatus.autoPowerOff.availability === "valid" ? controller.autoPowerOff : -1
-                        Connections {
-                            target: controller
-                            function onStateChanged() { powerCombo.currentIndex = Qt.binding(function() {
-                                return controller.featureStatus.autoPowerOff && controller.featureStatus.autoPowerOff.availability === "valid" ? controller.autoPowerOff : -1
-                            }) }
-                        }
-                        onActivated: controller.setAutoPowerOff(index)
-
-                        background: Rectangle {
-                            radius: 11
-                            color: powerCombo.hovered ? Theme.surfaceHi : Theme.surfaceSunk
-                            border.width: 1
-                            border.color: powerCombo.hovered ? Theme.lineHi : Theme.line
-                            Behavior on color { ColorAnimation { duration: Theme.tFast } }
-                        }
-
-                        contentItem: Text {
-                            textFormat: Text.PlainText
-                            leftPadding: 13
-                            rightPadding: 28
-                            text: powerCombo.displayText
-                            color: Theme.txt
-                            font.pixelSize: 12
-                            verticalAlignment: Text.AlignVCenter
-                            elide: Text.ElideRight
-                        }
-
-                        indicator: Glyph { appWindow: root.appWindow;
-                            x: powerCombo.width - width - 12
-                            y: powerCombo.height / 2 - height / 2
-                            size: 14
-                            color: Theme.txtFaint
-                            path: appWindow.icons.chevron
-                            rotation: powerCombo.popup.visible ? 180 : 0
-                            Behavior on rotation { NumberAnimation { duration: Theme.tBase } }
-                        }
+                    indicator: Glyph { appWindow: root.appWindow;
+                        x: powerCombo.width - width - 12
+                        y: powerCombo.height / 2 - height / 2
+                        size: 14
+                        color: Theme.txtDim
+                        path: appWindow.icons.chevron
+                        rotation: powerCombo.popup.visible ? 180 : 0
+                        Behavior on rotation { NumberAnimation { duration: Theme.tBase } }
                     }
                 }
             }
