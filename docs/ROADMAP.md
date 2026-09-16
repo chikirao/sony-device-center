@@ -105,8 +105,10 @@ Sound Control, в протоколе недоступно, оставить де
 Suggested / сцены — Фаза «будущее»; Save as Custom — библиотека EQ (Фаза 1).
 
 Технически:
-- [ ] **Вынести Main.qml** (2600+ строк) на компоненты по страницам —
-  обязательный первый шаг, иначе редизайн нечитаем в ревью (upstream #21).
+- [x] **Extract Main.qml into components and pages.** Six pages, Sidebar and
+  eleven reusable controls; explicit window dependency, unchanged dark styling.
+  QML loading checks cover both simulated models, en/ru and both window sizes
+  (upstream #21).
 - [ ] **`Theme` singleton** с токенами (цвета, радиусы, шрифты); текущие
   токены из начала `Main.qml` — первая тема «Dark», макет — «Light».
 - [ ] **Шрифты — решено:** **Doto** для чисел и dot-matrix заголовков,

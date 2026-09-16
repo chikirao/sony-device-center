@@ -155,6 +155,7 @@ if(BUILD_TESTING)
     if(TARGET Qt6::Test)
         add_executable(sony-ui-tests
             ../../tests/ui/DeviceControllerTests.cpp
+            qml.qrc
             src/DeviceCenterController.cpp include/DeviceCenterController.h
             src/DeviceBackend.cpp include/DeviceBackend.h
             src/I18nManager.cpp include/I18nManager.h
@@ -166,9 +167,9 @@ if(BUILD_TESTING)
             target_link_libraries(sony-ui-tests PRIVATE WindowsApp)
         endif()
         target_compile_definitions(sony-ui-tests PRIVATE SONY_DEVICE_CENTER_VERSION="${SonyDeviceCenter_VERSION}")
-        target_link_libraries(sony-ui-tests PRIVATE Qt6::Test Qt6::Gui Qt6::Widgets sony-core)
-        add_test(NAME "device-controller-worker-integration" COMMAND sony-ui-tests)
-        set_tests_properties("device-controller-worker-integration" PROPERTIES TIMEOUT 25)
+        target_link_libraries(sony-ui-tests PRIVATE Qt6::Test Qt6::Gui Qt6::Widgets Qt6::Qml Qt6::Quick Qt6::QuickControls2 sony-core)
+        add_test(NAME "device-controller-worker-integration" COMMAND sony-ui-tests -o -,txt -o ui-test-results.txt,txt)
+        set_tests_properties("device-controller-worker-integration" PROPERTIES TIMEOUT 60)
         # The tray icon renderer needs a GUI platform. Headless CI runners
         # have none; Windows always has one, and its deployed plugin folder
         # next to the binaries carries only qwindows.

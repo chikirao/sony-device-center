@@ -3,6 +3,11 @@
 #include "TrayController.h"
 #include "NotificationController.h"
 #include <QImage>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQuickWindow>
+#include <QQuickStyle>
+#include <QDir>
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
 #include "sony/protocol/FrameCodec.h"
@@ -23,6 +28,58 @@ public:
 class DeviceControllerTests : public QObject {
     Q_OBJECT
 private slots:
+    void initTestCase() { QQuickStyle::setStyle("Basic"); }
+    void extractedPagesLoad_data() {
+        QTest::addColumn<QString>("model");
+        QTest::addColumn<QString>("language");
+        QTest::addColumn<QSize>("size");
+        for (const auto& model : {"WH-1000XM5", "WF-1000XM5"})
+            for (const auto& language : {"en", "ru"})
+                for (const auto size : {QSize(980, 660), QSize(1600, 1000)}) {
+                    const auto name = QString("%1-%2-%3").arg(model, language).arg(size.width());
+                    QTest::newRow(qPrintable(name)) << QString(model) << QString(language) << size;
+                }
+    }
+    void extractedPagesLoad() {
+        QFETCH(QString, model);
+        QFETCH(QString, language);
+        QFETCH(QSize, size);
+        auto simulated = core::createSimulatedDevice(model.toStdString());
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        const auto previousLanguage = controller.currentLanguage();
+        controller.setLanguage(language);
+        QQmlApplicationEngine engine;
+        QStringList warnings;
+        connect(&engine, &QQmlEngine::warnings, this, [&](const QList<QQmlError>& errors) {
+            for (const auto& error : errors) warnings.append(error.toString());
+        });
+        engine.rootContext()->setContextProperty("controller", &controller);
+        engine.rootContext()->setContextProperty("trayAvailable", false);
+        engine.rootContext()->setContextProperty("startHidden", false);
+        engine.load(QUrl("qrc:/qml/Main.qml"));
+        controller.setLanguage(previousLanguage);
+        QVERIFY2(!engine.rootObjects().isEmpty(), qPrintable(warnings.join("\n")));
+        auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
+        QVERIFY(window);
+        controller.setLanguage(language);
+        window->resize(size);
+        for (int page = 0; page < 6; ++page) {
+            QVERIFY(window->setProperty("navIndex", page));
+            const auto screenshotDirectory = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
+            QTest::qWait(screenshotDirectory.isEmpty() ? 30 : 400);
+            if (!screenshotDirectory.isEmpty()) {
+                QDir().mkpath(screenshotDirectory);
+                const auto path = QString("%1/%2-%3-%4-page%5.png")
+                    .arg(screenshotDirectory, model, language).arg(size.width()).arg(page);
+                QVERIFY(window->grabWindow().save(path));
+            }
+        }
+        controller.setLanguage(previousLanguage);
+        QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join("\n")));
+    }
     void startupDoesNotBlockGui() {
         auto service = std::make_shared<SlowService>();
         QElapsedTimer elapsed; elapsed.start();
