@@ -17,7 +17,7 @@
 
 ## Фаза 0 — быстрые фиксы
 
-- [ ] **`--simulated` для GUI на Windows.** `sonyd --simulated` на Windows
+- [x] **`--simulated` для GUI на Windows.** `sonyd --simulated` на Windows
   недоступен (нет IPC), а у GUI своего симулятора нет — UI нельзя проверить
   без наушников. Добавить флаг, подставляющий `FakeTransport` в
   `DeviceBackend`. Нужен для всей работы над UI, треем и темами.
@@ -25,7 +25,7 @@
   падает по памяти при параллельной сборке. Перейти на
   `qt_add_resources(... BIG_RESOURCES)` (ресурсы компилируются в объектные
   файлы напрямую) или ужать картинки устройств (сейчас по 1.5 МБ каждая).
-- [ ] **Иконка Windows-exe.** `apps/device-center/CMakeLists.txt` собирает exe
+- [x] **Иконка Windows-exe.** `apps/device-center/CMakeLists.txt` собирает exe
   без ресурсного `.rc`, поэтому у `sony-device-center.exe`, панели задач и
   ярлыка из инсталлятора нет иконки (`.ico` сейчас используется только для
   самого NSIS-инсталлятора). Добавить `packaging/windows/app.rc` с
