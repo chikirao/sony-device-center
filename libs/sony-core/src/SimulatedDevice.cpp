@@ -43,6 +43,15 @@ size_t SimulatedDeviceTransport::send(std::span<const std::byte> data) {
     return written;
 }
 
+void SimulatedDeviceTransport::setBattery(int level, bool charging) {
+    std::lock_guard lock(_stateMutex);
+    _battery = static_cast<uint8_t>(std::clamp(level, 0, 100));
+    _charging = charging;
+    if (!isConnected()) return;
+    // POWER_NTFY 25 00 <level> <charging>
+    reply({0x25, 0x00, _battery, static_cast<uint8_t>(_charging ? 1 : 0)});
+}
+
 void SimulatedDeviceTransport::reply(std::vector<uint8_t> payload) {
     queueIncoming(FrameCodec::encode(SonyFrame{
         .type = DataType::DataMdr,

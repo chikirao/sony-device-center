@@ -9,8 +9,17 @@ ApplicationWindow {
     height: 780
     minimumWidth: 980
     minimumHeight: 660
-    visible: true
+    visible: !startHidden
     title: "Sony Device Center — " + controller.deviceName
+
+    // Closing hides the window when a tray icon exists to bring it back;
+    // quitting for real is the tray menu's job.
+    onClosing: function(close) {
+        if (trayAvailable && controller.minimizeToTray) {
+            close.accepted = false
+            window.hide()
+        }
+    }
     color: bg
 
     footer: Rectangle {
@@ -1924,9 +1933,20 @@ ApplicationWindow {
             // 6 · SETTINGS
             // ==================================================
             ViewPage {
-                ColumnLayout {
+                // More cards than fit the minimum window height, so this
+                // page scrolls; the others still fit and don't.
+                Flickable {
                     anchors.fill: parent
-                    anchors.margins: 36
+                    contentWidth: width
+                    contentHeight: settingsColumn.implicitHeight + 72
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+                ColumnLayout {
+                    id: settingsColumn
+                    x: 36; y: 36
+                    width: parent.width - 72
                     spacing: 22
 
                     ColumnLayout {
@@ -1951,9 +1971,10 @@ ApplicationWindow {
                     // Card 1: System & Interface Preferences
                     Card {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 180
+                        Layout.preferredHeight: systemColumn.implicitHeight + 44
 
                         ColumnLayout {
+                            id: systemColumn
                             anchors.fill: parent
                             anchors.margins: 22
                             spacing: 16
@@ -2000,6 +2021,59 @@ ApplicationWindow {
                                 NeoSwitch {
                                     confirmedChecked: controller.autostart
                                     onToggled: controller.setAutostart(checked)
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: window.line
+                                visible: trayAvailable
+                            }
+
+                            // Row: minimise to tray (only offered when a tray exists)
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 16
+                                visible: trayAvailable
+
+                                Rectangle {
+                                    Layout.preferredWidth: 38
+                                    Layout.preferredHeight: 38
+                                    radius: 11
+                                    color: Qt.rgba(window.accent.r, window.accent.g, window.accent.b, 0.14)
+                                    border.width: 1
+                                    border.color: Qt.rgba(window.accent.r, window.accent.g, window.accent.b, 0.35)
+
+                                    Glyph {
+                                        anchors.centerIn: parent
+                                        path: window.icons.headphones
+                                        size: 18
+                                        color: window.accentSoft
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 3
+                                    Text {
+                                        textFormat: Text.PlainText
+                                        text: window.tr("minimize_to_tray")
+                                        color: window.txt
+                                        font.pixelSize: 14
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Text {
+                                        textFormat: Text.PlainText
+                                        text: window.tr("minimize_to_tray_desc")
+                                        color: window.txtDim
+                                        font.pixelSize: 12
+                                    }
+                                }
+
+                                NeoSwitch {
+                                    confirmedChecked: controller.minimizeToTray
+                                    onToggled: controller.setMinimizeToTray(checked)
                                 }
                             }
 
@@ -2152,6 +2226,111 @@ ApplicationWindow {
                                                 radius: 3
                                                 color: window.accent
                                             }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Card 2: Notifications (they go through the tray icon)
+                    Card {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: notifyColumn.implicitHeight + 44
+                        visible: trayAvailable
+
+                        ColumnLayout {
+                            id: notifyColumn
+                            anchors.fill: parent
+                            anchors.margins: 22
+                            spacing: 16
+
+                            Eyebrow { text: window.tr("notifications") }
+
+                            Repeater {
+                                model: [
+                                    { key: "low", title: window.tr("notify_low_battery_setting"), desc: window.tr("notify_low_battery_setting_desc"), glyph: window.icons.bolt },
+                                    { key: "conn", title: window.tr("notify_connection_setting"), desc: window.tr("notify_connection_setting_desc"), glyph: window.icons.headphones },
+                                    { key: "charged", title: window.tr("notify_charged_setting"), desc: window.tr("notify_charged_setting_desc"), glyph: window.icons.sparkle }
+                                ]
+                                delegate: RowLayout {
+                                    id: notifyRow
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 16
+
+                                    Rectangle {
+                                        Layout.preferredWidth: 38
+                                        Layout.preferredHeight: 38
+                                        radius: 11
+                                        color: Qt.rgba(window.accent.r, window.accent.g, window.accent.b, 0.14)
+                                        border.width: 1
+                                        border.color: Qt.rgba(window.accent.r, window.accent.g, window.accent.b, 0.35)
+                                        Glyph { anchors.centerIn: parent; path: notifyRow.modelData.glyph; size: 18; color: window.accentSoft }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 3
+                                        Text {
+                                            textFormat: Text.PlainText
+                                            text: notifyRow.modelData.title
+                                            color: window.txt
+                                            font.pixelSize: 14
+                                            font.weight: Font.DemiBold
+                                        }
+                                        Text {
+                                            textFormat: Text.PlainText
+                                            text: notifyRow.modelData.desc
+                                            color: window.txtDim
+                                            font.pixelSize: 12
+                                        }
+                                    }
+
+                                    // Threshold picker sits only on the low-battery row.
+                                    ComboBox {
+                                        id: thresholdCombo
+                                        visible: notifyRow.modelData.key === "low"
+                                        implicitWidth: 92
+                                        implicitHeight: 38
+                                        model: [10, 15, 20, 25, 30]
+                                        currentIndex: Math.max(0, model.indexOf(controller.lowBatteryThreshold))
+                                        onActivated: controller.setLowBatteryThreshold(model[index])
+                                        displayText: currentText + "%"
+
+                                        background: Rectangle {
+                                            radius: 11
+                                            color: thresholdCombo.hovered ? window.surfaceHi : window.surfaceSunk
+                                            border.width: 1
+                                            border.color: thresholdCombo.hovered ? window.lineHi : window.line
+                                        }
+                                        contentItem: Text {
+                                            textFormat: Text.PlainText
+                                            leftPadding: 13
+                                            rightPadding: 28
+                                            text: thresholdCombo.displayText
+                                            color: window.txt
+                                            font.pixelSize: 12
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        indicator: Glyph {
+                                            x: thresholdCombo.width - width - 12
+                                            y: thresholdCombo.height / 2 - height / 2
+                                            size: 14
+                                            color: window.txtFaint
+                                            path: window.icons.chevron
+                                            rotation: thresholdCombo.popup.visible ? 180 : 0
+                                        }
+                                    }
+
+                                    NeoSwitch {
+                                        confirmedChecked: notifyRow.modelData.key === "low" ? controller.notifyLowBattery
+                                                        : notifyRow.modelData.key === "conn" ? controller.notifyConnection
+                                                        : controller.notifyCharged
+                                        onToggled: {
+                                            if (notifyRow.modelData.key === "low") controller.setNotifyLowBattery(checked)
+                                            else if (notifyRow.modelData.key === "conn") controller.setNotifyConnection(checked)
+                                            else controller.setNotifyCharged(checked)
                                         }
                                     }
                                 }
@@ -2368,7 +2547,7 @@ ApplicationWindow {
                         wrapMode: Text.WordWrap
                     }
 
-                    Item { Layout.fillHeight: true }
+                }
                 }
             }
         }

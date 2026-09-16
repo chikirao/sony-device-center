@@ -1,5 +1,8 @@
 #include <QtTest>
 #include "DeviceCenterController.h"
+#include "TrayController.h"
+#include "NotificationController.h"
+#include <QImage>
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
 #include "sony/protocol/FrameCodec.h"
@@ -73,6 +76,54 @@ private slots:
         QCOMPARE(lastLevel, 15);
         QVERIFY2(noiseWrites <= 3, qPrintable(QString("expected the drag to coalesce, got %1 writes").arg(noiseWrites)));
     }
+    void trayIconReflectsBatteryAndConnection() {
+        // Rendering is pure: no tray needed, so it runs headless too.
+        auto pixel = [](const QIcon& icon, int x, int y) { return icon.pixmap(64, 64).toImage().pixelColor(x, y); };
+        const auto full = TrayController::renderIcon(87, false, true);
+        const auto low = TrayController::renderIcon(10, false, true);
+        const auto gone = TrayController::renderIcon(-1, false, false);
+        QVERIFY(!full.isNull());
+        // Top of the ring at 12 o'clock is inside the filled arc for any level > 0.
+        QCOMPARE(pixel(full, 32, 3).name(), QColor("#2DD4A7").name());
+        QCOMPARE(pixel(low, 32, 3).name(), QColor("#FF5A5F").name());
+        QCOMPARE(pixel(gone, 32, 3).name(), QColor("#3A3D48").name());
+        QCOMPARE(pixel(TrayController::renderIcon(50, true, true), 32, 3).name(), QColor("#7C8CFF").name());
+    }
+    void notificationsFireOnceAtEachEdge() {
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        controller.setNotifyCharged(true);
+        controller.setLowBatteryThreshold(20);
+        TrayController tray(controller);
+        NotificationController notifications(controller, tray);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy() && controller.batteryLevel() == 87, 5000);
+        // Starting next to connected headphones is a baseline, not an event.
+        QCOMPARE(notifications.messageCount(), 0);
+
+        auto settle = [&](int level) { QTRY_COMPARE_WITH_TIMEOUT(controller.batteryLevel(), level, 3000); QTest::qWait(50); };
+        simulated.transport->setBattery(18, false); settle(18);
+        QCOMPARE(notifications.messageCount(), 1);
+        QVERIFY(notifications.lastMessage().contains("18"));
+        simulated.transport->setBattery(17, false); settle(17);
+        QVERIFY2(notifications.messageCount() == 1, "still low: must not repeat");
+        simulated.transport->setBattery(9, false); settle(9);
+        QVERIFY2(notifications.messageCount() == 2, "critical step announces again");
+        QVERIFY(notifications.lastMessage().contains("9"));
+        simulated.transport->setBattery(100, true); settle(100);
+        QCOMPARE(notifications.messageCount(), 3);
+        QVERIFY(notifications.lastMessage().contains(controller.t("notify_charged")));
+        QTest::qWait(1200);
+        QVERIFY2(notifications.messageCount() == 3, "charged: polling must not repeat it");
+
+        controller.setNotifyConnection(true);
+        service->activeDevice()->powerOff();
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.isConnected(), 5000);
+        QTest::qWait(50);
+        QCOMPARE(notifications.messageCount(), 4);
+        QVERIFY(notifications.lastMessage().contains(controller.t("notify_disconnected")));
+    }
     void failedActionPreservesConfirmedValue() {
         auto transport = std::make_shared<ReplyTransport>();
         auto service = std::make_shared<core::DeviceService>(transport);
@@ -108,5 +159,6 @@ private slots:
         QCoreApplication::processEvents();
     }
 };
-QTEST_GUILESS_MAIN(DeviceControllerTests)
+// A full (widgets) application: the tray icon renderer paints with fonts.
+QTEST_MAIN(DeviceControllerTests)
 #include "DeviceControllerTests.moc"

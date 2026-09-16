@@ -13,7 +13,7 @@ set(CMAKE_AUTORCC ON)
 option(SONY_REQUIRE_QT
     "Fail configuration when Qt 6 is missing instead of skipping the desktop app" OFF)
 
-find_package(Qt6 COMPONENTS Core Gui Qml Quick QuickControls2 QUIET)
+find_package(Qt6 COMPONENTS Core Gui Widgets Qml Quick QuickControls2 QUIET)
 
 if(NOT Qt6_FOUND)
     if(SONY_REQUIRE_QT)
@@ -34,6 +34,12 @@ add_executable(sony-device-center
     include/DeviceCenterController.h
     src/I18nManager.cpp
     include/I18nManager.h
+    src/TrayController.cpp
+    include/TrayController.h
+    src/NotificationController.cpp
+    include/NotificationController.h
+    src/WindowsToast.cpp
+    include/WindowsToast.h
     qml.qrc
 )
 
@@ -52,6 +58,7 @@ target_link_libraries(sony-device-center
     PRIVATE
         Qt6::Core
         Qt6::Gui
+        Qt6::Widgets
         Qt6::Qml
         Qt6::Quick
         Qt6::QuickControls2
@@ -117,6 +124,10 @@ if(WIN32)
     target_sources(sony-device-center PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/../../packaging/windows/sony-device-center.rc")
 
+    # C++/WinRT (toast notifications) resolves activation factories through
+    # the umbrella library.
+    target_link_libraries(sony-device-center PRIVATE WindowsApp)
+
     # A bare .exe cannot start without the Qt DLLs and QML module tree beside
     # it, so let windeployqt populate the install prefix at install time.
     get_target_property(_qt_qmake Qt6::qmake IMPORTED_LOCATION)
@@ -146,12 +157,25 @@ if(BUILD_TESTING)
             ../../tests/ui/DeviceControllerTests.cpp
             src/DeviceCenterController.cpp include/DeviceCenterController.h
             src/DeviceBackend.cpp include/DeviceBackend.h
-            src/I18nManager.cpp include/I18nManager.h)
+            src/I18nManager.cpp include/I18nManager.h
+            src/TrayController.cpp include/TrayController.h
+            src/NotificationController.cpp include/NotificationController.h
+            src/WindowsToast.cpp include/WindowsToast.h)
         target_include_directories(sony-ui-tests PRIVATE include)
+        if(WIN32)
+            target_link_libraries(sony-ui-tests PRIVATE WindowsApp)
+        endif()
         target_compile_definitions(sony-ui-tests PRIVATE SONY_DEVICE_CENTER_VERSION="${SonyDeviceCenter_VERSION}")
-        target_link_libraries(sony-ui-tests PRIVATE Qt6::Test Qt6::Gui sony-core)
+        target_link_libraries(sony-ui-tests PRIVATE Qt6::Test Qt6::Gui Qt6::Widgets sony-core)
         add_test(NAME "device-controller-worker-integration" COMMAND sony-ui-tests)
         set_tests_properties("device-controller-worker-integration" PROPERTIES TIMEOUT 25)
+        # The tray icon renderer needs a GUI platform. Headless CI runners
+        # have none; Windows always has one, and its deployed plugin folder
+        # next to the binaries carries only qwindows.
+        if(NOT WIN32)
+            set_tests_properties("device-controller-worker-integration" PROPERTIES
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+        endif()
     endif()
 endif()
 

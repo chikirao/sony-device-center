@@ -57,6 +57,11 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(QVariantList pairedDevices READ pairedDevices NOTIFY pairedDevicesChanged)
 
     Q_PROPERTY(bool autostart READ autostart WRITE setAutostart NOTIFY autostartChanged)
+    Q_PROPERTY(bool minimizeToTray READ minimizeToTray WRITE setMinimizeToTray NOTIFY minimizeToTrayChanged)
+    Q_PROPERTY(bool notifyLowBattery READ notifyLowBattery WRITE setNotifyLowBattery NOTIFY notificationSettingsChanged)
+    Q_PROPERTY(bool notifyConnection READ notifyConnection WRITE setNotifyConnection NOTIFY notificationSettingsChanged)
+    Q_PROPERTY(bool notifyCharged READ notifyCharged WRITE setNotifyCharged NOTIFY notificationSettingsChanged)
+    Q_PROPERTY(int lowBatteryThreshold READ lowBatteryThreshold WRITE setLowBatteryThreshold NOTIFY notificationSettingsChanged)
     Q_PROPERTY(QString appVersion READ appVersion CONSTANT)
     Q_PROPERTY(QString currentLanguage READ currentLanguage WRITE setLanguage NOTIFY languageChanged)
     Q_PROPERTY(QVariantList availableLanguages READ availableLanguages CONSTANT)
@@ -120,6 +125,16 @@ public:
     Q_INVOKABLE void powerOff();
 
     Q_INVOKABLE void setAutostart(bool enable);
+    [[nodiscard]] bool minimizeToTray() const;
+    Q_INVOKABLE void setMinimizeToTray(bool enable);
+    [[nodiscard]] bool notifyLowBattery() const { return _notifyLowBattery; }
+    [[nodiscard]] bool notifyConnection() const { return _notifyConnection; }
+    [[nodiscard]] bool notifyCharged() const { return _notifyCharged; }
+    [[nodiscard]] int lowBatteryThreshold() const { return _lowBatteryThreshold; }
+    Q_INVOKABLE void setNotifyLowBattery(bool enable);
+    Q_INVOKABLE void setNotifyConnection(bool enable);
+    Q_INVOKABLE void setNotifyCharged(bool enable);
+    Q_INVOKABLE void setLowBatteryThreshold(int percent);
     Q_INVOKABLE void setLanguage(const QString& langCode);
     Q_INVOKABLE QString t(const QString& key) const;
     Q_INVOKABLE void openUrl(const QString& url);
@@ -133,6 +148,8 @@ signals:
     void capabilitiesChanged();
     void pairedDevicesChanged();
     void autostartChanged();
+    void minimizeToTrayChanged();
+    void notificationSettingsChanged();
     void languageChanged();
 
 private:
@@ -167,6 +184,9 @@ private:
     int _autoPowerOff{0};
     QVariantList _pairedDevices;
     QString _currentLanguage{"en"};
+    bool _minimizeToTray{true};
+    bool _notifyLowBattery{true}, _notifyConnection{true}, _notifyCharged{false};
+    int _lowBatteryThreshold{20};
 
 };
 

@@ -28,6 +28,11 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
     : QObject(parent) {
     QSettings settings("SonyBridge", "SonyDeviceCenter");
     _currentLanguage = settings.value("language", "en").toString();
+    _minimizeToTray = settings.value("minimizeToTray", true).toBool();
+    _notifyLowBattery = settings.value("notifyLowBattery", true).toBool();
+    _notifyConnection = settings.value("notifyConnection", true).toBool();
+    _notifyCharged = settings.value("notifyCharged", false).toBool();
+    _lowBatteryThreshold = settings.value("lowBatteryThreshold", 20).toInt();
     _backend = new DeviceBackend(std::move(service));
     _backend->moveToThread(&_worker);
     connect(&_worker, &QThread::started, _backend, &DeviceBackend::start);
@@ -216,7 +221,7 @@ void DeviceCenterController::setAutostart(bool enable) {
             out << "Type=Application\n";
             out << "Name=Sony Device Center\n";
             out << "Comment=Unofficial open-source companion for Sony WH/WF/LinkBuds audio devices\n";
-            out << "Exec=" << QCoreApplication::applicationFilePath() << "\n";
+            out << "Exec=" << QCoreApplication::applicationFilePath() << " --minimized\n";
             out << "Icon=sony-device-center\n";
             out << "Terminal=false\n";
             out << "Categories=Audio;AudioVideo;Settings;\n";
@@ -229,12 +234,46 @@ void DeviceCenterController::setAutostart(bool enable) {
     QSettings bootSettings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     if (enable) {
         QString appPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
-        bootSettings.setValue("SonyDeviceCenter", "\"" + appPath + "\"");
+        bootSettings.setValue("SonyDeviceCenter", "\"" + appPath + "\" --minimized");
     } else {
         bootSettings.remove("SonyDeviceCenter");
     }
 #endif
     emit autostartChanged();
+}
+
+bool DeviceCenterController::minimizeToTray() const { return _minimizeToTray; }
+void DeviceCenterController::setMinimizeToTray(bool enable) {
+    if (_minimizeToTray == enable) return;
+    _minimizeToTray = enable;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("minimizeToTray", enable);
+    emit minimizeToTrayChanged();
+}
+
+void DeviceCenterController::setNotifyLowBattery(bool enable) {
+    if (_notifyLowBattery == enable) return;
+    _notifyLowBattery = enable;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("notifyLowBattery", enable);
+    emit notificationSettingsChanged();
+}
+void DeviceCenterController::setNotifyConnection(bool enable) {
+    if (_notifyConnection == enable) return;
+    _notifyConnection = enable;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("notifyConnection", enable);
+    emit notificationSettingsChanged();
+}
+void DeviceCenterController::setNotifyCharged(bool enable) {
+    if (_notifyCharged == enable) return;
+    _notifyCharged = enable;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("notifyCharged", enable);
+    emit notificationSettingsChanged();
+}
+void DeviceCenterController::setLowBatteryThreshold(int percent) {
+    percent = std::clamp(percent, 5, 50);
+    if (_lowBatteryThreshold == percent) return;
+    _lowBatteryThreshold = percent;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("lowBatteryThreshold", percent);
+    emit notificationSettingsChanged();
 }
 
 QString DeviceCenterController::appVersion() const {
