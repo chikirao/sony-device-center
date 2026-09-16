@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -28,7 +29,7 @@ ViewPage {
             Text {
                 textFormat: Text.PlainText
                 text: appWindow.tr("settings_title")
-                color: appWindow.txt
+                color: Theme.txt
                 font.pixelSize: 28
                 font.weight: Font.DemiBold
                 font.letterSpacing: -0.6
@@ -36,12 +37,60 @@ ViewPage {
             Text {
                 textFormat: Text.PlainText
                 text: appWindow.tr("settings_subtitle")
-                color: appWindow.txtDim
+                color: Theme.txtDim
                 font.pixelSize: 13
             }
         }
 
         // Card 1: System & Interface Preferences
+        Card {
+            appWindow: root.appWindow
+            Layout.fillWidth: true
+            implicitHeight: appearanceColumn.implicitHeight + 40
+            ColumnLayout {
+                id: appearanceColumn
+                anchors.fill: parent
+                anchors.margins: 20
+                spacing: 14
+                Eyebrow { appWindow: root.appWindow; text: appWindow.tr("appearance") }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text { text: appWindow.tr("icon_antialiasing"); color: Theme.txt; Layout.fillWidth: true; wrapMode: Text.Wrap }
+                    NeoSwitch {
+                        appWindow: root.appWindow
+                        objectName: "iconSmoothingSwitch"
+                        confirmedChecked: controller.iconAntialiasing
+                        onToggled: controller.setIconAntialiasing(checked)
+                    }
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text { text: appWindow.tr("theme"); color: Theme.txt; Layout.fillWidth: true }
+                    ComboBox {
+                        objectName: "themeSelector"
+                        Layout.preferredWidth: 200
+                        model: [appWindow.tr("theme_dark"), appWindow.tr("theme_light"), appWindow.tr("theme_system")]
+                        currentIndex: ["dark", "light", "system"].indexOf(controller.themeMode)
+                        onActivated: controller.setThemeMode(["dark", "light", "system"][currentIndex])
+                    }
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Text { text: appWindow.tr("animations"); color: Theme.txt }
+                        Text { text: appWindow.tr("animations_desc"); color: Theme.txtDim; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                    }
+                    NeoSwitch {
+                        appWindow: root.appWindow
+                        objectName: "animationsSwitch"
+                        confirmedChecked: controller.animationsEnabled
+                        onToggled: controller.setAnimationsEnabled(checked)
+                    }
+                }
+            }
+        }
+
         Card { appWindow: root.appWindow;
             Layout.fillWidth: true
             Layout.preferredHeight: systemColumn.implicitHeight + 44
@@ -61,15 +110,15 @@ ViewPage {
                         Layout.preferredWidth: 38
                         Layout.preferredHeight: 38
                         radius: 11
-                        color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.14)
+                        color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
                         border.width: 1
-                        border.color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.35)
+                        border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
 
                         Glyph { appWindow: root.appWindow;
                             anchors.centerIn: parent
                             path: appWindow.icons.power
                             size: 18
-                            color: appWindow.accentSoft
+                            color: Theme.accentSoft
                         }
                     }
 
@@ -79,14 +128,14 @@ ViewPage {
                         Text {
                             textFormat: Text.PlainText
                             text: appWindow.tr("init_with_os")
-                            color: appWindow.txt
+                            color: Theme.txt
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
                         }
                         Text {
                             textFormat: Text.PlainText
                             text: appWindow.tr("init_with_os_desc")
-                            color: appWindow.txtDim
+                            color: Theme.txtDim
                             font.pixelSize: 12
                         }
                     }
@@ -100,7 +149,7 @@ ViewPage {
                 Rectangle {
                     Layout.fillWidth: true
                     height: 1
-                    color: appWindow.line
+                    color: Theme.line
                     visible: trayAvailable
                 }
 
@@ -114,15 +163,15 @@ ViewPage {
                         Layout.preferredWidth: 38
                         Layout.preferredHeight: 38
                         radius: 11
-                        color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.14)
+                        color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
                         border.width: 1
-                        border.color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.35)
+                        border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
 
                         Glyph { appWindow: root.appWindow;
                             anchors.centerIn: parent
                             path: appWindow.icons.headphones
                             size: 18
-                            color: appWindow.accentSoft
+                            color: Theme.accentSoft
                         }
                     }
 
@@ -132,14 +181,14 @@ ViewPage {
                         Text {
                             textFormat: Text.PlainText
                             text: appWindow.tr("minimize_to_tray")
-                            color: appWindow.txt
+                            color: Theme.txt
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
                         }
                         Text {
                             textFormat: Text.PlainText
                             text: appWindow.tr("minimize_to_tray_desc")
-                            color: appWindow.txtDim
+                            color: Theme.txtDim
                             font.pixelSize: 12
                         }
                     }
@@ -153,7 +202,7 @@ ViewPage {
                 Rectangle {
                     Layout.fillWidth: true
                     height: 1
-                    color: appWindow.line
+                    color: Theme.line
                 }
 
                 // Row 2: Language Selector
@@ -165,15 +214,15 @@ ViewPage {
                         Layout.preferredWidth: 38
                         Layout.preferredHeight: 38
                         radius: 11
-                        color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.14)
+                        color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
                         border.width: 1
-                        border.color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.35)
+                        border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
 
                         Glyph { appWindow: root.appWindow;
                             anchors.centerIn: parent
                             path: appWindow.icons.globe
                             size: 18
-                            color: appWindow.accentSoft
+                            color: Theme.accentSoft
                         }
                     }
 
@@ -183,14 +232,14 @@ ViewPage {
                         Text {
                             textFormat: Text.PlainText
                             text: appWindow.tr("language")
-                            color: appWindow.txt
+                            color: Theme.txt
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
                         }
                         Text {
                             textFormat: Text.PlainText
                             text: appWindow.tr("language_desc")
-                            color: appWindow.txtDim
+                            color: Theme.txtDim
                             font.pixelSize: 12
                         }
                     }
@@ -220,10 +269,10 @@ ViewPage {
 
                         background: Rectangle {
                             radius: 11
-                            color: langCombo.hovered ? appWindow.surfaceHi : appWindow.surfaceSunk
+                            color: langCombo.hovered ? Theme.surfaceHi : Theme.surfaceSunk
                             border.width: 1
-                            border.color: langCombo.hovered ? appWindow.lineHi : appWindow.line
-                            Behavior on color { ColorAnimation { duration: appWindow.tFast } }
+                            border.color: langCombo.hovered ? Theme.lineHi : Theme.line
+                            Behavior on color { ColorAnimation { duration: Theme.tFast } }
                         }
 
                         contentItem: Text {
@@ -231,7 +280,7 @@ ViewPage {
                             leftPadding: 14
                             rightPadding: 28
                             text: langCombo.displayText
-                            color: appWindow.txt
+                            color: Theme.txt
                             font.pixelSize: 13
                             font.weight: Font.Medium
                             verticalAlignment: Text.AlignVCenter
@@ -242,10 +291,10 @@ ViewPage {
                             x: langCombo.width - width - 12
                             y: langCombo.height / 2 - height / 2
                             size: 14
-                            color: appWindow.txtFaint
+                            color: Theme.txtFaint
                             path: appWindow.icons.chevron
                             rotation: langCombo.popup.visible ? 180 : 0
-                            Behavior on rotation { NumberAnimation { duration: appWindow.tBase } }
+                            Behavior on rotation { NumberAnimation { duration: Theme.tBase } }
                         }
 
                         popup: Popup {
@@ -254,10 +303,10 @@ ViewPage {
                             implicitHeight: Math.min(contentItem.implicitHeight + 12, 260)
                             padding: 6
                             background: Rectangle {
-                                radius: 12
-                                color: appWindow.surface
+                                radius: Theme.controlRadius
+                                color: Theme.surface
                                 border.width: 1
-                                border.color: appWindow.lineHi
+                                border.color: Theme.lineHi
                             }
                             contentItem: ListView {
                                 clip: true
@@ -277,8 +326,8 @@ ViewPage {
 
                             background: Rectangle {
                                 radius: 8
-                                color: langDel.highlighted ? appWindow.surfaceHi : (langDel.hovered ? appWindow.surfaceHi : "transparent")
-                                Behavior on color { ColorAnimation { duration: appWindow.tFast } }
+                                color: langDel.highlighted ? Theme.surfaceHi : (langDel.hovered ? Theme.surfaceHi : "transparent")
+                                Behavior on color { ColorAnimation { duration: Theme.tFast } }
                             }
 
                             contentItem: RowLayout {
@@ -287,7 +336,7 @@ ViewPage {
                                     textFormat: Text.PlainText
                                     Layout.fillWidth: true
                                     text: modelData.name
-                                    color: (modelData.code === controller.currentLanguage) ? appWindow.accentSoft : appWindow.txt
+                                    color: (modelData.code === controller.currentLanguage) ? Theme.accentSoft : Theme.txt
                                     font.pixelSize: 13
                                     font.weight: (modelData.code === controller.currentLanguage) ? Font.DemiBold : Font.Normal
                                     verticalAlignment: Text.AlignVCenter
@@ -297,7 +346,7 @@ ViewPage {
                                     width: 6
                                     height: 6
                                     radius: 3
-                                    color: appWindow.accent
+                                    color: Theme.accent
                                 }
                             }
                         }
@@ -336,10 +385,10 @@ ViewPage {
                             Layout.preferredWidth: 38
                             Layout.preferredHeight: 38
                             radius: 11
-                            color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.14)
+                            color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
                             border.width: 1
-                            border.color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.35)
-                            Glyph { appWindow: root.appWindow; anchors.centerIn: parent; path: notifyRow.modelData.glyph; size: 18; color: appWindow.accentSoft }
+                            border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
+                            Glyph { appWindow: root.appWindow; anchors.centerIn: parent; path: notifyRow.modelData.glyph; size: 18; color: Theme.accentSoft }
                         }
 
                         ColumnLayout {
@@ -348,14 +397,14 @@ ViewPage {
                             Text {
                                 textFormat: Text.PlainText
                                 text: notifyRow.modelData.title
-                                color: appWindow.txt
+                                color: Theme.txt
                                 font.pixelSize: 14
                                 font.weight: Font.DemiBold
                             }
                             Text {
                                 textFormat: Text.PlainText
                                 text: notifyRow.modelData.desc
-                                color: appWindow.txtDim
+                                color: Theme.txtDim
                                 font.pixelSize: 12
                             }
                         }
@@ -373,16 +422,16 @@ ViewPage {
 
                             background: Rectangle {
                                 radius: 11
-                                color: thresholdCombo.hovered ? appWindow.surfaceHi : appWindow.surfaceSunk
+                                color: thresholdCombo.hovered ? Theme.surfaceHi : Theme.surfaceSunk
                                 border.width: 1
-                                border.color: thresholdCombo.hovered ? appWindow.lineHi : appWindow.line
+                                border.color: thresholdCombo.hovered ? Theme.lineHi : Theme.line
                             }
                             contentItem: Text {
                                 textFormat: Text.PlainText
                                 leftPadding: 13
                                 rightPadding: 28
                                 text: thresholdCombo.displayText
-                                color: appWindow.txt
+                                color: Theme.txt
                                 font.pixelSize: 12
                                 verticalAlignment: Text.AlignVCenter
                             }
@@ -390,7 +439,7 @@ ViewPage {
                                 x: thresholdCombo.width - width - 12
                                 y: thresholdCombo.height / 2 - height / 2
                                 size: 14
-                                color: appWindow.txtFaint
+                                color: Theme.txtFaint
                                 path: appWindow.icons.chevron
                                 rotation: thresholdCombo.popup.visible ? 180 : 0
                             }
@@ -439,14 +488,14 @@ ViewPage {
                             Text {
                                 textFormat: Text.PlainText
                                 text: appWindow.tr("about_app")
-                                color: appWindow.txt
+                                color: Theme.txt
                                 font.pixelSize: 15
                                 font.weight: Font.DemiBold
                             }
                             Text {
                                 textFormat: Text.PlainText
                                 text: "Sony Device Center"
-                                color: appWindow.txtDim
+                                color: Theme.txtDim
                                 font.pixelSize: 12
                             }
                         }
@@ -455,16 +504,16 @@ ViewPage {
                             Layout.preferredHeight: 28
                             Layout.preferredWidth: verLabel.implicitWidth + 20
                             radius: 14
-                            color: appWindow.surfaceSunk
+                            color: Theme.surfaceSunk
                             border.width: 1
-                            border.color: appWindow.lineHi
+                            border.color: Theme.lineHi
 
                             Text {
                                 textFormat: Text.PlainText
                                 id: verLabel
                                 anchors.centerIn: parent
                                 text: "v" + controller.appVersion
-                                color: appWindow.accentSoft
+                                color: Theme.accentSoft
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
                             }
@@ -474,7 +523,7 @@ ViewPage {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: appWindow.line
+                        color: Theme.line
                     }
 
                     RowLayout {
@@ -487,7 +536,7 @@ ViewPage {
                             Text {
                                 textFormat: Text.PlainText
                                 text: "MDR V1 & V2 (C++20)"
-                                color: appWindow.txt
+                                color: Theme.txt
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                             }
@@ -499,7 +548,7 @@ ViewPage {
                             Text {
                                 textFormat: Text.PlainText
                                 text: "Qt 6 Quick / QML"
-                                color: appWindow.txt
+                                color: Theme.txt
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                             }
@@ -511,7 +560,7 @@ ViewPage {
                             Text {
                                 textFormat: Text.PlainText
                                 text: appWindow.tr("license_value")
-                                color: appWindow.txt
+                                color: Theme.txt
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                             }
@@ -535,16 +584,16 @@ ViewPage {
                         Rectangle {
                             Layout.preferredWidth: 42
                             Layout.preferredHeight: 42
-                            radius: 12
-                            color: Qt.rgba(appWindow.danger.r, appWindow.danger.g, appWindow.danger.b, 0.16)
+                            radius: Theme.controlRadius
+                            color: Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.16)
                             border.width: 1
-                            border.color: Qt.rgba(appWindow.danger.r, appWindow.danger.g, appWindow.danger.b, 0.45)
+                            border.color: Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.45)
 
                             Glyph { appWindow: root.appWindow;
                                 anchors.centerIn: parent
                                 path: appWindow.icons.heart
                                 size: 20
-                                color: appWindow.danger
+                                color: Theme.danger
                             }
                         }
 
@@ -554,14 +603,14 @@ ViewPage {
                             Text {
                                 textFormat: Text.PlainText
                                 text: appWindow.tr("links_support")
-                                color: appWindow.txt
+                                color: Theme.txt
                                 font.pixelSize: 15
                                 font.weight: Font.DemiBold
                             }
                             Text {
                                 textFormat: Text.PlainText
                                 text: appWindow.tr("github_sponsorship")
-                                color: appWindow.txtDim
+                                color: Theme.txtDim
                                 font.pixelSize: 12
                             }
                         }
@@ -571,7 +620,7 @@ ViewPage {
                         textFormat: Text.PlainText
                         Layout.fillWidth: true
                         text: appWindow.tr("donate_desc")
-                        color: appWindow.txtDim
+                        color: Theme.txtDim
                         font.pixelSize: 12
                         wrapMode: Text.WordWrap
                         maximumLineCount: 2
@@ -590,7 +639,7 @@ ViewPage {
 
                         PillButton { appWindow: root.appWindow;
                             compact: true
-                            tint: appWindow.danger
+                            tint: Theme.danger
                             glyphPath: appWindow.icons.heart
                             text: appWindow.tr("btn_donate")
                             onClicked: controller.openUrl("https://github.com/sponsors/marconvcm")
@@ -607,14 +656,14 @@ ViewPage {
             Layout.fillWidth: true
             Layout.topMargin: 10
             Layout.preferredHeight: 1
-            color: appWindow.line
+            color: Theme.line
         }
 
         Text {
             textFormat: Text.PlainText
             Layout.fillWidth: true
             text: appWindow.tr("disclaimer")
-            color: appWindow.txtFaint
+            color: Theme.txtFaint
             font.pixelSize: 12
             lineHeight: 1.4
             wrapMode: Text.WordWrap

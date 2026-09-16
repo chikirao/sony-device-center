@@ -9,13 +9,13 @@ Rectangle {
     required property var appWindow
     Layout.fillHeight: true
     Layout.preferredWidth: 258
-    color: Qt.rgba(0.05, 0.055, 0.075, 0.72)
+    color: Theme.light ? "#101112" : Qt.rgba(0.05, 0.055, 0.075, 0.72)
 
     Rectangle {
         anchors.right: parent.right
         width: 1
         height: parent.height
-        color: appWindow.line
+        color: Theme.sidebarLine
     }
 
     ColumnLayout {
@@ -36,15 +36,15 @@ Rectangle {
                 Text {
                     textFormat: Text.PlainText
                     text: "DEVICE"
-                    color: appWindow.txtDim
-                    font.family: appWindow.monoFamily
+                    color: Theme.sidebarTxtDim
+                    font.family: Theme.monoFamily
                     font.pixelSize: 12
                     font.letterSpacing: 1.7
                 }
                 Text {
                     textFormat: Text.PlainText
                     text: "Center"
-                    color: appWindow.accentSoft
+                    color: Theme.sidebarAccentSoft
                     font.pixelSize: 17
                     font.weight: Font.DemiBold
                     font.letterSpacing: -0.3
@@ -53,7 +53,7 @@ Rectangle {
         }
 
         // Device badge with a live battery ring
-        Card { appWindow: root.appWindow;
+        Card { inverse: true; appWindow: root.appWindow;
             Layout.fillWidth: true
             Layout.preferredHeight: 84
             active: controller.connected
@@ -71,7 +71,7 @@ Rectangle {
                         id: ring
                         anchors.fill: parent
                         property real level: controller.connected ? Math.max(0, controller.batteryLevel) : 0
-                        Behavior on level { NumberAnimation { duration: 700; easing.type: Easing.OutCubic } }
+                        Behavior on level { NumberAnimation { duration: Theme.duration(700); easing.type: Easing.OutCubic } }
                         onLevelChanged: requestPaint()
 
                         onPaint: {
@@ -100,14 +100,14 @@ Rectangle {
                         visible: controller.isCharging
                         path: appWindow.icons.bolt
                         size: 16
-                        color: appWindow.success
+                        color: Theme.sidebarSuccess
                         weight: 2
 
                         SequentialAnimation on opacity {
-                            running: controller.isCharging
+                            running: Theme.motionEnabled && controller.isCharging
                             loops: Animation.Infinite
-                            NumberAnimation { to: 0.35; duration: 900; easing.type: Easing.InOutQuad }
-                            NumberAnimation { to: 1.0; duration: 900; easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: 0.35; duration: Theme.duration(900); easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: 1.0; duration: Theme.duration(900); easing.type: Easing.InOutQuad }
                         }
                     }
 
@@ -116,7 +116,7 @@ Rectangle {
                         anchors.centerIn: parent
                         visible: !controller.isCharging
                         text: controller.connected && controller.batteryLevel >= 0 ? controller.batteryLevel : "—"
-                        color: appWindow.txt
+                        color: Theme.sidebarTxt
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
                     }
@@ -129,7 +129,7 @@ Rectangle {
                         textFormat: Text.PlainText
                         Layout.fillWidth: true
                         text: controller.deviceName
-                        color: appWindow.txt
+                        color: Theme.sidebarTxt
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
@@ -149,7 +149,7 @@ Rectangle {
                             if (controller.batteryCase >= 0) parts.push(appWindow.tr("battery_case") + " " + controller.batteryCase)
                             return parts.join(" · ")
                         }
-                        color: appWindow.txtDim
+                        color: Theme.sidebarTxtDim
                         font.pixelSize: 11
                         elide: Text.ElideRight
                     }
@@ -159,19 +159,19 @@ Rectangle {
                             Layout.preferredWidth: 6
                             Layout.preferredHeight: 6
                             radius: 3
-                            color: controller.connected ? appWindow.success : appWindow.danger
+                            color: controller.connected ? Theme.sidebarSuccess : Theme.sidebarDanger
 
                             SequentialAnimation on opacity {
-                                running: controller.connected
+                                running: Theme.motionEnabled && controller.connected
                                 loops: Animation.Infinite
-                                NumberAnimation { to: 0.3; duration: 1100; easing.type: Easing.InOutQuad }
-                                NumberAnimation { to: 1.0; duration: 1100; easing.type: Easing.InOutQuad }
+                                NumberAnimation { to: 0.3; duration: Theme.duration(1100); easing.type: Easing.InOutQuad }
+                                NumberAnimation { to: 1.0; duration: Theme.duration(1100); easing.type: Easing.InOutQuad }
                             }
                         }
                         Text {
                             textFormat: Text.PlainText
                             text: controller.connected ? appWindow.tr("connected") : appWindow.tr("disconnected")
-                            color: controller.connected ? appWindow.txtDim : appWindow.txtFaint
+                            color: controller.connected ? Theme.sidebarTxtDim : Theme.sidebarTxtFaint
                             font.pixelSize: 11
                         }
                     }
@@ -188,14 +188,14 @@ Rectangle {
             Rectangle {
                 width: parent.width
                 height: 44
-                radius: 12
+                radius: Theme.controlRadius
                 y: appWindow.navIndex * 50
-                color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.14)
+                color: Qt.rgba(Theme.sidebarAccent.r, Theme.sidebarAccent.g, Theme.sidebarAccent.b, 0.14)
                 border.width: 1
-                border.color: Qt.rgba(appWindow.accent.r, appWindow.accent.g, appWindow.accent.b, 0.45)
+                border.color: Qt.rgba(Theme.sidebarAccent.r, Theme.sidebarAccent.g, Theme.sidebarAccent.b, 0.45)
 
                 Behavior on y {
-                    NumberAnimation { duration: 320; easing.type: Easing.OutBack; easing.overshoot: 1.1 }
+                    NumberAnimation { duration: Theme.duration(320); easing.type: Easing.OutBack; easing.overshoot: 1.1 }
                 }
 
                 Rectangle {
@@ -204,7 +204,7 @@ Rectangle {
                     radius: 2
                     x: -1
                     anchors.verticalCenter: parent.verticalCenter
-                    color: appWindow.accent
+                    color: Theme.sidebarAccent
                 }
             }
 
@@ -230,9 +230,9 @@ Rectangle {
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: 12
-                        color: (navHover.hovered && !navItem.current) ? appWindow.surfaceHi : "transparent"
-                        Behavior on color { ColorAnimation { duration: appWindow.tFast } }
+                        radius: Theme.controlRadius
+                        color: (navHover.hovered && !navItem.current) ? Theme.sidebarSurfaceHi : "transparent"
+                        Behavior on color { ColorAnimation { duration: Theme.tFast } }
                     }
 
                     HoverHandler { id: navHover; cursorShape: Qt.PointingHandCursor }
@@ -246,19 +246,19 @@ Rectangle {
                         Glyph { appWindow: root.appWindow;
                             path: navItem.modelData.glyph
                             size: 19
-                            color: navItem.current ? appWindow.accentSoft
-                                 : navHover.hovered ? appWindow.txt : appWindow.txtFaint
+                            color: navItem.current ? Theme.sidebarAccentSoft
+                                 : navHover.hovered ? Theme.sidebarTxt : Theme.sidebarTxtFaint
                         }
 
                         Text {
                             textFormat: Text.PlainText
                             Layout.fillWidth: true
                             text: appWindow.tr(navItem.modelData.key)
-                            color: navItem.current ? appWindow.txt
-                                 : navHover.hovered ? appWindow.txtDim : appWindow.txtFaint
+                            color: navItem.current ? Theme.sidebarTxt
+                                 : navHover.hovered ? Theme.sidebarTxtDim : Theme.sidebarTxtFaint
                             font.pixelSize: 13
                             font.weight: navItem.current ? Font.DemiBold : Font.Normal
-                            Behavior on color { ColorAnimation { duration: appWindow.tFast } }
+                            Behavior on color { ColorAnimation { duration: Theme.tFast } }
                         }
                     }
 
@@ -273,10 +273,10 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 44
-            radius: 12
-            color: appWindow.surfaceSunk
+            radius: Theme.controlRadius
+            color: Theme.sidebarSurfaceSunk
             border.width: 1
-            border.color: appWindow.line
+            border.color: Theme.sidebarLine
 
             RowLayout {
                 anchors.fill: parent
@@ -284,7 +284,7 @@ Rectangle {
                 anchors.rightMargin: 13
                 spacing: 9
 
-                Glyph { appWindow: root.appWindow; path: appWindow.icons.bluetooth; size: 15; color: appWindow.success }
+                Glyph { appWindow: root.appWindow; path: appWindow.icons.bluetooth; size: 15; color: Theme.sidebarSuccess }
 
                 ColumnLayout {
                     Layout.fillWidth: true
@@ -292,14 +292,14 @@ Rectangle {
                     Text {
                         textFormat: Text.PlainText
                         text: "SDK Core"
-                        color: appWindow.txtDim
+                        color: Theme.sidebarTxtDim
                         font.pixelSize: 11
                         font.weight: Font.Medium
                     }
                     Text {
                         textFormat: Text.PlainText
                         text: "IPC · RFCOMM V2"
-                        color: appWindow.txtFaint
+                        color: Theme.sidebarTxtFaint
                         font.pixelSize: 10
                     }
                 }
@@ -308,7 +308,7 @@ Rectangle {
                     Layout.preferredWidth: 7
                     Layout.preferredHeight: 7
                     radius: 3.5
-                    color: appWindow.success
+                    color: Theme.sidebarSuccess
                 }
             }
         }

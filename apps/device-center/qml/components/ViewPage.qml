@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -18,10 +19,20 @@ Item {
 
     ParallelAnimation {
         id: entrance
-        NumberAnimation { target: inner; property: "opacity"; from: 0; to: 1; duration: appWindow.tBase + 60; easing.type: Easing.OutQuad }
-        NumberAnimation { target: inner; property: "y"; from: 16; to: 0; duration: appWindow.tSlow; easing.type: Easing.OutCubic }
+        NumberAnimation { target: inner; property: "opacity"; from: 0; to: 1; duration: Theme.duration(260); easing.type: Easing.OutQuad }
+        NumberAnimation { target: inner; property: "y"; from: 16; to: 0; duration: Theme.tSlow; easing.type: Easing.OutCubic }
     }
 
+    Connections {
+        target: Theme
+        function onMotionEnabledChanged() {
+            if (!Theme.motionEnabled) {
+                entrance.stop()
+                inner.opacity = 1
+                inner.y = 0
+            }
+        }
+    }
     onVisibleChanged: if (visible) entrance.restart()
     Component.onCompleted: if (visible) entrance.restart()
 }

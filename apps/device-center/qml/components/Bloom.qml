@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -7,7 +8,7 @@ import QtQuick.Shapes
 Shape {
     required property var appWindow
     id: bloom
-    property color tint: appWindow.accent
+    property color tint: Theme.accent
     property real strength: 0.22
     antialiasing: true
     ShapePath {

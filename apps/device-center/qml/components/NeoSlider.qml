@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -24,9 +25,9 @@ Slider {
         width: sl.availableWidth
         height: 6
         radius: 3
-        color: appWindow.surfaceSunk
+        color: Theme.surfaceSunk
         border.width: 1
-        border.color: appWindow.line
+        border.color: Theme.line
 
         Rectangle {
             width: sl.visualPosition * parent.width
@@ -34,8 +35,8 @@ Slider {
             radius: 3
             gradient: Gradient {
                 orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: appWindow.accent }
-                GradientStop { position: 1.0; color: appWindow.accentSoft }
+                GradientStop { position: 0.0; color: Theme.accent }
+                GradientStop { position: 1.0; color: Theme.accentSoft }
             }
         }
     }
@@ -48,10 +49,10 @@ Slider {
         radius: 9
         color: "white"
         border.width: 2
-        border.color: appWindow.accent
+        border.color: Theme.accent
         scale: sl.pressed ? 1.25 : (sl.hovered ? 1.12 : 1.0)
         Behavior on scale {
-            NumberAnimation { duration: 180; easing.type: Easing.OutBack; easing.overshoot: 2.5 }
+            NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutBack; easing.overshoot: 2.5 }
         }
     }
 }

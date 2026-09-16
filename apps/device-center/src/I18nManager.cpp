@@ -181,6 +181,14 @@ void I18nManager::_initTranslations() {
     en["battery_estimate_hint"]           = "The estimate uses the discharge rate since the charger came off; it needs a few percent of use before it shows.";
     en["battery_legend_discharging"]      = "Discharging";
     en["battery_now"]                     = "Now";
+    en["appearance"]                      = "Appearance";
+    en["theme"]                           = "Theme";
+    en["theme_dark"]                      = "Dark";
+    en["theme_light"]                     = "Light";
+    en["theme_system"]                    = "Follow system";
+    en["animations"]                      = "Animations";
+    en["animations_desc"]                 = "Page transitions and display effects. System reduced motion takes priority.";
+    en["icon_antialiasing"]               = "Smooth icons";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -320,6 +328,14 @@ void I18nManager::_initTranslations() {
     pt["battery_estimate_hint"]           = "A estimativa usa a taxa de descarga desde que o carregador foi desconectado; precisa de alguns por cento de uso antes de aparecer.";
     pt["battery_legend_discharging"]      = "Descarregando";
     pt["battery_now"]                     = "Agora";
+    pt["appearance"]                      = "Aparência";
+    pt["theme"]                           = "Tema";
+    pt["theme_dark"]                      = "Escuro";
+    pt["theme_light"]                     = "Claro";
+    pt["theme_system"]                    = "Usar sistema";
+    pt["animations"]                      = "Animações";
+    pt["animations_desc"]                 = "Transições e efeitos visuais. A redução de movimento do sistema tem prioridade.";
+    pt["icon_antialiasing"]               = "Suavizar ícones";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -459,6 +475,14 @@ void I18nManager::_initTranslations() {
     es["battery_estimate_hint"]           = "La estimación usa la velocidad de descarga desde que se desconectó el cargador; necesita unos puntos de uso antes de mostrarse.";
     es["battery_legend_discharging"]      = "Descargando";
     es["battery_now"]                     = "Ahora";
+    es["appearance"]                      = "Apariencia";
+    es["theme"]                           = "Tema";
+    es["theme_dark"]                      = "Oscuro";
+    es["theme_light"]                     = "Claro";
+    es["theme_system"]                    = "Seguir sistema";
+    es["animations"]                      = "Animaciones";
+    es["animations_desc"]                 = "Transiciones y efectos visuales. Reducir movimiento del sistema tiene prioridad.";
+    es["icon_antialiasing"]               = "Suavizar iconos";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -598,6 +622,14 @@ void I18nManager::_initTranslations() {
     de["battery_estimate_hint"]           = "Die Schätzung nutzt die Entladerate seit dem Abstecken des Ladegeräts; sie erscheint erst nach ein paar Prozent Nutzung.";
     de["battery_legend_discharging"]      = "Entladen";
     de["battery_now"]                     = "Jetzt";
+    de["appearance"]                      = "Darstellung";
+    de["theme"]                           = "Design";
+    de["theme_dark"]                      = "Dunkel";
+    de["theme_light"]                     = "Hell";
+    de["theme_system"]                    = "Wie System";
+    de["animations"]                      = "Animationen";
+    de["animations_desc"]                 = "Seitenübergänge und Anzeigeeffekte. Reduzierte Bewegung im System hat Vorrang.";
+    de["icon_antialiasing"]               = "Kantenglättung für Symbole";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -737,6 +769,14 @@ void I18nManager::_initTranslations() {
     fr["battery_estimate_hint"]           = "L'estimation repose sur la vitesse de décharge depuis le débranchement du chargeur ; elle n'apparaît qu'après quelques pour cent d'utilisation.";
     fr["battery_legend_discharging"]      = "Décharge";
     fr["battery_now"]                     = "Maintenant";
+    fr["appearance"]                      = "Apparence";
+    fr["theme"]                           = "Thème";
+    fr["theme_dark"]                      = "Sombre";
+    fr["theme_light"]                     = "Clair";
+    fr["theme_system"]                    = "Suivre le système";
+    fr["animations"]                      = "Animations";
+    fr["animations_desc"]                 = "Transitions et effets visuels. La réduction des animations du système est prioritaire.";
+    fr["icon_antialiasing"]               = "Lisser les icônes";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -876,6 +916,14 @@ void I18nManager::_initTranslations() {
     ja["battery_estimate_hint"]           = "推定は充電器を外してからの放電速度に基づきます。表示には数%の使用が必要です。";
     ja["battery_legend_discharging"]      = "放電";
     ja["battery_now"]                     = "現在";
+    ja["appearance"]                      = "外観";
+    ja["theme"]                           = "テーマ";
+    ja["theme_dark"]                      = "ダーク";
+    ja["theme_light"]                     = "ライト";
+    ja["theme_system"]                    = "システムに従う";
+    ja["animations"]                      = "アニメーション";
+    ja["animations_desc"]                 = "ページ遷移と表示効果。システムの視差効果を減らす設定が優先されます。";
+    ja["icon_antialiasing"]               = "アイコンのアンチエイリアス";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1015,6 +1063,14 @@ void I18nManager::_initTranslations() {
     ru["battery_estimate_hint"]           = "Оценка строится по скорости разряда с момента отключения от зарядки; для неё нужно несколько процентов использования.";
     ru["battery_legend_discharging"]      = "Разряд";
     ru["battery_now"]                     = "Сейчас";
+    ru["appearance"]                      = "Оформление";
+    ru["theme"]                           = "Тема";
+    ru["theme_dark"]                      = "Тёмная";
+    ru["theme_light"]                     = "Светлая";
+    ru["theme_system"]                    = "Как в системе";
+    ru["animations"]                      = "Анимации";
+    ru["animations_desc"]                 = "Переходы страниц и эффекты табло. Системное уменьшение анимаций имеет приоритет.";
+    ru["icon_antialiasing"]               = "Сглаживание иконок";
 }
 
 } // namespace sony::devicecenter

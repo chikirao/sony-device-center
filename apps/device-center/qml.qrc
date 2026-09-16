@@ -1,6 +1,8 @@
 <RCC>
     <qresource prefix="/">
         <file>qml/Main.qml</file>
+        <file>qml/Theme.qml</file>
+        <file>qml/qmldir</file>
         <file>qml/components/Glyph.qml</file>
         <file>qml/components/BrandMark.qml</file>
         <file>qml/components/BrandTile.qml</file>

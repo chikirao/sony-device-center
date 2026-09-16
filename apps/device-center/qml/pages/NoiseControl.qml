@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -17,7 +18,7 @@ ViewPage {
             Text {
                 textFormat: Text.PlainText
                 text: appWindow.tr("nav_noise_control")
-                color: appWindow.txt
+                color: Theme.txt
                 font.pixelSize: 28
                 font.weight: Font.DemiBold
                 font.letterSpacing: -0.6
@@ -25,7 +26,7 @@ ViewPage {
             Text {
                 textFormat: Text.PlainText
                 text: appWindow.tr("nc_page_desc")
-                color: appWindow.txtDim
+                color: Theme.txtDim
                 font.pixelSize: 13
             }
         }
@@ -38,9 +39,9 @@ ViewPage {
 
             Repeater {
                 model: [
-                    { mode: "cancelling", label: appWindow.tr("noise_cancelling"),  glyph: appWindow.icons.shield, desc: appWindow.tr("nc_card_cancelling"), tint: appWindow.accent },
-                    { mode: "ambient",    label: appWindow.tr("ambient_sound"),     glyph: appWindow.icons.mic,    desc: appWindow.tr("nc_card_ambient"),    tint: appWindow.ambientWarm },
-                    { mode: "off",        label: appWindow.tr("noise_control_off"), glyph: appWindow.icons.power,  desc: appWindow.tr("nc_card_off"),        tint: appWindow.txtDim }
+                    { mode: "cancelling", label: appWindow.tr("noise_cancelling"),  glyph: appWindow.icons.shield, desc: appWindow.tr("nc_card_cancelling"), tint: Theme.accent },
+                    { mode: "ambient",    label: appWindow.tr("ambient_sound"),     glyph: appWindow.icons.mic,    desc: appWindow.tr("nc_card_ambient"),    tint: Theme.ambientWarm },
+                    { mode: "off",        label: appWindow.tr("noise_control_off"), glyph: appWindow.icons.power,  desc: appWindow.tr("nc_card_off"),        tint: Theme.txtDim }
                 ]
 
                 delegate: Card { appWindow: root.appWindow;
@@ -55,7 +56,7 @@ ViewPage {
                     scale: modeTap.pressed ? 0.975 : (modeHover.hovered ? 1.012 : 1.0)
 
                     Behavior on scale {
-                        NumberAnimation { duration: 220; easing.type: Easing.OutBack; easing.overshoot: 1.8 }
+                        NumberAnimation { duration: Theme.duration(220); easing.type: Easing.OutBack; easing.overshoot: 1.8 }
                     }
 
                     HoverHandler { id: modeHover; cursorShape: Qt.PointingHandCursor }
@@ -86,19 +87,19 @@ ViewPage {
                                 radius: 13
                                 color: modeCard.current
                                      ? Qt.rgba(modeCard.modelData.tint.r, modeCard.modelData.tint.g, modeCard.modelData.tint.b, 0.18)
-                                     : appWindow.surfaceSunk
+                                     : Theme.surfaceSunk
                                 border.width: 1
                                 border.color: modeCard.current
                                      ? Qt.rgba(modeCard.modelData.tint.r, modeCard.modelData.tint.g, modeCard.modelData.tint.b, 0.5)
-                                     : appWindow.line
-                                Behavior on color { ColorAnimation { duration: appWindow.tBase } }
-                                Behavior on border.color { ColorAnimation { duration: appWindow.tBase } }
+                                     : Theme.line
+                                Behavior on color { ColorAnimation { duration: Theme.tBase } }
+                                Behavior on border.color { ColorAnimation { duration: Theme.tBase } }
 
                                 Glyph { appWindow: root.appWindow;
                                     anchors.centerIn: parent
                                     path: modeCard.modelData.glyph
                                     size: 21
-                                    color: modeCard.current ? modeCard.modelData.tint : appWindow.txtFaint
+                                    color: modeCard.current ? modeCard.modelData.tint : Theme.txtFaint
                                 }
                             }
 
@@ -112,8 +113,8 @@ ViewPage {
                                 color: modeCard.modelData.tint
                                 opacity: modeCard.current ? 1 : 0
                                 scale: modeCard.current ? 1 : 0.4
-                                Behavior on opacity { NumberAnimation { duration: appWindow.tBase } }
-                                Behavior on scale { NumberAnimation { duration: 280; easing.type: Easing.OutBack; easing.overshoot: 3 } }
+                                Behavior on opacity { NumberAnimation { duration: Theme.tBase } }
+                                Behavior on scale { NumberAnimation { duration: Theme.duration(280); easing.type: Easing.OutBack; easing.overshoot: 3 } }
                             }
                         }
 
@@ -122,14 +123,14 @@ ViewPage {
                             Text {
                                 textFormat: Text.PlainText
                                 text: modeCard.modelData.label
-                                color: appWindow.txt
+                                color: Theme.txt
                                 font.pixelSize: 15
                                 font.weight: Font.DemiBold
                             }
                             Text {
                                 textFormat: Text.PlainText
                                 text: modeCard.modelData.desc
-                                color: appWindow.txtFaint
+                                color: Theme.txtFaint
                                 font.pixelSize: 12
                             }
                         }
@@ -146,7 +147,7 @@ ViewPage {
             readonly property bool live: controller.noiseControlMode === "ambient"
             opacity: live ? 1.0 : 0.42
             enabled: live
-            Behavior on opacity { NumberAnimation { duration: appWindow.tSlow; easing.type: Easing.OutQuad } }
+            Behavior on opacity { NumberAnimation { duration: Theme.tSlow; easing.type: Easing.OutQuad } }
 
             ColumnLayout {
                 anchors.fill: parent
@@ -161,7 +162,7 @@ ViewPage {
                         Text {
                             textFormat: Text.PlainText
                             text: appWindow.tr("sound_level")
-                            color: appWindow.txt
+                            color: Theme.txt
                             font.pixelSize: 15
                             font.weight: Font.DemiBold
                         }
@@ -171,14 +172,14 @@ ViewPage {
                         implicitWidth: 56
                         implicitHeight: 34
                         radius: 11
-                        color: Qt.rgba(appWindow.ambientWarm.r, appWindow.ambientWarm.g, appWindow.ambientWarm.b, 0.16)
+                        color: Qt.rgba(Theme.ambientWarm.r, Theme.ambientWarm.g, Theme.ambientWarm.b, 0.16)
                         border.width: 1
-                        border.color: Qt.rgba(appWindow.ambientWarm.r, appWindow.ambientWarm.g, appWindow.ambientWarm.b, 0.5)
+                        border.color: Qt.rgba(Theme.ambientWarm.r, Theme.ambientWarm.g, Theme.ambientWarm.b, 0.5)
                         Text {
                             textFormat: Text.PlainText
                             anchors.centerIn: parent
                             text: Math.round(ambientSlider.value)
-                            color: appWindow.ambientWarm
+                            color: Theme.ambientWarm
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
                         }
@@ -202,14 +203,14 @@ ViewPage {
                         Text {
                             textFormat: Text.PlainText
                             text: appWindow.tr("focus_on_voice")
-                            color: appWindow.txt
+                            color: Theme.txt
                             font.pixelSize: 13
                             font.weight: Font.Medium
                         }
                         Text {
                             textFormat: Text.PlainText
                             text: appWindow.tr("focus_on_voice_desc")
-                            color: appWindow.txtFaint
+                            color: Theme.txtFaint
                             font.pixelSize: 11
                         }
                     }

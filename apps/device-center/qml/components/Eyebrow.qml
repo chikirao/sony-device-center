@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -8,7 +9,7 @@ Text {
     id: root
     required property var appWindow
     textFormat: Text.PlainText
-    color: appWindow.txtFaint
+    color: Theme.txtFaint
     font.pixelSize: 10
     font.bold: true
     font.letterSpacing: 1.4

@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -19,7 +20,10 @@ Item {
 
     Shape {
         anchors.fill: parent
-        antialiasing: true
+        antialiasing: Theme.iconAntialiasing
+        // Geometry rendering needs multisampling to smooth ShapePath edges.
+        layer.enabled: Theme.iconAntialiasing
+        layer.samples: Theme.iconAntialiasing ? 4 : 0
 
         ShapePath {
             strokeColor: brandMark.color
@@ -55,5 +59,5 @@ Item {
         }
     }
 
-    Behavior on color { ColorAnimation { duration: appWindow.tFast } }
+    Behavior on color { ColorAnimation { duration: Theme.tFast } }
 }

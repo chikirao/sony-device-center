@@ -8,6 +8,7 @@
 #include <QQuickWindow>
 #include <QQuickStyle>
 #include <QDir>
+#include <QSettings>
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
 #include "sony/protocol/FrameCodec.h"
@@ -66,6 +67,30 @@ private slots:
         QVERIFY(window);
         controller.setLanguage(language);
         window->resize(size);
+        const auto previousTheme = controller.themeMode();
+        const auto previousAnimations = controller.animationsEnabled();
+        controller.setThemeMode("light");
+        QTest::qWait(20);
+        QCOMPARE(window->color(), QColor("#F5F5F5"));
+        const auto output = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
+        if (!output.isEmpty()) {
+            QDir().mkpath(output);
+            window->setProperty("navIndex", 5);
+            QTest::qWait(400);
+            QVERIFY(window->grabWindow().save(QString("%1/light-%2-%3-%4.png").arg(output, model, language).arg(size.width())));
+        }
+        const bool previousSmoothing = controller.iconAntialiasing();
+        controller.setIconAntialiasing(false);
+        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("iconAntialiasing").toBool(), false);
+        controller.setIconAntialiasing(previousSmoothing);
+        controller.setThemeMode("dark");
+        QTest::qWait(20);
+        QCOMPARE(window->color(), QColor("#0A0B0F"));
+        controller.setAnimationsEnabled(false);
+        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("animationsEnabled").toBool(), false);
+        controller.setThemeMode("invalid");
+        QCOMPARE(controller.themeMode(), QString("dark"));
+        controller.setAnimationsEnabled(previousAnimations);
         for (int page = 0; page < 7; ++page) {
             QVERIFY(window->setProperty("navIndex", page));
             const auto screenshotDirectory = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
@@ -77,6 +102,13 @@ private slots:
                 QVERIFY(window->grabWindow().save(path));
             }
         }
+        const auto* smoothingSwitch = window->findChild<QObject*>("iconSmoothingSwitch");
+        QVERIFY(smoothingSwitch);
+        QCOMPARE(smoothingSwitch->property("checked").toBool(), controller.iconAntialiasing());
+        const auto* animationsSwitch = window->findChild<QObject*>("animationsSwitch");
+        QVERIFY(animationsSwitch);
+        QCOMPARE(animationsSwitch->property("checked").toBool(), controller.animationsEnabled());
+        controller.setThemeMode(previousTheme);
         controller.setLanguage(previousLanguage);
         QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join("\n")));
     }
