@@ -72,6 +72,7 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(bool notifyLowBattery READ notifyLowBattery WRITE setNotifyLowBattery NOTIFY notificationSettingsChanged)
     Q_PROPERTY(bool notifyConnection READ notifyConnection WRITE setNotifyConnection NOTIFY notificationSettingsChanged)
     Q_PROPERTY(bool notifyCharged READ notifyCharged WRITE setNotifyCharged NOTIFY notificationSettingsChanged)
+    Q_PROPERTY(bool notifyHotkeys READ notifyHotkeys WRITE setNotifyHotkeys NOTIFY notificationSettingsChanged)
     Q_PROPERTY(int lowBatteryThreshold READ lowBatteryThreshold WRITE setLowBatteryThreshold NOTIFY notificationSettingsChanged)
     Q_PROPERTY(QString appVersion READ appVersion CONSTANT)
     Q_PROPERTY(QString currentLanguage READ currentLanguage WRITE setLanguage NOTIFY languageChanged)
@@ -160,10 +161,13 @@ public:
     [[nodiscard]] bool notifyLowBattery() const { return _notifyLowBattery; }
     [[nodiscard]] bool notifyConnection() const { return _notifyConnection; }
     [[nodiscard]] bool notifyCharged() const { return _notifyCharged; }
+    // Toast naming the mode a global hotkey switched to.
+    [[nodiscard]] bool notifyHotkeys() const { return _notifyHotkeys; }
     [[nodiscard]] int lowBatteryThreshold() const { return _lowBatteryThreshold; }
     Q_INVOKABLE void setNotifyLowBattery(bool enable);
     Q_INVOKABLE void setNotifyConnection(bool enable);
     Q_INVOKABLE void setNotifyCharged(bool enable);
+    Q_INVOKABLE void setNotifyHotkeys(bool enable);
     Q_INVOKABLE void setLowBatteryThreshold(int percent);
     Q_INVOKABLE void setLanguage(const QString& langCode);
     Q_INVOKABLE QString t(const QString& key) const;
@@ -222,7 +226,7 @@ private:
     bool _systemReducedMotion{false};
     QString _currentLanguage{"en"};
     bool _minimizeToTray{true};
-    bool _notifyLowBattery{true}, _notifyConnection{true}, _notifyCharged{false};
+    bool _notifyLowBattery{true}, _notifyConnection{true}, _notifyCharged{false}, _notifyHotkeys{true};
     int _lowBatteryThreshold{20};
 
 };

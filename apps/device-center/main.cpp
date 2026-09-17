@@ -2,6 +2,7 @@
 #include <QCommandLineParser>
 #include <QFontDatabase>
 #include <QDir>
+#include <QQuickItem>
 #include <QQuickWindow>
 #include <QDateTime>
 #include <QQmlApplicationEngine>
@@ -14,6 +15,7 @@
 #include "DeviceCenterController.h"
 #include "TrayController.h"
 #include "NotificationController.h"
+#include "HotkeyManager.h"
 #include "WindowsToast.h"
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
@@ -98,6 +100,8 @@ int main(int argc, char *argv[]) {
     }
     sony::devicecenter::TrayController tray(controller);
     sony::devicecenter::NotificationController notifications(controller, tray);
+    // Global shortcuts (Windows only); disabled until the user binds them.
+    sony::devicecenter::HotkeyManager hotkeys(controller, tray);
     // Without a tray there is nowhere to come back from, so a hidden start
     // and close-to-tray only make sense when the icon actually exists.
     const bool startHidden = parser.isSet(minimizedOption) && tray.isAvailable();
@@ -106,6 +110,7 @@ int main(int argc, char *argv[]) {
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("controller", &controller);
+    engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
     engine.rootContext()->setContextProperty("trayAvailable", tray.isAvailable());
     engine.rootContext()->setContextProperty("startHidden", startHidden);
 
@@ -128,9 +133,19 @@ int main(int argc, char *argv[]) {
         auto* ticker = new QTimer(&app);
         int page = 0;
         QObject::connect(ticker, &QTimer::timeout, &app, [&, ticker, window]() mutable {
-            if (page > 0) window->grabWindow().save(QString("%1/page%2.png").arg(shotDir).arg(page - 1));
-            if (page > 6) { ticker->stop(); app.quit(); return; }
-            window->setProperty("navIndex", page++);
+            if (page > 0 && page <= 7) window->grabWindow().save(QString("%1/page%2.png").arg(shotDir).arg(page - 1));
+            // Settings is taller than the window: one more capture, scrolled
+            // to the hotkeys card.
+            if (page == 7) {
+                auto* flick = window->findChild<QQuickItem*>("settingsFlick");
+                auto* card = window->findChild<QQuickItem*>("hotkeysCard");
+                if (flick && card) flick->setProperty("contentY", card->y() - 16);
+            } else if (page == 8) {
+                window->grabWindow().save(QString("%1/page6-hotkeys.png").arg(shotDir));
+                ticker->stop(); app.quit(); return;
+            }
+            if (page <= 6) window->setProperty("navIndex", page);
+            ++page;
         });
         ticker->start(1500);
     }

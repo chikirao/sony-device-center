@@ -57,9 +57,14 @@
   (`WindowsToast.cpp`, регистрация AppUserModelID в HKCU), потому что
   balloon-уведомления `QSystemTrayIcon::showMessage` Windows 11 молча
   отбрасывает; на других платформах — balloon через трей.
-- [ ] **Глобальные хоткеи.** Переключить NC↔Ambient, Off, Speak-to-Chat.
-  В Qt нет кроссплатформенного API — на Windows `RegisterHotKey`, на
-  Linux/X11 `XGrabKey`, на Wayland только через портал. Начать с Windows.
+- [x] **Глобальные хоткеи** (`HotkeyManager`, карточка «Горячие клавиши» в
+  настройках). NC↔Ambient, Off, Speak-to-Chat, «Показать окно»; по умолчанию
+  выключены, сочетания в `QSettings` (`hotkeys/<action>/{enabled,shortcut}`),
+  срабатывание идёт через `DeviceCenterController` как из трея плюс toast
+  (переключатель «Отклик на хоткеи» в уведомлениях). Пока только Windows
+  (`RegisterHotKey` + `QAbstractNativeEventFilter`); на Linux/macOS карточка
+  говорит «недоступно». Дальше: Linux/X11 `XGrabKey`, Wayland только через
+  портал.
 - [ ] **Библиотека пользовательских EQ-пресетов.** В наушниках один
   custom-слот, на ПК храним сколько угодно с именами. Импорт/экспорт JSON.
 - [x] **История батареи** (`BatteryHistory`, вкладка «Батарея»). Точка на

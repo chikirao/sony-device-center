@@ -2,6 +2,7 @@
 #include "DeviceCenterController.h"
 #include "TrayController.h"
 #include "NotificationController.h"
+#include "HotkeyManager.h"
 #include <QImage>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -14,6 +15,9 @@
 #include "sony/protocol/FrameCodec.h"
 #include "../support/ReplyTransport.h"
 #include <chrono>
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 using namespace sony;
 using namespace sony::devicecenter;
 class SlowService : public core::IDeviceService {
@@ -57,7 +61,10 @@ private slots:
         connect(&engine, &QQmlEngine::warnings, this, [&](const QList<QQmlError>& errors) {
             for (const auto& error : errors) warnings.append(error.toString());
         });
+        TrayController tray(controller);
+        HotkeyManager hotkeys(controller, tray, nullptr, "hotkeys-test");
         engine.rootContext()->setContextProperty("controller", &controller);
+        engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
         engine.rootContext()->setContextProperty("trayAvailable", false);
         engine.rootContext()->setContextProperty("startHidden", false);
         engine.load(QUrl("qrc:/qml/Main.qml"));
@@ -323,6 +330,146 @@ private slots:
         transport->notify({0x69,0x17,1,1,1,0,12});
         QTRY_COMPARE_WITH_TIMEOUT(controller.noiseControlMode(),QString("ambient"),1000);
         QCOMPARE(controller.ambientLevel(),12);
+    }
+    void hotkeyBindingsPersistAndParse() {
+        // Parsing: one chord with a modifier, or a bare function key.
+        QCOMPARE(HotkeyManager::normalize("Ctrl+Alt+N"), QString("Ctrl+Alt+N"));
+        QCOMPARE(HotkeyManager::normalize("ctrl+alt+n"), QString("Ctrl+Alt+N"));
+        QCOMPARE(HotkeyManager::normalize("  Shift+F5 "), QString("Shift+F5"));
+        QCOMPARE(HotkeyManager::normalize("F9"), QString("F9"));
+        QVERIFY2(HotkeyManager::normalize("N").isEmpty(), "a bare letter would swallow typing");
+        QVERIFY(HotkeyManager::normalize("Ctrl").isEmpty());
+        QVERIFY(HotkeyManager::normalize("Ctrl+A, Ctrl+B").isEmpty());
+        QVERIFY(HotkeyManager::normalize("").isEmpty());
+        QVERIFY(HotkeyManager::normalize("+++").isEmpty());
+        QCOMPARE(HotkeyManager::sequenceFromKey(Qt::Key_N, Qt::ControlModifier | Qt::AltModifier), QString("Ctrl+Alt+N"));
+        QCOMPARE(HotkeyManager::sequenceFromKey(Qt::Key_N, Qt::ControlModifier | Qt::KeypadModifier), QString("Ctrl+N"));
+        QVERIFY2(HotkeyManager::sequenceFromKey(Qt::Key_Control, Qt::ControlModifier).isEmpty(), "modifier alone");
+        QVERIFY(HotkeyManager::sequenceFromKey(Qt::Key_N, Qt::NoModifier).isEmpty());
+        QCOMPARE(HotkeyManager::actionKey(HotkeyManager::Action::ShowWindow), QString("showWindow"));
+        QVERIFY(HotkeyManager::actionFromKey("toggleSpeakToChat") == HotkeyManager::Action::ToggleSpeakToChat);
+        QVERIFY(!HotkeyManager::actionFromKey("nope"));
+
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        DeviceCenterController controller(nullptr, service);
+        TrayController tray(controller);
+        const QString group = "hotkeys-test";
+        auto wipe = [&] { QSettings settings("SonyBridge", "SonyDeviceCenter"); settings.beginGroup(group); settings.remove(""); };
+        wipe();
+        {
+            HotkeyManager hotkeys(controller, tray, nullptr, group);
+            const auto bindings = hotkeys.bindings();
+            QCOMPARE(bindings.size(), HotkeyManager::kActionCount);
+            QCOMPARE(bindings[0].toMap()["action"].toString(), QString("toggleNoiseControl"));
+            QCOMPARE(bindings[3].toMap()["action"].toString(), QString("showWindow"));
+            for (const auto& entry : bindings) {
+                QVERIFY2(!entry.toMap()["enabled"].toBool(), "off by default");
+                QCOMPARE(entry.toMap()["status"].toString(), QString("off"));
+            }
+            QSignalSpy changed(&hotkeys, &HotkeyManager::bindingsChanged);
+            hotkeys.setShortcut("toggleNoiseControl", "ctrl+alt+n");
+            hotkeys.setEnabled("toggleNoiseControl", true);
+            hotkeys.setShortcut("showWindow", "bogus");
+            hotkeys.setEnabled("showWindow", true);
+            QCOMPARE(changed.count(), 3);
+            QCOMPARE(hotkeys.shortcut(HotkeyManager::Action::ToggleNoiseControl), QString("Ctrl+Alt+N"));
+            QVERIFY2(hotkeys.shortcut(HotkeyManager::Action::ShowWindow).isEmpty(), "unusable text clears");
+            QCOMPARE(hotkeys.status(HotkeyManager::Action::ShowWindow), HotkeyManager::Status::Off);
+            const auto expected = HotkeyManager::supported() ? HotkeyManager::Status::Registered : HotkeyManager::Status::Unsupported;
+            QCOMPARE(hotkeys.status(HotkeyManager::Action::ToggleNoiseControl), expected);
+            if (HotkeyManager::supported()) {
+                // The same combination twice: the OS refuses the second one.
+                hotkeys.setShortcut("noiseControlOff", "Ctrl+Alt+N");
+                hotkeys.setEnabled("noiseControlOff", true);
+                QCOMPARE(hotkeys.status(HotkeyManager::Action::NoiseControlOff), HotkeyManager::Status::Conflict);
+                QCOMPARE(hotkeys.bindings()[1].toMap()["status"].toString(), QString("conflict"));
+                hotkeys.setShortcut("noiseControlOff", "Ctrl+Alt+O");
+                QCOMPARE(hotkeys.status(HotkeyManager::Action::NoiseControlOff), HotkeyManager::Status::Registered);
+                // Suspended for the capture field: nothing is held, status stays.
+                hotkeys.suspend(true);
+                QCOMPARE(hotkeys.status(HotkeyManager::Action::NoiseControlOff), HotkeyManager::Status::Registered);
+                hotkeys.suspend(false);
+            }
+        }
+        {
+            // A fresh manager reads the same bindings back.
+            HotkeyManager hotkeys(controller, tray, nullptr, group);
+            QVERIFY(hotkeys.isEnabled(HotkeyManager::Action::ToggleNoiseControl));
+            QCOMPARE(hotkeys.shortcut(HotkeyManager::Action::ToggleNoiseControl), QString("Ctrl+Alt+N"));
+            QVERIFY(hotkeys.isEnabled(HotkeyManager::Action::ShowWindow));
+            QVERIFY(hotkeys.shortcut(HotkeyManager::Action::ShowWindow).isEmpty());
+            QCOMPARE(hotkeys.bindings()[0].toMap()["display"].toString(), HotkeyManager::displayText("Ctrl+Alt+N"));
+        }
+        wipe();
+    }
+    void hotkeysRouteActionsToController() {
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        const auto previousLevel = QSettings("SonyBridge", "SonyDeviceCenter").value("ambientLevel", 10);
+        DeviceCenterController controller(nullptr, service);
+        const bool previousNotify = controller.notifyHotkeys();
+        controller.setNotifyHotkeys(true);
+        TrayController tray(controller);
+        HotkeyManager hotkeys(controller, tray, nullptr, "hotkeys-test");
+        QSignalSpy shown(&hotkeys, &HotkeyManager::showWindowRequested);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
+        auto settle = [&] { QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000); QVERIFY2(controller.lastError().isEmpty(), qPrintable(controller.lastError())); };
+
+        controller.setAmbient(14, false); settle();
+        controller.setAnc(true); settle();
+        using Action = HotkeyManager::Action;
+        hotkeys.trigger(Action::ToggleNoiseControl); settle();
+        QCOMPARE(controller.noiseControlMode(), QString("ambient"));
+        QVERIFY2(controller.ambientLevel() == 14, "the remembered level, like the tray menu");
+        QCOMPARE(hotkeys.lastFeedback(), controller.t("ambient_sound"));
+        hotkeys.trigger(Action::ToggleNoiseControl); settle();
+        QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
+        QCOMPARE(hotkeys.lastFeedback(), controller.t("noise_cancelling"));
+        hotkeys.trigger(Action::NoiseControlOff); settle();
+        QCOMPARE(controller.noiseControlMode(), QString("off"));
+        QCOMPARE(hotkeys.lastFeedback(), controller.t("noise_control_off"));
+        hotkeys.trigger(Action::ToggleNoiseControl); settle();
+        QVERIFY2(controller.noiseControlMode() == "ambient", "off goes to ambient");
+
+        const bool speak = controller.speakToChat();
+        hotkeys.trigger(Action::ToggleSpeakToChat); settle();
+        QCOMPARE(controller.speakToChat(), !speak);
+        QVERIFY(hotkeys.lastFeedback().startsWith("Speak-to-Chat"));
+        hotkeys.trigger(Action::ToggleSpeakToChat); settle();
+        QCOMPARE(controller.speakToChat(), speak);
+
+        hotkeys.trigger(Action::ShowWindow);
+        QCOMPARE(shown.count(), 1);
+#ifdef Q_OS_WIN
+        // The real delivery path: a WM_HOTKEY thread message reaches the
+        // native event filter through Qt's dispatcher. Posted by hand, so no
+        // keystroke is injected into the session.
+        hotkeys.setShortcut("showWindow", "Ctrl+Alt+F12");
+        hotkeys.setEnabled("showWindow", true);
+        QCOMPARE(hotkeys.status(Action::ShowWindow), HotkeyManager::Status::Registered);
+        PostThreadMessageW(GetCurrentThreadId(), WM_HOTKEY,
+                           HotkeyManager::kNativeIdBase + static_cast<int>(Action::ShowWindow), 0);
+        QTRY_COMPARE_WITH_TIMEOUT(shown.count(), 2, 2000);
+        hotkeys.setEnabled("showWindow", false);
+        // Disabled: the same message is ignored.
+        PostThreadMessageW(GetCurrentThreadId(), WM_HOTKEY,
+                           HotkeyManager::kNativeIdBase + static_cast<int>(Action::ShowWindow), 0);
+        QTest::qWait(100);
+        QCOMPARE(shown.count(), 2);
+        QSettings settings("SonyBridge", "SonyDeviceCenter"); settings.beginGroup("hotkeys-test"); settings.remove("");
+#endif
+
+        // Feedback follows the notification toggle.
+        controller.setNotifyHotkeys(false);
+        const auto before = hotkeys.lastFeedback();
+        hotkeys.trigger(Action::NoiseControlOff); settle();
+        QCOMPARE(hotkeys.lastFeedback(), before);
+
+        controller.setNotifyHotkeys(previousNotify);
+        QSettings("SonyBridge", "SonyDeviceCenter").setValue("ambientLevel", previousLevel);
     }
     void destructionDrainsWorkerAndCallbacks() {
         auto service = std::make_shared<SlowService>();

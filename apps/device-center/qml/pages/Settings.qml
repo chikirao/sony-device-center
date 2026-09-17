@@ -10,6 +10,7 @@ ViewPage {
     // More cards than fit the minimum window height, so this
     // page scrolls; the others still fit and don't.
     Flickable {
+        objectName: "settingsFlick"
         anchors.fill: parent
         contentWidth: width
         contentHeight: settingsColumn.implicitHeight + 72
@@ -127,6 +128,7 @@ ViewPage {
                         spacing: 3
                         Text {
                             textFormat: Text.PlainText
+                            Layout.fillWidth: true
                             text: appWindow.tr("init_with_os")
                             color: Theme.txt
                             font.pixelSize: 14
@@ -134,6 +136,7 @@ ViewPage {
                         }
                         Text {
                             textFormat: Text.PlainText
+                            Layout.fillWidth: true
                             text: appWindow.tr("init_with_os_desc")
                             color: Theme.txtDim
                             font.pixelSize: 12
@@ -180,6 +183,7 @@ ViewPage {
                         spacing: 3
                         Text {
                             textFormat: Text.PlainText
+                            Layout.fillWidth: true
                             text: appWindow.tr("minimize_to_tray")
                             color: Theme.txt
                             font.pixelSize: 14
@@ -187,6 +191,7 @@ ViewPage {
                         }
                         Text {
                             textFormat: Text.PlainText
+                            Layout.fillWidth: true
                             text: appWindow.tr("minimize_to_tray_desc")
                             color: Theme.txtDim
                             font.pixelSize: 12
@@ -231,6 +236,7 @@ ViewPage {
                         spacing: 3
                         Text {
                             textFormat: Text.PlainText
+                            Layout.fillWidth: true
                             text: appWindow.tr("language")
                             color: Theme.txt
                             font.pixelSize: 14
@@ -238,6 +244,7 @@ ViewPage {
                         }
                         Text {
                             textFormat: Text.PlainText
+                            Layout.fillWidth: true
                             text: appWindow.tr("language_desc")
                             color: Theme.txtDim
                             font.pixelSize: 12
@@ -372,7 +379,8 @@ ViewPage {
                     model: [
                         { key: "low", title: appWindow.tr("notify_low_battery_setting"), desc: appWindow.tr("notify_low_battery_setting_desc"), glyph: appWindow.icons.bolt },
                         { key: "conn", title: appWindow.tr("notify_connection_setting"), desc: appWindow.tr("notify_connection_setting_desc"), glyph: appWindow.icons.headphones },
-                        { key: "charged", title: appWindow.tr("notify_charged_setting"), desc: appWindow.tr("notify_charged_setting_desc"), glyph: appWindow.icons.sparkle }
+                        { key: "charged", title: appWindow.tr("notify_charged_setting"), desc: appWindow.tr("notify_charged_setting_desc"), glyph: appWindow.icons.sparkle },
+                        { key: "hotkey", title: appWindow.tr("notify_hotkey_setting"), desc: appWindow.tr("notify_hotkey_setting_desc"), glyph: appWindow.icons.keyboard }
                     ]
                     delegate: RowLayout {
                         id: notifyRow
@@ -395,6 +403,7 @@ ViewPage {
                             spacing: 3
                             Text {
                                 textFormat: Text.PlainText
+                                Layout.fillWidth: true
                                 text: notifyRow.modelData.title
                                 color: Theme.txt
                                 font.pixelSize: 14
@@ -402,6 +411,7 @@ ViewPage {
                             }
                             Text {
                                 textFormat: Text.PlainText
+                                Layout.fillWidth: true
                                 text: notifyRow.modelData.desc
                                 color: Theme.txtDim
                                 font.pixelSize: 12
@@ -447,12 +457,163 @@ ViewPage {
                         NeoSwitch { appWindow: root.appWindow;
                             confirmedChecked: notifyRow.modelData.key === "low" ? controller.notifyLowBattery
                                             : notifyRow.modelData.key === "conn" ? controller.notifyConnection
+                                            : notifyRow.modelData.key === "hotkey" ? controller.notifyHotkeys
                                             : controller.notifyCharged
                             onToggled: {
                                 if (notifyRow.modelData.key === "low") controller.setNotifyLowBattery(checked)
                                 else if (notifyRow.modelData.key === "conn") controller.setNotifyConnection(checked)
+                                else if (notifyRow.modelData.key === "hotkey") controller.setNotifyHotkeys(checked)
                                 else controller.setNotifyCharged(checked)
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Card 3: Global hotkeys. The action list is static so the delegates
+        // (and the focused capture field) survive a bindings update; each row
+        // looks its own binding up by action.
+        Card { appWindow: root.appWindow;
+            objectName: "hotkeysCard"
+            Layout.fillWidth: true
+            Layout.preferredHeight: hotkeyColumn.implicitHeight + 44
+
+            ColumnLayout {
+                id: hotkeyColumn
+                anchors.fill: parent
+                anchors.margins: 22
+                spacing: 16
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+                    Eyebrow { appWindow: root.appWindow; text: appWindow.tr("hotkeys") }
+                    Text {
+                        textFormat: Text.PlainText
+                        Layout.fillWidth: true
+                        text: hotkeys.supported ? appWindow.tr("hotkeys_desc") : appWindow.tr("hotkeys_unavailable")
+                        color: hotkeys.supported ? Theme.txtDim : Theme.danger
+                        font.pixelSize: 12
+                        wrapMode: Text.Wrap
+                    }
+                }
+
+                Repeater {
+                    model: [
+                        { action: "toggleNoiseControl", title: appWindow.tr("hotkey_toggle_noise"), glyph: appWindow.icons.shield },
+                        { action: "noiseControlOff", title: appWindow.tr("hotkey_off"), glyph: appWindow.icons.power },
+                        { action: "toggleSpeakToChat", title: appWindow.tr("hotkey_speak_to_chat"), glyph: appWindow.icons.chat },
+                        { action: "showWindow", title: appWindow.tr("hotkey_show_window"), glyph: appWindow.icons.home }
+                    ]
+                    delegate: RowLayout {
+                        id: hotkeyRow
+                        required property var modelData
+                        readonly property var binding: hotkeys.bindings.find(b => b.action === hotkeyRow.modelData.action)
+                        readonly property bool conflict: binding.status === "conflict"
+                        Layout.fillWidth: true
+                        spacing: 16
+
+                        Rectangle {
+                            Layout.preferredWidth: 38
+                            Layout.preferredHeight: 38
+                            radius: Theme.controlRadius
+                            color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
+                            border.width: 1
+                            border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
+                            Glyph { appWindow: root.appWindow; anchors.centerIn: parent; path: hotkeyRow.modelData.glyph; size: 18; color: Theme.accentSoft }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 3
+                            Text {
+                                textFormat: Text.PlainText
+                                Layout.fillWidth: true
+                                text: hotkeyRow.modelData.title
+                                color: Theme.txt
+                                font.pixelSize: 14
+                                font.weight: Font.DemiBold
+                            }
+                            Text {
+                                textFormat: Text.PlainText
+                                Layout.fillWidth: true
+                                visible: hotkeyRow.conflict
+                                text: appWindow.tr("hotkey_conflict")
+                                color: Theme.danger
+                                font.pixelSize: 12
+                            }
+                        }
+
+                        // Capture field: click, press the combination, done.
+                        // Backspace clears, Escape backs out.
+                        Rectangle {
+                            id: captureField
+                            objectName: "hotkeyCapture-" + hotkeyRow.modelData.action
+                            Layout.preferredWidth: 168
+                            Layout.preferredHeight: 38
+                            radius: Theme.controlRadius
+                            color: captureArea.containsMouse && !activeFocus ? Theme.surfaceHi : Theme.surfaceSunk
+                            border.width: 1
+                            border.color: activeFocus ? Theme.accent : hotkeyRow.conflict ? Theme.danger
+                                        : captureArea.containsMouse ? Theme.lineHi : Theme.line
+                            activeFocusOnTab: true
+                            enabled: hotkeys.supported
+                            opacity: enabled ? 1 : 0.5
+                            Behavior on color { ColorAnimation { duration: Theme.tFast } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.tFast } }
+
+                            // Registered combinations would fire instead of
+                            // reaching this field, so they are let go while
+                            // it listens.
+                            onActiveFocusChanged: hotkeys.suspend(activeFocus)
+                            readonly property bool windowActive: Window.active
+                            onWindowActiveChanged: if (!windowActive) focus = false
+                            Component.onDestruction: if (activeFocus) hotkeys.suspend(false)
+
+                            Keys.onPressed: (event) => {
+                                event.accepted = true
+                                if (event.key === Qt.Key_Escape) { captureField.focus = false; return }
+                                if ((event.key === Qt.Key_Backspace || event.key === Qt.Key_Delete) && event.modifiers === Qt.NoModifier) {
+                                    hotkeys.setShortcut(hotkeyRow.modelData.action, "")
+                                    captureField.focus = false
+                                    return
+                                }
+                                var sequence = hotkeys.sequenceFromKey(event.key, event.modifiers)
+                                if (sequence === "") return
+                                hotkeys.setShortcut(hotkeyRow.modelData.action, sequence)
+                                captureField.focus = false
+                            }
+
+                            MouseArea {
+                                id: captureArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: captureField.forceActiveFocus()
+                            }
+
+                            Text {
+                                textFormat: Text.PlainText
+                                anchors.centerIn: parent
+                                width: parent.width - 24
+                                horizontalAlignment: Text.AlignHCenter
+                                elide: Text.ElideRight
+                                text: captureField.activeFocus ? appWindow.tr("hotkey_capture_hint")
+                                    : hotkeyRow.binding.display !== "" ? hotkeyRow.binding.display
+                                    : appWindow.tr("hotkey_not_set")
+                                color: captureField.activeFocus || hotkeyRow.binding.display === "" ? Theme.txtDim : Theme.txt
+                                font.pixelSize: 12
+                                font.weight: hotkeyRow.binding.display !== "" && !captureField.activeFocus ? Font.DemiBold : Font.Normal
+                            }
+                        }
+
+                        NeoSwitch { appWindow: root.appWindow;
+                            objectName: "hotkeySwitch-" + hotkeyRow.modelData.action
+                            enabled: hotkeys.supported
+                            opacity: enabled ? 1 : 0.5
+                            confirmedChecked: hotkeyRow.binding.enabled
+                            onToggled: hotkeys.setEnabled(hotkeyRow.modelData.action, checked)
                         }
                     }
                 }
