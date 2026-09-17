@@ -65,6 +65,7 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
     _notifyLowBattery = settings.value("notifyLowBattery", true).toBool();
     _notifyConnection = settings.value("notifyConnection", true).toBool();
     _notifyCharged = settings.value("notifyCharged", false).toBool();
+    _notifyHotkeys = settings.value("notifyHotkeys", true).toBool();
     _lowBatteryThreshold = settings.value("lowBatteryThreshold", 20).toInt();
     _ambientLevel = std::clamp(settings.value("ambientLevel", 10).toInt(), 1, 20);
     _backend = new DeviceBackend(std::move(service));
@@ -367,6 +368,12 @@ void DeviceCenterController::setNotifyCharged(bool enable) {
     if (_notifyCharged == enable) return;
     _notifyCharged = enable;
     QSettings("SonyBridge", "SonyDeviceCenter").setValue("notifyCharged", enable);
+    emit notificationSettingsChanged();
+}
+void DeviceCenterController::setNotifyHotkeys(bool enable) {
+    if (_notifyHotkeys == enable) return;
+    _notifyHotkeys = enable;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("notifyHotkeys", enable);
     emit notificationSettingsChanged();
 }
 void DeviceCenterController::setLowBatteryThreshold(int percent) {

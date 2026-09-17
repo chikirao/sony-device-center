@@ -177,6 +177,22 @@ GUI поднимает встроенный симулятор WH-1000XM5 пря
 по файлу на устройство; файл симулятора (`CC-98-8B-00-11-22.json`) можно
 удалять.
 
+### Глобальные хоткеи
+
+`HotkeyManager` регистрирует сочетания через `RegisterHotKey` без окна, так
+что `WM_HOTKEY` приходит как thread-message и ловится
+`QAbstractNativeEventFilter`. Пока поле захвата в настройках в фокусе,
+регистрации снимаются (`suspend(true)`), иначе уже назначенное сочетание
+сработало бы вместо записи. Чтобы посмотреть карточку с назначенными
+сочетаниями и конфликтом, достаточно положить значения в реестр —
+`HKCU\Software\SonyBridge\SonyDeviceCenter\hotkeys\<action>` с `shortcut`
+(portable-форма Qt, например `Ctrl+Alt+N`) и `enabled`; прогон
+`SONY_UI_SCREENSHOTS` дополнительно сохраняет `page6-hotkeys.png` —
+страницу настроек, прокрученную к этой карточке. Тесты
+(`hotkeyBindingsPersistAndParse`, `hotkeysRouteActionsToController`) работают
+в группе `hotkeys-test` и на Windows дополнительно шлют `WM_HOTKEY` через
+`PostThreadMessage`, не трогая клавиатуру.
+
 ## 7. Установщик
 
 Локально не нужен. `release.yml` в GitHub Actions при пуше тега `v*`

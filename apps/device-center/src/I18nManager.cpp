@@ -204,6 +204,21 @@ void I18nManager::_initTranslations() {
     en["upscaling"]                       = "Upscaling";
     en["eq_bands_hint"]                   = "Drag a band to shape your own curve.";
     en["per_hour"]                        = "per hour";
+    en["hotkeys"]                         = "Hotkeys";
+    en["hotkeys_desc"]                    = "System-wide shortcuts that work while the window is hidden.";
+    en["hotkeys_unavailable"]             = "Global hotkeys are available on Windows only for now.";
+    en["hotkey_toggle_noise"]             = "Noise Cancelling ↔ Ambient Sound";
+    en["hotkey_off"]                      = "Noise control off";
+    en["hotkey_speak_to_chat"]            = "Toggle Speak-to-Chat";
+    en["hotkey_show_window"]              = "Show window";
+    en["hotkey_capture_hint"]             = "Press a combination…";
+    en["hotkey_not_set"]                  = "Not set";
+    en["hotkey_conflict"]                 = "Taken by another application";
+    en["hotkey_clear"]                    = "Clear";
+    en["hotkey_state_on"]                 = "on";
+    en["hotkey_state_off"]                = "off";
+    en["notify_hotkey_setting"]           = "Hotkey Feedback";
+    en["notify_hotkey_setting_desc"]      = "Show which mode a global hotkey switched to.";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -366,6 +381,21 @@ void I18nManager::_initTranslations() {
     pt["upscaling"]                       = "Upscaling";
     pt["eq_bands_hint"]                   = "Arraste uma banda para criar sua própria curva.";
     pt["per_hour"]                        = "por hora";
+    pt["hotkeys"]                         = "Atalhos de teclado";
+    pt["hotkeys_desc"]                    = "Atalhos globais que funcionam mesmo com a janela oculta.";
+    pt["hotkeys_unavailable"]             = "Por enquanto, os atalhos globais só estão disponíveis no Windows.";
+    pt["hotkey_toggle_noise"]             = "Cancelamento de ruído ↔ Som ambiente";
+    pt["hotkey_off"]                      = "Desligar controle de ruído";
+    pt["hotkey_speak_to_chat"]            = "Alternar Speak-to-Chat";
+    pt["hotkey_show_window"]              = "Mostrar janela";
+    pt["hotkey_capture_hint"]             = "Pressione uma combinação…";
+    pt["hotkey_not_set"]                  = "Não definido";
+    pt["hotkey_conflict"]                 = "Em uso por outro aplicativo";
+    pt["hotkey_clear"]                    = "Limpar";
+    pt["hotkey_state_on"]                 = "ligado";
+    pt["hotkey_state_off"]                = "desligado";
+    pt["notify_hotkey_setting"]           = "Resposta dos atalhos";
+    pt["notify_hotkey_setting_desc"]      = "Mostrar para qual modo o atalho global mudou.";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -528,6 +558,21 @@ void I18nManager::_initTranslations() {
     es["upscaling"]                       = "Mejora de audio";
     es["eq_bands_hint"]                   = "Arrastra una banda para crear tu propia curva.";
     es["per_hour"]                        = "por hora";
+    es["hotkeys"]                         = "Atajos de teclado";
+    es["hotkeys_desc"]                    = "Atajos globales que funcionan aunque la ventana esté oculta.";
+    es["hotkeys_unavailable"]             = "Por ahora, los atajos globales solo están disponibles en Windows.";
+    es["hotkey_toggle_noise"]             = "Cancelación de ruido ↔ Sonido ambiente";
+    es["hotkey_off"]                      = "Control de ruido desactivado";
+    es["hotkey_speak_to_chat"]            = "Alternar Speak-to-Chat";
+    es["hotkey_show_window"]              = "Mostrar ventana";
+    es["hotkey_capture_hint"]             = "Pulsa una combinación…";
+    es["hotkey_not_set"]                  = "Sin asignar";
+    es["hotkey_conflict"]                 = "Ocupado por otra aplicación";
+    es["hotkey_clear"]                    = "Borrar";
+    es["hotkey_state_on"]                 = "activado";
+    es["hotkey_state_off"]                = "desactivado";
+    es["notify_hotkey_setting"]           = "Respuesta de atajos";
+    es["notify_hotkey_setting_desc"]      = "Mostrar a qué modo cambió el atajo global.";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -690,6 +735,21 @@ void I18nManager::_initTranslations() {
     de["upscaling"]                       = "Upscaling";
     de["eq_bands_hint"]                   = "Ziehe ein Band, um deine eigene Kurve zu formen.";
     de["per_hour"]                        = "pro Stunde";
+    de["hotkeys"]                         = "Tastenkürzel";
+    de["hotkeys_desc"]                    = "Systemweite Kürzel, die auch bei verstecktem Fenster wirken.";
+    de["hotkeys_unavailable"]             = "Globale Tastenkürzel gibt es vorerst nur unter Windows.";
+    de["hotkey_toggle_noise"]             = "Noise Cancelling ↔ Umgebungsgeräusche";
+    de["hotkey_off"]                      = "Geräuschsteuerung aus";
+    de["hotkey_speak_to_chat"]            = "Speak-to-Chat umschalten";
+    de["hotkey_show_window"]              = "Fenster anzeigen";
+    de["hotkey_capture_hint"]             = "Kombination drücken…";
+    de["hotkey_not_set"]                  = "Nicht belegt";
+    de["hotkey_conflict"]                 = "Von einer anderen Anwendung belegt";
+    de["hotkey_clear"]                    = "Löschen";
+    de["hotkey_state_on"]                 = "ein";
+    de["hotkey_state_off"]                = "aus";
+    de["notify_hotkey_setting"]           = "Tastenkürzel-Rückmeldung";
+    de["notify_hotkey_setting_desc"]      = "Anzeigen, in welchen Modus ein globales Kürzel gewechselt hat.";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -852,6 +912,21 @@ void I18nManager::_initTranslations() {
     fr["upscaling"]                       = "Suréchantillonnage";
     fr["eq_bands_hint"]                   = "Faites glisser une bande pour tracer votre propre courbe.";
     fr["per_hour"]                        = "par heure";
+    fr["hotkeys"]                         = "Raccourcis clavier";
+    fr["hotkeys_desc"]                    = "Raccourcis globaux actifs même quand la fenêtre est masquée.";
+    fr["hotkeys_unavailable"]             = "Les raccourcis globaux ne sont disponibles que sous Windows pour l’instant.";
+    fr["hotkey_toggle_noise"]             = "Réduction de bruit ↔ Son ambiant";
+    fr["hotkey_off"]                      = "Contrôle du bruit désactivé";
+    fr["hotkey_speak_to_chat"]            = "Activer/désactiver Speak-to-Chat";
+    fr["hotkey_show_window"]              = "Afficher la fenêtre";
+    fr["hotkey_capture_hint"]             = "Appuyez sur une combinaison…";
+    fr["hotkey_not_set"]                  = "Non défini";
+    fr["hotkey_conflict"]                 = "Utilisé par une autre application";
+    fr["hotkey_clear"]                    = "Effacer";
+    fr["hotkey_state_on"]                 = "activé";
+    fr["hotkey_state_off"]                = "désactivé";
+    fr["notify_hotkey_setting"]           = "Retour des raccourcis";
+    fr["notify_hotkey_setting_desc"]      = "Indiquer le mode activé par un raccourci global.";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1014,6 +1089,21 @@ void I18nManager::_initTranslations() {
     ja["upscaling"]                       = "アップスケーリング";
     ja["eq_bands_hint"]                   = "バンドをドラッグして独自のカーブを作成します。";
     ja["per_hour"]                        = "1時間あたり";
+    ja["hotkeys"]                         = "ホットキー";
+    ja["hotkeys_desc"]                    = "ウィンドウが隠れていても使えるシステム全体のショートカット。";
+    ja["hotkeys_unavailable"]             = "グローバルホットキーは現在 Windows のみ対応です。";
+    ja["hotkey_toggle_noise"]             = "ノイズキャンセリング ↔ 外音取り込み";
+    ja["hotkey_off"]                      = "ノイズコントロールをオフ";
+    ja["hotkey_speak_to_chat"]            = "Speak-to-Chat を切り替え";
+    ja["hotkey_show_window"]              = "ウィンドウを表示";
+    ja["hotkey_capture_hint"]             = "キーの組み合わせを押してください…";
+    ja["hotkey_not_set"]                  = "未設定";
+    ja["hotkey_conflict"]                 = "他のアプリケーションが使用中";
+    ja["hotkey_clear"]                    = "クリア";
+    ja["hotkey_state_on"]                 = "オン";
+    ja["hotkey_state_off"]                = "オフ";
+    ja["notify_hotkey_setting"]           = "ホットキーの通知";
+    ja["notify_hotkey_setting_desc"]      = "グローバルホットキーで切り替えたモードを表示します。";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1176,6 +1266,21 @@ void I18nManager::_initTranslations() {
     ru["upscaling"]                       = "Улучшение звука";
     ru["eq_bands_hint"]                   = "Потяните полосу, чтобы задать свою кривую.";
     ru["per_hour"]                        = "в час";
+    ru["hotkeys"]                         = "Горячие клавиши";
+    ru["hotkeys_desc"]                    = "Работают во всей системе, даже когда окно скрыто.";
+    ru["hotkeys_unavailable"]             = "Глобальные хоткеи пока доступны только в Windows.";
+    ru["hotkey_toggle_noise"]             = "Шумоподавление ↔ Окружающий звук";
+    ru["hotkey_off"]                      = "Выключить шумоподавление";
+    ru["hotkey_speak_to_chat"]            = "Переключить Speak-to-Chat";
+    ru["hotkey_show_window"]              = "Показать окно";
+    ru["hotkey_capture_hint"]             = "Нажмите сочетание…";
+    ru["hotkey_not_set"]                  = "Не задано";
+    ru["hotkey_conflict"]                 = "Занято другим приложением";
+    ru["hotkey_clear"]                    = "Сбросить";
+    ru["hotkey_state_on"]                 = "вкл";
+    ru["hotkey_state_off"]                = "выкл";
+    ru["notify_hotkey_setting"]           = "Отклик на хоткеи";
+    ru["notify_hotkey_setting_desc"]      = "Показывать, в какой режим переключил хоткей.";
 }
 
 } // namespace sony::devicecenter
