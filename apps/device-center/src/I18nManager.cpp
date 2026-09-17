@@ -204,6 +204,7 @@ void I18nManager::_initTranslations() {
     en["upscaling"]                       = "Upscaling";
     en["eq_bands_hint"]                   = "Drag a band to shape your own curve.";
     en["per_hour"]                        = "per hour";
+    en["battery_estimate_pending"]        = "Not enough data yet";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -366,6 +367,7 @@ void I18nManager::_initTranslations() {
     pt["upscaling"]                       = "Upscaling";
     pt["eq_bands_hint"]                   = "Arraste uma banda para criar sua própria curva.";
     pt["per_hour"]                        = "por hora";
+    pt["battery_estimate_pending"]        = "Ainda faltam dados";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -528,6 +530,7 @@ void I18nManager::_initTranslations() {
     es["upscaling"]                       = "Mejora de audio";
     es["eq_bands_hint"]                   = "Arrastra una banda para crear tu propia curva.";
     es["per_hour"]                        = "por hora";
+    es["battery_estimate_pending"]        = "Aún faltan datos";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -690,6 +693,7 @@ void I18nManager::_initTranslations() {
     de["upscaling"]                       = "Upscaling";
     de["eq_bands_hint"]                   = "Ziehe ein Band, um deine eigene Kurve zu formen.";
     de["per_hour"]                        = "pro Stunde";
+    de["battery_estimate_pending"]        = "Noch zu wenig Daten";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -852,6 +856,7 @@ void I18nManager::_initTranslations() {
     fr["upscaling"]                       = "Suréchantillonnage";
     fr["eq_bands_hint"]                   = "Faites glisser une bande pour tracer votre propre courbe.";
     fr["per_hour"]                        = "par heure";
+    fr["battery_estimate_pending"]        = "Pas encore assez de données";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1014,6 +1019,7 @@ void I18nManager::_initTranslations() {
     ja["upscaling"]                       = "アップスケーリング";
     ja["eq_bands_hint"]                   = "バンドをドラッグして独自のカーブを作成します。";
     ja["per_hour"]                        = "1時間あたり";
+    ja["battery_estimate_pending"]        = "データがまだ不足しています";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1176,6 +1182,7 @@ void I18nManager::_initTranslations() {
     ru["upscaling"]                       = "Улучшение звука";
     ru["eq_bands_hint"]                   = "Потяните полосу, чтобы задать свою кривую.";
     ru["per_hour"]                        = "в час";
+    ru["battery_estimate_pending"]        = "Пока мало данных";
 }
 
 } // namespace sony::devicecenter
