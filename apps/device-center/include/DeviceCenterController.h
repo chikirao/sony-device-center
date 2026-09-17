@@ -73,6 +73,8 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(bool notifyConnection READ notifyConnection WRITE setNotifyConnection NOTIFY notificationSettingsChanged)
     Q_PROPERTY(bool notifyCharged READ notifyCharged WRITE setNotifyCharged NOTIFY notificationSettingsChanged)
     Q_PROPERTY(bool notifyHotkeys READ notifyHotkeys WRITE setNotifyHotkeys NOTIFY notificationSettingsChanged)
+    Q_PROPERTY(bool notifyUpdates READ notifyUpdates WRITE setNotifyUpdates NOTIFY notificationSettingsChanged)
+    Q_PROPERTY(bool checkUpdatesOnStart READ checkUpdatesOnStart WRITE setCheckUpdatesOnStart NOTIFY notificationSettingsChanged)
     Q_PROPERTY(int lowBatteryThreshold READ lowBatteryThreshold WRITE setLowBatteryThreshold NOTIFY notificationSettingsChanged)
     Q_PROPERTY(QString appVersion READ appVersion CONSTANT)
     Q_PROPERTY(QString currentLanguage READ currentLanguage WRITE setLanguage NOTIFY languageChanged)
@@ -168,6 +170,12 @@ public:
     Q_INVOKABLE void setNotifyConnection(bool enable);
     Q_INVOKABLE void setNotifyCharged(bool enable);
     Q_INVOKABLE void setNotifyHotkeys(bool enable);
+    // Toast when a newer release is found (the check itself is separate).
+    [[nodiscard]] bool notifyUpdates() const { return _notifyUpdates; }
+    Q_INVOKABLE void setNotifyUpdates(bool enable);
+    // Whether main() asks GitHub for the latest release on launch.
+    [[nodiscard]] bool checkUpdatesOnStart() const { return _checkUpdatesOnStart; }
+    Q_INVOKABLE void setCheckUpdatesOnStart(bool enable);
     Q_INVOKABLE void setLowBatteryThreshold(int percent);
     Q_INVOKABLE void setLanguage(const QString& langCode);
     Q_INVOKABLE QString t(const QString& key) const;
@@ -230,6 +238,7 @@ private:
     QString _currentLanguage{"en"};
     bool _minimizeToTray{true};
     bool _notifyLowBattery{true}, _notifyConnection{true}, _notifyCharged{false}, _notifyHotkeys{true};
+    bool _notifyUpdates{true}, _checkUpdatesOnStart{true};
     int _lowBatteryThreshold{20};
 
 };

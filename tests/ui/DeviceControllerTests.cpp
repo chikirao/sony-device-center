@@ -5,6 +5,8 @@
 #include "HotkeyManager.h"
 #include "EqualizerLibrary.h"
 #include "BluetoothWatcher.h"
+#include "UpdateChecker.h"
+#include "../support/FakeReleaseFetcher.h"
 #include <QTemporaryDir>
 #include <QImage>
 #include <QQmlApplicationEngine>
@@ -81,9 +83,14 @@ private slots:
         HotkeyManager hotkeys(controller, tray, nullptr, "hotkeys-test");
         QTemporaryDir libraryDir;
         EqualizerLibrary eqLibrary(controller, libraryDir.path());
+        // A newer release on offer, so the Settings card renders its busiest state.
+        auto* fetcher = new test::FakeReleaseFetcher;
+        fetcher->body = test::FakeReleaseFetcher::release("v9.9.9", {"sony-device-center-9.9.9-" + UpdateChecker::platformAssetSuffix()});
+        UpdateChecker updates(SONY_DEVICE_CENTER_VERSION, fetcher);
         engine.rootContext()->setContextProperty("controller", &controller);
         engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
         engine.rootContext()->setContextProperty("eqLibrary", &eqLibrary);
+        engine.rootContext()->setContextProperty("updates", &updates);
         engine.rootContext()->setContextProperty("trayAvailable", false);
         engine.rootContext()->setContextProperty("startHidden", false);
         engine.load(QUrl("qrc:/qml/Main.qml"));
@@ -128,6 +135,23 @@ private slots:
                 QVERIFY(window->grabWindow().save(path));
             }
         }
+        // The About card follows the checker: idle, then the release with
+        // both actions once the (canned) reply is in.
+        auto* updateStatus = window->findChild<QObject*>("updateStatus");
+        auto* download = window->findChild<QObject*>("updateDownload");
+        auto* releasePage = window->findChild<QObject*>("updateReleasePage");
+        auto* checkNow = window->findChild<QObject*>("updateCheckNow");
+        QVERIFY(updateStatus && download && releasePage && checkNow);
+        QCOMPARE(updateStatus->property("text").toString(), controller.t("update_idle"));
+        QVERIFY(!download->property("visible").toBool());
+        QVERIFY(checkNow->property("visible").toBool());
+        updates.check();
+        QTRY_COMPARE(updates.state(), QString("available"));
+        QTest::qWait(20);
+        QCOMPARE(updateStatus->property("text").toString(), controller.t("update_available").arg("9.9.9"));
+        QVERIFY(download->property("visible").toBool());
+        QVERIFY(releasePage->property("visible").toBool());
+        QVERIFY(!checkNow->property("visible").toBool());
         const auto* smoothingSwitch = window->findChild<QObject*>("iconSmoothingSwitch");
         QVERIFY(smoothingSwitch);
         QCOMPARE(smoothingSwitch->property("checked").toBool(), controller.iconAntialiasing());
@@ -275,6 +299,42 @@ private slots:
         QTest::qWait(50);
         QCOMPARE(notifications.messageCount(), 4);
         QVERIFY(notifications.lastMessage().contains(controller.t("notify_disconnected")));
+    }
+    void updateToastHonoursTheSetting() {
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        DeviceCenterController controller(nullptr, service);
+        TrayController tray(controller);
+        NotificationController notifications(controller, tray);
+        const bool previous = controller.notifyUpdates();
+        const bool previousCheck = controller.checkUpdatesOnStart();
+
+        auto* fetcher = new test::FakeReleaseFetcher;
+        fetcher->body = test::FakeReleaseFetcher::release("v9.9.9");
+        UpdateChecker updates("0.2.1", fetcher);
+        connect(&updates, &UpdateChecker::updateAvailable, &notifications, &NotificationController::announceUpdate);
+
+        controller.setNotifyUpdates(false);
+        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("notifyUpdates").toBool(), false);
+        updates.check();
+        QTRY_COMPARE(updates.state(), QString("available"));
+        QVERIFY2(notifications.messageCount() == 0, "switched off: the card shows it, no toast");
+
+        controller.setNotifyUpdates(true);
+        auto* again = new test::FakeReleaseFetcher;
+        again->body = test::FakeReleaseFetcher::release("v9.9.9");
+        UpdateChecker fresh("0.2.1", again);
+        connect(&fresh, &UpdateChecker::updateAvailable, &notifications, &NotificationController::announceUpdate);
+        fresh.check();
+        QTRY_COMPARE(fresh.state(), QString("available"));
+        QCOMPARE(notifications.messageCount(), 1);
+        QVERIFY(notifications.lastMessage().contains("9.9.9"));
+        QVERIFY(notifications.lastMessage().contains(controller.t("notify_update_body")));
+
+        controller.setCheckUpdatesOnStart(false);
+        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("checkUpdatesOnStart").toBool(), false);
+        controller.setCheckUpdatesOnStart(previousCheck);
+        controller.setNotifyUpdates(previous);
     }
     void batteryLogFollowsTheSimulatedDevice() {
         QTemporaryDir dir;

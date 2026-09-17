@@ -380,7 +380,8 @@ ViewPage {
                         { key: "low", title: appWindow.tr("notify_low_battery_setting"), desc: appWindow.tr("notify_low_battery_setting_desc"), glyph: appWindow.icons.bolt },
                         { key: "conn", title: appWindow.tr("notify_connection_setting"), desc: appWindow.tr("notify_connection_setting_desc"), glyph: appWindow.icons.headphones },
                         { key: "charged", title: appWindow.tr("notify_charged_setting"), desc: appWindow.tr("notify_charged_setting_desc"), glyph: appWindow.icons.sparkle },
-                        { key: "hotkey", title: appWindow.tr("notify_hotkey_setting"), desc: appWindow.tr("notify_hotkey_setting_desc"), glyph: appWindow.icons.keyboard }
+                        { key: "hotkey", title: appWindow.tr("notify_hotkey_setting"), desc: appWindow.tr("notify_hotkey_setting_desc"), glyph: appWindow.icons.keyboard },
+                        { key: "update", title: appWindow.tr("notify_update_setting"), desc: appWindow.tr("notify_update_setting_desc"), glyph: appWindow.icons.download }
                     ]
                     delegate: RowLayout {
                         id: notifyRow
@@ -455,14 +456,17 @@ ViewPage {
                         }
 
                         NeoSwitch { appWindow: root.appWindow;
+                            objectName: "notifySwitch-" + notifyRow.modelData.key
                             confirmedChecked: notifyRow.modelData.key === "low" ? controller.notifyLowBattery
                                             : notifyRow.modelData.key === "conn" ? controller.notifyConnection
                                             : notifyRow.modelData.key === "hotkey" ? controller.notifyHotkeys
+                                            : notifyRow.modelData.key === "update" ? controller.notifyUpdates
                                             : controller.notifyCharged
                             onToggled: {
                                 if (notifyRow.modelData.key === "low") controller.setNotifyLowBattery(checked)
                                 else if (notifyRow.modelData.key === "conn") controller.setNotifyConnection(checked)
                                 else if (notifyRow.modelData.key === "hotkey") controller.setNotifyHotkeys(checked)
+                                else if (notifyRow.modelData.key === "update") controller.setNotifyUpdates(checked)
                                 else controller.setNotifyCharged(checked)
                             }
                         }
@@ -625,12 +629,15 @@ ViewPage {
             Layout.fillWidth: true
             spacing: 18
 
-            // Left Card: About App & Version
+            // Left Card: About App & Version, and the update check.
             Card { appWindow: root.appWindow;
+                objectName: "aboutCard"
                 Layout.fillWidth: true
-                Layout.preferredHeight: 184
+                Layout.fillHeight: true
+                Layout.preferredHeight: aboutColumn.implicitHeight + 44
 
                 ColumnLayout {
+                    id: aboutColumn
                     anchors.fill: parent
                     anchors.margins: 22
                     spacing: 14
@@ -691,39 +698,131 @@ ViewPage {
                         spacing: 16
 
                         ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
                             spacing: 2
                             Eyebrow { appWindow: root.appWindow; text: appWindow.tr("protocol_core") }
                             Text {
+                                Layout.fillWidth: true
                                 textFormat: Text.PlainText
-                                text: "MDR V1 & V2 (C++20)"
+                                text: "MDR V1 & V2, C++20"
                                 color: Theme.txt
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
+                                wrapMode: Text.Wrap
                             }
                         }
 
                         ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
                             spacing: 2
                             Eyebrow { appWindow: root.appWindow; text: appWindow.tr("framework") }
                             Text {
+                                Layout.fillWidth: true
                                 textFormat: Text.PlainText
                                 text: "Qt 6 Quick / QML"
                                 color: Theme.txt
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
+                                wrapMode: Text.Wrap
                             }
                         }
 
                         ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
                             spacing: 2
                             Eyebrow { appWindow: root.appWindow; text: appWindow.tr("license") }
                             Text {
+                                Layout.fillWidth: true
                                 textFormat: Text.PlainText
                                 text: appWindow.tr("license_value")
                                 color: Theme.txt
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
+                                wrapMode: Text.Wrap
                             }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: Theme.line
+                    }
+
+                    // What GitHub said last, and the way to act on it: the
+                    // installer for this platform and the release notes when
+                    // there is something newer, a re-check otherwise.
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+                        Eyebrow { appWindow: root.appWindow; text: appWindow.tr("updates") }
+                        Text {
+                            objectName: "updateStatus"
+                            textFormat: Text.PlainText
+                            Layout.fillWidth: true
+                            text: updates.state === "available" ? appWindow.tr("update_available").arg(updates.latestVersion)
+                                : updates.state === "checking" ? appWindow.tr("update_checking")
+                                : updates.state === "upToDate" ? appWindow.tr("update_up_to_date")
+                                : updates.state === "failed" ? appWindow.tr("update_failed")
+                                : appWindow.tr("update_idle")
+                            color: updates.state === "available" ? Theme.txt : Theme.txtDim
+                            font.pixelSize: 12
+                            font.weight: updates.state === "available" ? Font.DemiBold : Font.Medium
+                            wrapMode: Text.Wrap
+                        }
+                    }
+                    // The actions on their own line: two buttons beside the
+                    // status would not fit the card at the minimum width.
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+                        PillButton { appWindow: root.appWindow;
+                            objectName: "updateDownload"
+                            visible: updates.available && updates.downloadUrl !== ""
+                            compact: true
+                            active: true
+                            text: appWindow.tr("update_download")
+                            glyphPath: appWindow.icons.download
+                            onClicked: controller.openUrl(updates.downloadUrl)
+                        }
+                        PillButton { appWindow: root.appWindow;
+                            objectName: "updateReleasePage"
+                            visible: updates.available
+                            compact: true
+                            text: appWindow.tr("update_release_page")
+                            glyphPath: appWindow.icons.externalLink
+                            onClicked: controller.openUrl(updates.releaseUrl)
+                        }
+                        PillButton { appWindow: root.appWindow;
+                            objectName: "updateCheckNow"
+                            visible: !updates.available
+                            enabled: !updates.checking
+                            compact: true
+                            text: appWindow.tr("update_check_now")
+                            glyphPath: appWindow.icons.refresh
+                            onClicked: updates.check()
+                        }
+                        Item { Layout.fillWidth: true }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+                        Text {
+                            textFormat: Text.PlainText
+                            Layout.fillWidth: true
+                            text: appWindow.tr("update_check_on_start")
+                            color: Theme.txtDim
+                            font.pixelSize: 12
+                            wrapMode: Text.Wrap
+                        }
+                        NeoSwitch { appWindow: root.appWindow;
+                            objectName: "updateCheckOnStartSwitch"
+                            confirmedChecked: controller.checkUpdatesOnStart
+                            onToggled: controller.setCheckUpdatesOnStart(checked)
                         }
                     }
                 }
@@ -732,6 +831,7 @@ ViewPage {
             // Right Card: GitHub & Donate
             Card { appWindow: root.appWindow;
                 Layout.fillWidth: true
+                Layout.fillHeight: true
                 Layout.preferredHeight: 184
 
                 ColumnLayout {
