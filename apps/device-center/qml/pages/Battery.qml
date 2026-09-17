@@ -61,7 +61,7 @@ ViewPage {
                     var level = controller.connected && controller.batteryLevel >= 0 ? controller.batteryLevel + "%" : dash
                     var left = !controller.connected ? dash
                              : controller.isCharging ? appWindow.tr("charging")
-                             : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : dash
+                             : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : appWindow.tr("battery_estimate_pending")
                     var rate = controller.batteryDischargeRate > 0
                              ? appWindow.tr("battery_rate_value").arg(controller.batteryDischargeRate.toFixed(1)) : dash
                     var session = controller.batterySessionStart > 0
