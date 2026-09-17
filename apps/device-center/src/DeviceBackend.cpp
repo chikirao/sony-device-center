@@ -86,6 +86,13 @@ void DeviceBackend::command(QByteArray bytes, quint64 generation) {
     } catch (const std::exception& ex) { emit error(QString::fromUtf8(ex.what()), _generation); }
     emit completed(_generation);
 }
+void DeviceBackend::wake() {
+    // In IPC mode the daemon owns the retry loop; nothing to hurry here.
+    if (_stopped || !_service) return;
+    _service->wake();
+    poll();
+    discover();
+}
 void DeviceBackend::discover() {
     try { emit devicesReady(QByteArray::fromStdString(request("devices").dump())); }
     catch (const std::exception& ex) { emit error(QString::fromUtf8(ex.what()), _generation); }

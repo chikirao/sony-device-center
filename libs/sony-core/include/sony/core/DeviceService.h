@@ -20,6 +20,7 @@ public:
 
     void tick() override;
     void startAutoConnect(std::string address = {}) override;
+    void wake() override;
     std::string connectionState() const override;
     std::string selectedAddress() const override;
     std::string lastError() const override;

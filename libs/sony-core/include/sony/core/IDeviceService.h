@@ -23,6 +23,10 @@ public:
 
     virtual void tick() {}
     virtual void startAutoConnect(std::string address = {}) {}
+    // A device may have just appeared (the OS reported a Bluetooth link):
+    // drop the retry backoff so the next tick tries at once. No-op while
+    // connected or when auto-connect is off.
+    virtual void wake() {}
     virtual std::string connectionState() const { return isConnected() ? "connected" : "disconnected"; }
     virtual std::string selectedAddress() const { return {}; }
     virtual std::string lastError() const { return {}; }

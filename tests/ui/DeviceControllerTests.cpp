@@ -4,6 +4,7 @@
 #include "NotificationController.h"
 #include "HotkeyManager.h"
 #include "EqualizerLibrary.h"
+#include "BluetoothWatcher.h"
 #include <QTemporaryDir>
 #include <QImage>
 #include <QQmlApplicationEngine>
@@ -16,6 +17,7 @@
 #include "sony/core/SimulatedDevice.h"
 #include "sony/protocol/FrameCodec.h"
 #include "../support/ReplyTransport.h"
+#include <atomic>
 #include <chrono>
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -25,6 +27,18 @@ using namespace sony::devicecenter;
 class SlowService : public core::IDeviceService {
 public:
     void tick() override { std::this_thread::sleep_for(std::chrono::milliseconds(200)); }
+    std::vector<core::DiscoveredDevice> discoverDevices() override { return {}; }
+    void connect(const transport::DeviceAddress&, std::string_view) override {}
+    void disconnect() noexcept override {}
+    bool isConnected() const noexcept override { return false; }
+    core::SonyDevice* activeDevice() noexcept override { return nullptr; }
+    protocol::DeviceStateSnapshot snapshot() const override { return std::make_shared<const protocol::DeviceState>(); }
+};
+// Counts wake-ups; never connects.
+class WakeCountingService : public core::IDeviceService {
+public:
+    std::atomic<int> wakes{0};
+    void wake() override { ++wakes; }
     std::vector<core::DiscoveredDevice> discoverDevices() override { return {}; }
     void connect(const transport::DeviceAddress&, std::string_view) override {}
     void disconnect() noexcept override {}
@@ -568,6 +582,30 @@ private slots:
             QCOMPARE(library.activeId(), warm);
             QVERIFY(QFile::exists(library.filePath()));
         }
+    }
+    void bluetoothWakeReachesTheService() {
+        QCOMPARE(BluetoothWatcher::formatAddress(0xCC988B001122ULL), QString("CC:98:8B:00:11:22"));
+        QCOMPARE(BluetoothWatcher::formatAddress(0), QString("00:00:00:00:00:00"));
+        // With or without a radio the watcher must construct and tear down
+        // cleanly; whether it is available depends on the machine.
+        BluetoothWatcher watcher;
+        QSignalSpy links(&watcher, &BluetoothWatcher::connectionChanged);
+        QSignalSpy availability(&watcher, &BluetoothWatcher::availabilityChanged);
+        const bool available = watcher.isAvailable();
+        watcher.rescanRadios();
+        QCOMPARE(availability.count(), 1);
+        QCOMPARE(watcher.isAvailable(), available);
+        QCOMPARE(links.count(), 0);
+
+        auto service = std::make_shared<WakeCountingService>();
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        // What main.cpp does when the watcher reports a link coming up.
+        controller.wakeConnection();
+        QTRY_COMPARE_WITH_TIMEOUT(service->wakes.load(), 1, 2000);
+        controller.wakeConnection();
+        controller.wakeConnection();
+        QTRY_COMPARE_WITH_TIMEOUT(service->wakes.load(), 3, 2000);
     }
     void destructionDrainsWorkerAndCallbacks() {
         auto service = std::make_shared<SlowService>();

@@ -46,6 +46,8 @@ add_executable(sony-device-center
     include/HotkeyManager.h
     src/EqualizerLibrary.cpp
     include/EqualizerLibrary.h
+    src/BluetoothWatcher.cpp
+    include/BluetoothWatcher.h
     qml.qrc
 )
 
@@ -131,8 +133,9 @@ if(WIN32)
         "${CMAKE_CURRENT_SOURCE_DIR}/../../packaging/windows/sony-device-center.rc")
 
     # C++/WinRT (toast notifications) resolves activation factories through
-    # the umbrella library.
-    target_link_libraries(sony-device-center PRIVATE WindowsApp)
+    # the umbrella library; the Bluetooth watcher enumerates radios through
+    # bthprops.
+    target_link_libraries(sony-device-center PRIVATE WindowsApp bthprops)
 
     # A bare .exe cannot start without the Qt DLLs and QML module tree beside
     # it, so let windeployqt populate the install prefix at install time.
@@ -170,10 +173,11 @@ if(BUILD_TESTING)
             src/WindowsToast.cpp include/WindowsToast.h
             src/BatteryHistory.cpp include/BatteryHistory.h
             src/HotkeyManager.cpp include/HotkeyManager.h
-            src/EqualizerLibrary.cpp include/EqualizerLibrary.h)
+            src/EqualizerLibrary.cpp include/EqualizerLibrary.h
+            src/BluetoothWatcher.cpp include/BluetoothWatcher.h)
         target_include_directories(sony-ui-tests PRIVATE include)
         if(WIN32)
-            target_link_libraries(sony-ui-tests PRIVATE WindowsApp)
+            target_link_libraries(sony-ui-tests PRIVATE WindowsApp bthprops)
         endif()
         target_compile_definitions(sony-ui-tests PRIVATE SONY_DEVICE_CENTER_VERSION="${SonyDeviceCenter_VERSION}")
         target_link_libraries(sony-ui-tests PRIVATE Qt6::Test Qt6::Gui Qt6::Widgets Qt6::Qml Qt6::Quick Qt6::QuickControls2 sony-core)

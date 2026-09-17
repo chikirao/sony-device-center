@@ -176,6 +176,9 @@ public:
     Q_INVOKABLE void connectDevice(const QString& address, const QString& name = "");
     Q_INVOKABLE void disconnectDevice();
     Q_INVOKABLE void refreshDiscoveredDevices();
+    // A Bluetooth link came up somewhere (BluetoothWatcher): skip the retry
+    // backoff and try to connect right away.
+    Q_INVOKABLE void wakeConnection();
 
 signals:
     void stateChanged();

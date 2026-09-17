@@ -204,6 +204,22 @@ bands[5]}]}`, так что для скриншотов файл можно пр
 в группе `hotkeys-test` и на Windows дополнительно шлют `WM_HOTKEY` через
 `PostThreadMessage`, не трогая клавиатуру.
 
+### Автоподключение по событию Bluetooth
+
+`BluetoothWatcher` (только Windows) держит message-only окно и подписку
+`RegisterDeviceNotification` на handle каждого радиомодуля; HCI-событие
+«соединение поднялось» → `DeviceCenterController::wakeConnection()` →
+`DeviceService::wake()` на рабочем потоке (сброс backoff, попытка на
+следующем тике, т.е. ≤ 0,5 с). Если `BluetoothFindFirstRadio` ничего не
+находит (Bluetooth выключен в системе) — доступности нет, работает обычный
+retry; при включении радиомодуля прилетает `DBT_DEVICEARRIVAL` по
+`GUID_BTHPORT_DEVICE_INTERFACE`, и watcher пересканирует. Состояние пишется
+через `qInfo` («Bluetooth link events on/unavailable», «Bluetooth link up:
+<адрес>») — GUI-приложение без консоли, смотреть через DebugView или запуск
+из отладчика. Проверить вживую: выключить наушники, подождать ~30 с (backoff
+дошёл до максимума), включить — приложение должно подключиться через
+секунду-две, а не через полминуты.
+
 ## 7. Установщик
 
 Локально не нужен. `release.yml` в GitHub Actions при пуше тега `v*`
