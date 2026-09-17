@@ -48,6 +48,7 @@ Sony locks headphone settings and telemetry behind their mobile-only apps (*Sony
 - ⏻ **Power Off** — Switch the headphones off from the app or `sonyctl power off`.
 - 🔋 **Live Battery & Charging State** — Real-time telemetry for over-ear models, plus individual Left, Right, and Case battery levels for True Wireless (TWS) earbuds.
 - 🧩 **Advanced Audio Features** — Speak-to-Chat, Adaptive Volume, and Auto Power-Off timeouts (dynamically enabled based on device capability profiles).
+- 💾 **Preset Library** — keep any number of named custom curves on the PC, apply them with one click, import and export them as JSON.
 - ⌨️ **Global Hotkeys** (Windows) — bind system-wide shortcuts to Noise Cancelling ↔ Ambient, Off, Speak-to-Chat and "show window"; off by default, with a toast naming the new mode.
 - 🧬 **Dual Protocol Support** — Automatically detects and communicates with both **Protocol V1** (legacy models) and **Protocol V2** (modern models with alternating-bit Stop-and-Wait ARQ).
 - 💻 **Flexible Architecture** — Run standalone via direct Bluetooth transport, or as a background daemon with CLI and GUI clients.

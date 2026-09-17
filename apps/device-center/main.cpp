@@ -16,6 +16,7 @@
 #include "TrayController.h"
 #include "NotificationController.h"
 #include "HotkeyManager.h"
+#include "EqualizerLibrary.h"
 #include "WindowsToast.h"
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
@@ -102,6 +103,7 @@ int main(int argc, char *argv[]) {
     sony::devicecenter::NotificationController notifications(controller, tray);
     // Global shortcuts (Windows only); disabled until the user binds them.
     sony::devicecenter::HotkeyManager hotkeys(controller, tray);
+    sony::devicecenter::EqualizerLibrary eqLibrary(controller);
     // Without a tray there is nowhere to come back from, so a hidden start
     // and close-to-tray only make sense when the icon actually exists.
     const bool startHidden = parser.isSet(minimizedOption) && tray.isAvailable();
@@ -111,6 +113,7 @@ int main(int argc, char *argv[]) {
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("controller", &controller);
     engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
+    engine.rootContext()->setContextProperty("eqLibrary", &eqLibrary);
     engine.rootContext()->setContextProperty("trayAvailable", tray.isAvailable());
     engine.rootContext()->setContextProperty("startHidden", startHidden);
 

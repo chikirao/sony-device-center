@@ -3,6 +3,8 @@
 #include "TrayController.h"
 #include "NotificationController.h"
 #include "HotkeyManager.h"
+#include "EqualizerLibrary.h"
+#include <QTemporaryDir>
 #include <QImage>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -63,8 +65,11 @@ private slots:
         });
         TrayController tray(controller);
         HotkeyManager hotkeys(controller, tray, nullptr, "hotkeys-test");
+        QTemporaryDir libraryDir;
+        EqualizerLibrary eqLibrary(controller, libraryDir.path());
         engine.rootContext()->setContextProperty("controller", &controller);
         engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
+        engine.rootContext()->setContextProperty("eqLibrary", &eqLibrary);
         engine.rootContext()->setContextProperty("trayAvailable", false);
         engine.rootContext()->setContextProperty("startHidden", false);
         engine.load(QUrl("qrc:/qml/Main.qml"));
@@ -470,6 +475,99 @@ private slots:
 
         controller.setNotifyHotkeys(previousNotify);
         QSettings("SonyBridge", "SonyDeviceCenter").setValue("ambientLevel", previousLevel);
+    }
+    void equalizerLibraryStoresAppliesAndImports() {
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        auto settle = [&] { QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000); QVERIFY2(controller.lastError().isEmpty(), qPrintable(controller.lastError())); };
+        auto name = [](const EqualizerLibrary& library, int i) { return library.presets()[i].toMap()["name"].toString(); };
+        const QVariantList warmCurve{4, 2, 0, -1, -3};
+
+        QString warm, snap;
+        {
+            EqualizerLibrary library(controller, dir.path());
+            QVERIFY(library.presets().isEmpty());
+            QVERIFY(library.activeId().isEmpty());
+            // Curves are validated: five bands, every gain within ±10.
+            QVERIFY(library.save("Bad", 0, {1, 2, 3}).isEmpty());
+            QVERIFY(library.save("Bad", 11, {0, 0, 0, 0, 0}).isEmpty());
+            QVERIFY(library.save("Bad", 0, {0, 0, 0, 0, 12}).isEmpty());
+            QCOMPARE(library.presets().size(), 0);
+
+            QSignalSpy changed(&library, &EqualizerLibrary::presetsChanged);
+            warm = library.save("Warm", 3, warmCurve);
+            QVERIFY(!warm.isEmpty());
+            // Names are unique (case-insensitively) and never empty.
+            library.save("warm", 0, {0, 0, 0, 0, 0});
+            QCOMPARE(name(library, 1), QString("warm (2)"));
+            library.save("  ", 0, {1, 1, 1, 1, 1});
+            QCOMPARE(name(library, 2), QString("Preset 3"));
+            QCOMPARE(changed.count(), 3);
+
+            // Applying fills the headphones' custom slot; the highlight
+            // follows the device state, not the click.
+            library.apply(warm); settle();
+            QCOMPARE(controller.equalizerPreset(), EqualizerLibrary::kCustomPreset);
+            QCOMPARE(controller.clearBass(), 3);
+            QCOMPARE(controller.equalizerBands(), warmCurve);
+            QCOMPARE(library.activeId(), warm);
+            controller.setEqualizerPreset(0x16); settle();
+            QVERIFY2(library.activeId().isEmpty(), "a built-in preset is nobody's curve");
+
+            // saveCurrent captures what the device plays right now.
+            controller.setEqualizerCustom(-2, {1, 0, -1, 0, 1}); settle();
+            snap = library.saveCurrent("Snap");
+            QCOMPARE(library.activeId(), snap);
+            QVERIFY(library.rename(snap, "Warm"));
+            QCOMPARE(name(library, 3), QString("Warm (3)"));  // "warm (2)" is taken too
+            QVERIFY2(library.rename(warm, "Warm"), "keeping one's own name is fine");
+            QCOMPARE(name(library, 0), QString("Warm"));
+            QVERIFY(!library.rename("missing", "x"));
+
+            // Overwrite with the current curve moves the highlight.
+            QVERIFY(library.updateFromCurrent(warm));
+            QCOMPARE(library.presets()[0].toMap()["clearBass"].toInt(), -2);
+            QCOMPARE(library.activeId(), warm);
+
+            // Export one and all, import both into a fresh library.
+            const auto one = dir.filePath("one.json");
+            const auto all = dir.filePath("all.json");
+            QVERIFY(library.exportPreset(warm, one));
+            QVERIFY(library.exportPreset("", all));
+            QVERIFY(!library.exportPreset("missing", one));
+            QTemporaryDir otherDir;
+            EqualizerLibrary other(controller, otherDir.path());
+            QCOMPARE(other.importFile(one), 1);
+            QCOMPARE(name(other, 0), QString("Warm"));
+            QCOMPARE(other.presets()[0].toMap()["bands"].toList(), QVariantList({1, 0, -1, 0, 1}));
+            QCOMPARE(other.importFile(all), 4);
+            QCOMPARE(name(other, 1), QString("Warm (2)"));
+            QVERIFY2(other.presets()[1].toMap()["id"].toString() != warm, "imported presets get fresh ids");
+            QVERIFY(other.lastError().isEmpty());
+            const auto junk = dir.filePath("junk.json");
+            { QFile f(junk); QVERIFY(f.open(QIODevice::WriteOnly)); f.write("{\"presets\": [{\"name\": \"x\", \"bands\": [1, 2]}]}"); }
+            QCOMPARE(other.importFile(junk), 0);
+            QVERIFY(!other.lastError().isEmpty());
+            QCOMPARE(other.importFile(dir.filePath("missing.json")), -1);
+
+            QVERIFY(library.remove(snap));
+            QVERIFY(!library.remove(snap));
+            QCOMPARE(library.presets().size(), 3);
+        }
+        {
+            // Persisted: the same directory reads back with ids intact.
+            EqualizerLibrary library(controller, dir.path());
+            QCOMPARE(library.presets().size(), 3);
+            QCOMPARE(library.presets()[0].toMap()["id"].toString(), warm);
+            QCOMPARE(name(library, 0), QString("Warm"));
+            QCOMPARE(library.activeId(), warm);
+            QVERIFY(QFile::exists(library.filePath()));
+        }
     }
     void destructionDrainsWorkerAndCallbacks() {
         auto service = std::make_shared<SlowService>();

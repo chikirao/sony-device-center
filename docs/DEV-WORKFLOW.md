@@ -177,6 +177,17 @@ GUI поднимает встроенный симулятор WH-1000XM5 пря
 по файлу на устройство; файл симулятора (`CC-98-8B-00-11-22.json`) можно
 удалять.
 
+### Библиотека EQ-пресетов
+
+`EqualizerLibrary` держит кривые в
+`%LOCALAPPDATA%\SonyBridge\Sony Device Center\equalizer-presets.json`
+(`AppConfigLocation`); формат тот же, что у экспорта — `{"format":
+"sony-device-center-eq", "version": 1, "presets": [{name, clearBass,
+bands[5]}]}`, так что для скриншотов файл можно просто подложить. «Активный»
+пресет вычисляется из состояния наушников (custom-слот `0xa0` + совпадение
+кривой), а не из последнего клика. Тест
+`equalizerLibraryStoresAppliesAndImports` работает во временной папке.
+
 ### Глобальные хоткеи
 
 `HotkeyManager` регистрирует сочетания через `RegisterHotKey` без окна, так
