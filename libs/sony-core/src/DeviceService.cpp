@@ -96,6 +96,12 @@ void DeviceService::startAutoConnect(std::string address) {
     _target = std::move(address); _automatic = true; _retrySeconds = 1;
     _nextAttempt = _now(); _connectionState = "searching";
 }
+void DeviceService::wake() {
+    std::lock_guard lock(_mutex);
+    if (!_automatic || isConnected()) return;
+    _retrySeconds = 1;
+    _nextAttempt = _now();
+}
 std::string DeviceService::connectionState() const {
     std::lock_guard lock(_mutex);
     return _connectionState == "connected" && !isConnected() ? "retrying" : _connectionState;

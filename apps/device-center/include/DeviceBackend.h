@@ -16,6 +16,8 @@ public:
     void start();
     void command(QByteArray request, quint64 generation);
     void discover();
+    // The OS saw a Bluetooth link come up: retry the connection now.
+    void wake();
     void shutdown();
 signals:
     void snapshotReady(QByteArray data, quint64 generation);

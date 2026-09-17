@@ -77,6 +77,36 @@ TEST_CASE("Retry delay doubles and is capped at thirty seconds", "[core][recover
         CHECK(transport->attempts.size() == ++count);
     }
 }
+TEST_CASE("A wake-up cuts the retry backoff short", "[core][recovery]") {
+    auto now = DeviceService::Clock::time_point{};
+    auto transport = std::make_shared<ReplyTransport>();
+    transport->failAddress = "11:22:33:44:55:66";
+    DeviceService service(transport, {}, [&] { return now; });
+    // Before auto-connect a wake-up is meaningless and must not connect.
+    service.wake(); service.tick();
+    CHECK(transport->attempts.empty());
+    service.startAutoConnect(transport->failAddress); service.tick();
+    now += std::chrono::seconds(1); service.tick();
+    now += std::chrono::seconds(2); service.tick();
+    REQUIRE(transport->attempts.size() == 3);
+    // Backoff is now 4 s; the OS says the headphones just showed up.
+    now += std::chrono::seconds(1); service.tick();
+    CHECK(transport->attempts.size() == 3);
+    service.wake(); service.tick();
+    CHECK(transport->attempts.size() == 4);
+    // ...and the backoff restarts from one second, not from where it was.
+    now += std::chrono::milliseconds(999); service.tick();
+    CHECK(transport->attempts.size() == 4);
+    now += std::chrono::milliseconds(1); service.tick();
+    CHECK(transport->attempts.size() == 5);
+    // Once connected, wake-ups do nothing.
+    transport->failAddress.clear();
+    now += std::chrono::seconds(2); service.tick();
+    REQUIRE(service.isConnected());
+    const auto attempts = transport->attempts.size();
+    service.wake(); service.tick();
+    CHECK(transport->attempts.size() == attempts);
+}
 TEST_CASE("Structured snapshots are escaped versioned and truthful", "[core][json]") {
     auto transport = std::make_shared<ReplyTransport>();
     auto discovery = std::make_shared<FakeDeviceDiscovery>();

@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QFontDatabase>
+#include <QDebug>
 #include <QDir>
 #include <QQuickItem>
 #include <QQuickWindow>
@@ -17,6 +18,7 @@
 #include "NotificationController.h"
 #include "HotkeyManager.h"
 #include "EqualizerLibrary.h"
+#include "BluetoothWatcher.h"
 #include "WindowsToast.h"
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
@@ -104,6 +106,21 @@ int main(int argc, char *argv[]) {
     // Global shortcuts (Windows only); disabled until the user binds them.
     sony::devicecenter::HotkeyManager hotkeys(controller, tray);
     sony::devicecenter::EqualizerLibrary eqLibrary(controller);
+    // Reconnect the moment the OS sees the headphones come up, instead of at
+    // the next backed-off retry. Any device's link counts: the retry itself
+    // is cheap and the watcher cannot tell Sony from a mouse.
+    sony::devicecenter::BluetoothWatcher bluetoothWatcher;
+    QObject::connect(&bluetoothWatcher, &sony::devicecenter::BluetoothWatcher::connectionChanged, &controller,
+                     [&controller](const QString& address, bool connected) {
+        qInfo().noquote() << "Bluetooth link" << (connected ? "up:" : "down:") << address;
+        if (connected) controller.wakeConnection();
+    });
+    auto logWatcher = [&bluetoothWatcher] {
+        qInfo() << (bluetoothWatcher.isAvailable() ? "Bluetooth link events on; reconnecting on arrival"
+                                                   : "Bluetooth link events unavailable; relying on periodic retries");
+    };
+    QObject::connect(&bluetoothWatcher, &sony::devicecenter::BluetoothWatcher::availabilityChanged, &controller, logWatcher);
+    logWatcher();
     // Without a tray there is nowhere to come back from, so a hidden start
     // and close-to-tray only make sense when the icon actually exists.
     const bool startHidden = parser.isSet(minimizedOption) && tray.isAvailable();

@@ -274,6 +274,9 @@ void DeviceCenterController::disconnectDevice() { _send("disconnect"); }
 void DeviceCenterController::refreshDiscoveredDevices() {
     QMetaObject::invokeMethod(_backend, &DeviceBackend::discover, Qt::QueuedConnection);
 }
+void DeviceCenterController::wakeConnection() {
+    QMetaObject::invokeMethod(_backend, &DeviceBackend::wake, Qt::QueuedConnection);
+}
 
 bool DeviceCenterController::autostart() const {
 #if defined(Q_OS_LINUX)
