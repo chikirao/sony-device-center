@@ -52,6 +52,7 @@ RowLayout {
             id: chip
             appWindow: header.appWindow
             required property var modelData
+            required property int index
             implicitWidth: chipRow.implicitWidth + 32
             implicitHeight: 66
             Layout.alignment: Qt.AlignTop
@@ -63,7 +64,7 @@ RowLayout {
                 ColumnLayout {
                     spacing: 5
                     Eyebrow { appWindow: header.appWindow; text: chip.modelData.k }
-                    DotText { text: chip.modelData.v; dot: 3; maxWidth: 120; color: Theme.txt }
+                    DotText { text: chip.modelData.v; dot: 3; maxWidth: 120; color: Theme.txt; delay: chip.index * 120 }
                 }
             }
         }

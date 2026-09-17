@@ -25,23 +25,17 @@ Rectangle {
         spacing: 0
 
         // Wordmark
-        ColumnLayout {
-            spacing: 3
+        RowLayout {
             Layout.leftMargin: 6
+            spacing: 12
+            BrandMark { appWindow: root.appWindow; size: 30; color: Theme.sidebarTxt }
             Text {
                 textFormat: Text.PlainText
                 text: "Device"
                 color: Theme.sidebarTxt
-                font.pixelSize: 24
+                font.pixelSize: 22
                 font.weight: Font.Bold
-                font.letterSpacing: -0.6
-            }
-            Text {
-                textFormat: Text.PlainText
-                text: "SONY CENTER"
-                color: Theme.sidebarTxtDim
-                font.pixelSize: 10
-                font.weight: Font.DemiBold
+                font.letterSpacing: -0.5
             }
         }
 

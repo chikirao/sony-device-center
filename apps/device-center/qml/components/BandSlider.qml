@@ -16,14 +16,15 @@ ColumnLayout {
     Layout.maximumWidth: Number.POSITIVE_INFINITY
     spacing: 10
 
-    Text {
-        textFormat: Text.PlainText
+    DotValue {
         Layout.alignment: Qt.AlignHCenter
-        text: (band.value > 0 ? "+" : "") + Math.round(band.value)
-        color: Math.round(band.value) === 0 ? Theme.txtFaint : Theme.txt
-        font.pixelSize: 12
-        font.weight: Font.DemiBold
-        Behavior on color { ColorAnimation { duration: Theme.tFast } }
+        value: Math.round(vs.value)
+        from: -10; to: 10
+        signed: true
+        dot: 2.2
+        color: Math.round(vs.value) === 0 ? Theme.txtDim : Theme.txt
+        enabled: band.enabled
+        onEdited: function(v) { band.moved(v) }
     }
 
     Slider {
@@ -35,13 +36,22 @@ ColumnLayout {
         to: 10
         stepSize: 1
         value: band.value
+        // Same settling rule as NeoSlider: the device's value wins only once
+        // the user and the command queue are both idle.
+        function sync() { if (!vs.pressed && !settle.running && !controller.busy) vs.value = band.value }
         Connections {
-            target: controller
-            function onStateChanged() { if (!vs.pressed) vs.value = Qt.binding(function() { return band.value }) }
+            target: band
+            function onValueChanged() { vs.sync() }
+        }
+        Connections { target: controller; function onStateChanged() { if (!controller.busy) vs.sync() } }
+        Timer { id: settle; interval: 600; onTriggered: vs.sync() }
+        onMoved: { settle.restart(); band.moved(value) }
+        onPressedChanged: {
+            settle.restart()
+            if (!pressed && Math.round(value) !== Math.round(band.value)) band.moved(value)
         }
         implicitWidth: 34
         hoverEnabled: true
-        onMoved: band.moved(value)
 
         background: Rectangle {
             x: vs.leftPadding + vs.availableWidth / 2 - width / 2

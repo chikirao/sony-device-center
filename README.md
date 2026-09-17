@@ -27,7 +27,15 @@ Sony locks headphone settings and telemetry behind their mobile-only apps (*Sony
 | :---: | :---: | :---: |
 | ![Noise Control](docs/screenshots/noise-control.png) | ![Equalizer](docs/screenshots/equalizer.png) | ![Audio Features](docs/screenshots/audio-features.png) |
 
-<sub>Captured on Linux/Wayland against `sonyd --simulated`, the daemon's built-in device simulator.</sub>
+| Battery History | Device Switcher | Settings |
+| :---: | :---: | :---: |
+| ![Battery History](docs/screenshots/battery.png) | ![Device Switcher](docs/screenshots/device-switcher.png) | ![Settings](docs/screenshots/settings.png) |
+
+| Dark theme | Dark theme, earbuds |
+| :---: | :---: |
+| ![Overview, dark](docs/screenshots/overview-dark.png) | ![Overview, dark, WF-1000XM5](docs/screenshots/overview-dark-earbuds.png) |
+
+<sub>Captured on Windows with `sony-device-center --simulated` and `SONY_UI_SCREENSHOTS`, the app's built-in page walk over the device simulator.</sub>
 
 ---
 

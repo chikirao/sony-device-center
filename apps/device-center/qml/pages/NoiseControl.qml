@@ -95,7 +95,14 @@ ViewPage {
                     RowLayout {
                         Layout.fillWidth: true
                         Eyebrow { appWindow: root.appWindow; text: appWindow.tr("ambient_level"); Layout.fillWidth: true }
-                        DotText { text: String(Math.round(levelSlider.value)); dot: 4.5; color: Theme.txt }
+                        DotValue {
+                            objectName: "ambientLevelValue"
+                            value: Math.round(levelSlider.value)
+                            from: 1; to: 20
+                            dot: 4.5
+                            enabled: controller.connected
+                            onEdited: function(v) { controller.setAmbient(v, voiceSwitch.checked) }
+                        }
                     }
                     NeoSlider { id: levelSlider; appWindow: root.appWindow;
                         Layout.fillWidth: true

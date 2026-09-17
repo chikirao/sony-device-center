@@ -78,14 +78,17 @@ ViewPage {
                     id: batteryStat
                     required property var modelData
                     Layout.fillWidth: true
-                    implicitHeight: 76
+                    implicitHeight: statColumn.implicitHeight + 30
                     radius: Theme.cardRadius
                     color: Theme.surface
                     border.width: 1
                     border.color: Theme.line
 
                     ColumnLayout {
-                        anchors.fill: parent
+                        id: statColumn
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
                         anchors.leftMargin: 16
                         anchors.rightMargin: 16
                         anchors.topMargin: 14
@@ -153,6 +156,7 @@ ViewPage {
                 // dependency, and the drawing is a hundred lines.
                 Canvas {
                     id: batteryChart
+                    renderTarget: Canvas.Image
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     property var samples: []
@@ -201,7 +205,7 @@ ViewPage {
                         var Y = function(level) { return padT + (1 - level / 100) * h }
                         var rgba = function(c, a) { return Qt.rgba(c.r, c.g, c.b, a).toString() }
 
-                        ctx.font = "10px sans-serif"
+                        ctx.font = "10px \"" + Qt.application.font.family + "\""
                         ctx.textBaseline = "middle"
 
                         // Horizontal grid with percentages.

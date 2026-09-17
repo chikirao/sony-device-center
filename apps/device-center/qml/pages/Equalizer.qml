@@ -164,11 +164,15 @@ ViewPage {
                                     Text { textFormat: Text.PlainText; text: "+10"; color: Theme.txtDim; font.pixelSize: 11 }
                                 }
                             }
-                            DotText {
+                            DotValue {
+                                objectName: "clearBassValue"
                                 Layout.alignment: Qt.AlignTop
-                                text: (Math.round(bassSlider.value) > 0 ? "+" : "") + Math.round(bassSlider.value)
+                                value: Math.round(bassSlider.value)
+                                from: -10; to: 10
+                                signed: true
                                 dot: 5
-                                color: Theme.txt
+                                enabled: root.available
+                                onEdited: function(v) { controller.setEqualizerCustom(v, controller.equalizerBands) }
                             }
                         }
                     }

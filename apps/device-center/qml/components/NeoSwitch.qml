@@ -8,10 +8,7 @@ Switch {
     id: sw
     property bool confirmedChecked: false
     checked: confirmedChecked
-    Connections {
-        target: controller
-        function onStateChanged() { sw.checked = Qt.binding(function() { return sw.confirmedChecked }) }
-    }
+    onConfirmedCheckedChanged: checked = confirmedChecked
     implicitWidth: 46
     implicitHeight: 26
     hoverEnabled: true

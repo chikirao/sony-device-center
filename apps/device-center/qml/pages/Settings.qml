@@ -326,8 +326,7 @@ ViewPage {
 
                             background: Rectangle {
                                 radius: 8
-                                color: langDel.highlighted ? Theme.surfaceHi : (langDel.hovered ? Theme.surfaceHi : "transparent")
-                                Behavior on color { ColorAnimation { duration: Theme.tFast } }
+                                color: langDel.hovered ? Theme.surfaceHi : "transparent"
                             }
 
                             contentItem: RowLayout {

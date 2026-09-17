@@ -21,6 +21,10 @@
 int main(int argc, char *argv[]) {
     // QApplication rather than QGuiApplication: the tray icon and its menu
     // come from QtWidgets. The QML side is unaffected.
+    // Screenshot mode must not depend on the window being visible on screen:
+    // the threaded render loop only advances animations while exposed, so an
+    // occluded or locked desktop would grab frozen first frames.
+    if (!qEnvironmentVariable("SONY_UI_SCREENSHOTS").isEmpty()) qputenv("QSG_RENDER_LOOP", "basic");
     QApplication app(argc, argv);
     sony::devicecenter::WindowsToast::registerApplication();
 
@@ -32,11 +36,11 @@ int main(int argc, char *argv[]) {
     app.setApplicationName("Sony Device Center");
     app.setOrganizationName("SonyBridge");
 
-    // Space Grotesk is the body face; scripts it lacks (Cyrillic, kana)
-    // fall through to the system font per glyph, which Qt handles itself.
-    for (const auto* face : {"Regular", "Medium", "Bold"})
-        QFontDatabase::addApplicationFont(QString(":/fonts/SpaceGrotesk-%1.ttf").arg(face));
-    QFont bodyFont("Space Grotesk");
+    // Manrope is the body face (Latin + Cyrillic); anything it lacks (kana)
+    // falls through to the system font per glyph, which Qt handles itself.
+    for (const auto* face : {"Regular", "Medium", "SemiBold", "Bold"})
+        QFontDatabase::addApplicationFont(QString(":/fonts/Manrope-%1.ttf").arg(face));
+    QFont bodyFont("Manrope");
     bodyFont.setPixelSize(13);
     app.setFont(bodyFont);
     app.setApplicationVersion(SONY_DEVICE_CENTER_VERSION);
@@ -128,7 +132,7 @@ int main(int argc, char *argv[]) {
             if (page > 6) { ticker->stop(); app.quit(); return; }
             window->setProperty("navIndex", page++);
         });
-        ticker->start(1200);
+        ticker->start(1500);
     }
 
     return app.exec();

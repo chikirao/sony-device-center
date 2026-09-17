@@ -108,6 +108,16 @@ private slots:
         const auto* animationsSwitch = window->findChild<QObject*>("animationsSwitch");
         QVERIFY(animationsSwitch);
         QCOMPARE(animationsSwitch->property("checked").toBool(), controller.animationsEnabled());
+        // Typing into a dot-matrix value sends the clamped number to the device.
+        if (controller.hasClearBass()) {
+            auto* bassValue = window->findChild<QObject*>("clearBassValue");
+            QVERIFY(bassValue);
+            QVERIFY(QMetaObject::invokeMethod(bassValue, "apply", Q_ARG(QVariant, QVariant("37"))));
+            QTRY_COMPARE_WITH_TIMEOUT(controller.clearBass(), 10, 3000);
+            QVERIFY(QMetaObject::invokeMethod(bassValue, "apply", Q_ARG(QVariant, QVariant("-3"))));
+            QTRY_COMPARE_WITH_TIMEOUT(controller.clearBass(), -3, 3000);
+            QTRY_COMPARE_WITH_TIMEOUT(bassValue->property("value").toInt(), -3, 3000);
+        }
         controller.setThemeMode(previousTheme);
         controller.setLanguage(previousLanguage);
         QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join("\n")));

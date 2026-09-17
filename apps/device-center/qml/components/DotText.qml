@@ -24,6 +24,9 @@ Item {
     property var dots: []
     property int columns: 0
     property real progress: 1
+    // Milliseconds before the sweep starts, so neighbouring displays that
+    // update together don't flip in unison.
+    property int delay: 0
 
     implicitWidth: fallback ? fallbackText.implicitWidth : naturalWidth * fit
     implicitHeight: fallback ? fallbackText.implicitHeight : (rows * pitch - (pitch - dot)) * fit
@@ -39,13 +42,15 @@ Item {
             var width = glyph[0].length
             for (var r = 0; r < rows; ++r)
                 for (var c = 0; c < width; ++c)
-                    if (glyph[r].charAt(c) === "#") points.push(x + c, r)
+                    // The third number is a stable per-dot jitter: some dots
+                    // land early, some late, but the sweep still runs left to right.
+                    if (glyph[r].charAt(c) === "#") points.push(x + c, r, ((x + c) * 37 + r * 91 + i * 17) % 100 / 100)
             x += width + 1
         }
         dots = points
         columns = Math.max(0, x - 1)
         fallback = missing
-        if (Theme.motionEnabled && visible) sweep.restart()
+        if (Theme.motionEnabled && visible) { progress = 0; sweep.restart() }
         else { sweep.stop(); progress = 1 }
         canvas.requestPaint()
     }
@@ -57,12 +62,15 @@ Item {
     onProgressChanged: canvas.requestPaint()
     Component.onCompleted: rebuild()
 
-    NumberAnimation {
+    SequentialAnimation {
         id: sweep
-        target: root; property: "progress"
-        from: 0; to: 1
-        duration: 260 + root.columns * 9
-        easing.type: Easing.OutQuad
+        PauseAnimation { duration: root.delay }
+        NumberAnimation {
+            target: root; property: "progress"
+            from: 0; to: 1
+            duration: 520 + root.columns * 16
+            easing.type: Easing.OutQuad
+        }
     }
     Connections {
         target: Theme
@@ -76,12 +84,12 @@ Item {
         onPaint: {
             var ctx = getContext("2d")
             ctx.reset()
-            var wave = 5
-            var reach = root.progress * (root.columns + wave)
+            var wave = 3, jitter = 6
+            var reach = root.progress * (root.columns + wave + jitter)
             var r = root.d / 2
-            for (var i = 0; i < root.dots.length; i += 2) {
+            for (var i = 0; i < root.dots.length; i += 3) {
                 var col = root.dots[i]
-                var alpha = Math.max(0, Math.min(1, (reach - col) / wave))
+                var alpha = Math.max(0, Math.min(1, (reach - col - root.dots[i + 2] * jitter) / wave))
                 if (alpha <= 0) continue
                 ctx.fillStyle = Qt.rgba(root.color.r, root.color.g, root.color.b, root.color.a * alpha)
                 ctx.beginPath()

@@ -8,12 +8,19 @@ Slider {
     id: sl
     property real confirmedValue: 0
     value: confirmedValue
-    // Re-attach the binding once the device confirms, but never under the
-    // user's finger: a poll arriving mid-drag would yank the handle back.
-    Connections {
-        target: controller
-        function onStateChanged() { if (!sl.pressed) sl.value = Qt.binding(function() { return sl.confirmedValue }) }
+    // The knob shows what the user asked for until the device has gone quiet:
+    // never under the finger, never while a command is in flight, and not for
+    // a moment after release, because the snapshot from an intermediate value
+    // used to snap a just-released knob back to where it passed through.
+    function sync() { if (!pressed && !settle.running && !controller.busy) value = confirmedValue }
+    onConfirmedValueChanged: sync()
+    onMoved: settle.restart()
+    onPressedChanged: {
+        settle.restart()
+        if (!pressed && Math.round(value) !== Math.round(confirmedValue)) moved()
     }
+    Connections { target: controller; function onStateChanged() { if (!controller.busy) sl.sync() } }
+    Timer { id: settle; interval: 600; onTriggered: sl.sync() }
     implicitHeight: 28
     hoverEnabled: true
 
