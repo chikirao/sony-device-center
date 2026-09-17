@@ -336,7 +336,7 @@ void I18nManager::_initTranslations() {
     pt["battery_time_left_short"]         = "~%1 restantes";
     pt["duration_hours_minutes"]          = "%1 h %2 min";
     pt["duration_minutes"]                = "%1 min";
-    pt["battery_rate"]                    = "Taxa de descarga";
+    pt["battery_rate"]                    = "Descarga";
     pt["battery_rate_value"]              = "%1% por hora";
     pt["battery_session"]                 = "Sessão atual";
     pt["battery_session_since"]           = "Descarregando desde %1";
@@ -499,7 +499,7 @@ void I18nManager::_initTranslations() {
     es["battery_time_left_short"]         = "~%1 restantes";
     es["duration_hours_minutes"]          = "%1 h %2 min";
     es["duration_minutes"]                = "%1 min";
-    es["battery_rate"]                    = "Velocidad de descarga";
+    es["battery_rate"]                    = "Descarga";
     es["battery_rate_value"]              = "%1% por hora";
     es["battery_session"]                 = "Sesión actual";
     es["battery_session_since"]           = "Descargando desde %1";
@@ -821,11 +821,11 @@ void I18nManager::_initTranslations() {
     fr["battery_subtitle"]                = "Niveau de charge du dernier jour ou de la dernière semaine, et autonomie estimée de la charge actuelle.";
     fr["battery_range_24h"]               = "24 h";
     fr["battery_range_7d"]                = "7 jours";
-    fr["time_left"]                       = "Autonomie restante";
+    fr["time_left"]                       = "Autonomie";
     fr["battery_time_left_short"]         = "~%1 restantes";
     fr["duration_hours_minutes"]          = "%1 h %2 min";
     fr["duration_minutes"]                = "%1 min";
-    fr["battery_rate"]                    = "Vitesse de décharge";
+    fr["battery_rate"]                    = "Décharge";
     fr["battery_rate_value"]              = "%1 % par heure";
     fr["battery_session"]                 = "Session en cours";
     fr["battery_session_since"]           = "En décharge depuis %1";
@@ -1151,7 +1151,7 @@ void I18nManager::_initTranslations() {
     ru["battery_time_left_short"]         = "≈ %1 осталось";
     ru["duration_hours_minutes"]          = "%1 ч %2 мин";
     ru["duration_minutes"]                = "%1 мин";
-    ru["battery_rate"]                    = "Скорость разряда";
+    ru["battery_rate"]                    = "Разряд";
     ru["battery_rate_value"]              = "%1% в час";
     ru["battery_session"]                 = "Текущая сессия";
     ru["battery_session_since"]           = "Разряжается с %1";

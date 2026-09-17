@@ -236,19 +236,14 @@ ViewPage {
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 18
-                    spacing: 12
+                    anchors.topMargin: 16
+                    anchors.bottomMargin: 14
+                    spacing: 8
                     CardTitle { appWindow: root.appWindow; text: appWindow.tr("battery_title"); onClicked: appWindow.navIndex = 5 }
                     RowLayout {
-                        id: historyStats
                         Layout.fillHeight: true
                         spacing: 12
-                        // Labels may wrap ("Скорость разряда" at 980 px);
-                        // both take the taller one's height so the values
-                        // beneath stay on one line.
-                        readonly property real labelHeight: Math.max(timeLeftStat.labelImplicitHeight, rateStat.labelImplicitHeight)
                         Stat { appWindow: root.appWindow;
-                            id: timeLeftStat
-                            labelHeight: historyStats.labelHeight
                             label: appWindow.tr("time_left")
                             value: !controller.connected ? "—" : controller.isCharging ? appWindow.tr("charging")
                                  : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : "—"
@@ -257,8 +252,6 @@ ViewPage {
                         }
                         Rectangle { width: 1; Layout.fillHeight: true; color: Theme.line }
                         Stat { appWindow: root.appWindow;
-                            id: rateStat
-                            labelHeight: historyStats.labelHeight
                             label: appWindow.tr("battery_rate")
                             value: controller.connected && controller.batteryDischargeRate > 0 ? controller.batteryDischargeRate.toFixed(1) + "%" : "—"
                             // A session with no rate yet is the normal state
@@ -349,18 +342,18 @@ ViewPage {
         property string label: ""
         property string value: ""
         property string note: ""
-        property real labelHeight: 0
-        readonly property real labelImplicitHeight: labelText.implicitHeight
         Layout.fillWidth: true
         // Equal columns: otherwise the row splits by label width and the
         // narrower stat is left with no room for its note.
         Layout.preferredWidth: 1
         Layout.alignment: Qt.AlignTop
-        spacing: 8
-        Text { id: labelText; textFormat: Text.PlainText; text: stat.label; color: Theme.txtDim; font.pixelSize: 11
-               wrapMode: Text.Wrap; Layout.fillWidth: true
-               Layout.preferredHeight: Math.max(implicitHeight, stat.labelHeight); verticalAlignment: Text.AlignBottom }
-        DotText { text: stat.value; dot: 4.2; maxWidth: stat.width; color: Theme.txt }
+        spacing: 6
+        // One line, elided: the card has no height for a wrapped label on
+        // top of a two-line note, so the labels are kept short in every
+        // language instead ("Разряд", "Décharge").
+        Text { textFormat: Text.PlainText; text: stat.label; color: Theme.txtDim; font.pixelSize: 11
+               elide: Text.ElideRight; Layout.fillWidth: true }
+        DotText { text: stat.value; dot: 3.6; maxWidth: stat.width; color: Theme.txt }
         // Two lines: "Discharging since 13:30" does not fit one at the
         // minimum window width, and the card has the height to spare.
         Text { textFormat: Text.PlainText; visible: text !== ""; text: stat.note; color: Theme.txtDim; font.pixelSize: 11
