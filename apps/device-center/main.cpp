@@ -150,6 +150,10 @@ int main(int argc, char *argv[]) {
     auto* window = engine.rootObjects().isEmpty() ? nullptr : qobject_cast<QQuickWindow*>(engine.rootObjects().first());
     if (!shotDir.isEmpty() && window) {
         QDir().mkpath(shotDir);
+        // SONY_UI_WINDOW=980x660 checks the layout at a given size (the
+        // minimum is the interesting one).
+        const auto size = qEnvironmentVariable("SONY_UI_WINDOW").split('x');
+        if (size.size() == 2) window->resize(size[0].toInt(), size[1].toInt());
         auto* ticker = new QTimer(&app);
         int page = 0;
         QObject::connect(ticker, &QTimer::timeout, &app, [&, ticker, window]() mutable {
