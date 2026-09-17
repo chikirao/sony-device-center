@@ -76,14 +76,27 @@ ViewPage {
         }
     }
 
-    ColumnLayout {
+    // The preset library made the page taller than the minimum window, so
+    // it scrolls; the band row keeps whatever height is left, never less
+    // than what the sliders need.
+    Flickable {
+        id: eqFlick
         anchors.fill: parent
-        anchors.margins: 32
-        anchors.topMargin: 22
+        contentWidth: width
+        contentHeight: eqColumn.implicitHeight + 54
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+    ColumnLayout {
+        id: eqColumn
+        x: 32; y: 22
+        width: parent.width - 64
         spacing: 16
 
         // Title and presets share one sheet.
         Card { appWindow: root.appWindow;
+            id: presetsCard
             Layout.fillWidth: true
             implicitHeight: presetCol.implicitHeight + 44
             ColumnLayout {
@@ -209,7 +222,8 @@ ViewPage {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.minimumHeight: 320
+            Layout.preferredHeight: Math.max(320, eqFlick.height - presetsCard.implicitHeight - 54)
             spacing: 16
 
             // The five bands — the reason anyone opens this screen.
@@ -402,5 +416,6 @@ ViewPage {
                 }
             }
         }
+    }
     }
 }
