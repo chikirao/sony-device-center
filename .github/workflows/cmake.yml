@@ -130,9 +130,8 @@ jobs:
           cmake --build build-asan --target sony-protocol-tests sony-transport-tests sony-core-tests sony-battery-history-tests sony-update-checker-tests
 
       # Only the library test targets and the headless battery-history and
-      # update-checker tests
-      # are built above, so the app-level tests have no binary to start. The
-      # regular matrix job covers them.
+      # update-checker tests are built above, so the app-level tests have no
+      # binary to start. The regular matrix job covers them.
       - name: Run tests with sanitizers
         env:
           ASAN_OPTIONS: "detect_leaks=0:abort_on_error=1"

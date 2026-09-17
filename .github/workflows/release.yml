@@ -249,10 +249,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
+        # v0.2.1 never got published: uploads.github.com answered 404 for
+        # the DMG mid-upload (twice) and `gh release create` rolls the whole
+        # release back when an asset fails. So the release is created bare
+        # and each asset is uploaded on its own, with retries.
         run: |
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --clobber
-            gh release edit "$TAG" --notes-file notes.md
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --notes-file notes.md
           else
-            gh release create "$TAG" dist/* --title "$TAG" --notes-file notes.md
+            gh release edit "$TAG" --notes-file notes.md
           fi
+          for asset in dist/*; do
+            for attempt in 1 2 3 4; do
+              if gh release upload "$TAG" "$asset" --clobber; then break; fi
+              echo "upload of $asset failed (attempt $attempt), retrying"
+              sleep $((attempt * 20))
+              [ "$attempt" = 4 ] && exit 1
+            done
+          done
