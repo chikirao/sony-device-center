@@ -205,6 +205,12 @@ void I18nManager::_initTranslations() {
     en["eq_bands_hint"]                   = "Drag a band to shape your own curve.";
     en["per_hour"]                        = "per hour";
     en["battery_estimate_pending"]        = "Not enough data yet";
+    en["devices_rescan"]                  = "Rescan";
+    en["devices_current"]                 = "Current device";
+    en["devices_others"]                  = "Other paired devices";
+    en["devices_none_others"]             = "No other Sony devices are paired with this computer.";
+    en["devices_none_title"]              = "No paired devices";
+    en["devices_none_desc"]               = "Pair the headphones in the system's Bluetooth settings first; they will show up here.";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -368,6 +374,12 @@ void I18nManager::_initTranslations() {
     pt["eq_bands_hint"]                   = "Arraste uma banda para criar sua própria curva.";
     pt["per_hour"]                        = "por hora";
     pt["battery_estimate_pending"]        = "Ainda faltam dados";
+    pt["devices_rescan"]                  = "Procurar de novo";
+    pt["devices_current"]                 = "Dispositivo atual";
+    pt["devices_others"]                  = "Outros dispositivos pareados";
+    pt["devices_none_others"]             = "Nenhum outro dispositivo Sony está pareado com este computador.";
+    pt["devices_none_title"]              = "Nenhum dispositivo pareado";
+    pt["devices_none_desc"]               = "Pareie os fones nas configurações Bluetooth do sistema; eles aparecerão aqui.";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -531,6 +543,12 @@ void I18nManager::_initTranslations() {
     es["eq_bands_hint"]                   = "Arrastra una banda para crear tu propia curva.";
     es["per_hour"]                        = "por hora";
     es["battery_estimate_pending"]        = "Aún faltan datos";
+    es["devices_rescan"]                  = "Volver a buscar";
+    es["devices_current"]                 = "Dispositivo actual";
+    es["devices_others"]                  = "Otros dispositivos emparejados";
+    es["devices_none_others"]             = "No hay otros dispositivos Sony emparejados con este equipo.";
+    es["devices_none_title"]              = "Sin dispositivos emparejados";
+    es["devices_none_desc"]               = "Empareja los auriculares en los ajustes Bluetooth del sistema; aparecerán aquí.";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -694,6 +712,12 @@ void I18nManager::_initTranslations() {
     de["eq_bands_hint"]                   = "Ziehe ein Band, um deine eigene Kurve zu formen.";
     de["per_hour"]                        = "pro Stunde";
     de["battery_estimate_pending"]        = "Noch zu wenig Daten";
+    de["devices_rescan"]                  = "Neu suchen";
+    de["devices_current"]                 = "Aktuelles Gerät";
+    de["devices_others"]                  = "Weitere gekoppelte Geräte";
+    de["devices_none_others"]             = "Mit diesem Computer sind keine weiteren Sony-Geräte gekoppelt.";
+    de["devices_none_title"]              = "Keine gekoppelten Geräte";
+    de["devices_none_desc"]               = "Koppeln Sie die Kopfhörer zuerst in den Bluetooth-Einstellungen des Systems; sie erscheinen dann hier.";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -857,6 +881,12 @@ void I18nManager::_initTranslations() {
     fr["eq_bands_hint"]                   = "Faites glisser une bande pour tracer votre propre courbe.";
     fr["per_hour"]                        = "par heure";
     fr["battery_estimate_pending"]        = "Pas encore assez de données";
+    fr["devices_rescan"]                  = "Rechercher à nouveau";
+    fr["devices_current"]                 = "Appareil actuel";
+    fr["devices_others"]                  = "Autres appareils appairés";
+    fr["devices_none_others"]             = "Aucun autre appareil Sony n'est appairé avec cet ordinateur.";
+    fr["devices_none_title"]              = "Aucun appareil appairé";
+    fr["devices_none_desc"]               = "Appairez d'abord le casque dans les réglages Bluetooth du système ; il apparaîtra ici.";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1020,6 +1050,12 @@ void I18nManager::_initTranslations() {
     ja["eq_bands_hint"]                   = "バンドをドラッグして独自のカーブを作成します。";
     ja["per_hour"]                        = "1時間あたり";
     ja["battery_estimate_pending"]        = "データがまだ不足しています";
+    ja["devices_rescan"]                  = "再検索";
+    ja["devices_current"]                 = "現在のデバイス";
+    ja["devices_others"]                  = "他のペアリング済みデバイス";
+    ja["devices_none_others"]             = "このパソコンにペアリングされている他のSonyデバイスはありません。";
+    ja["devices_none_title"]              = "ペアリング済みデバイスがありません";
+    ja["devices_none_desc"]               = "まずシステムのBluetooth設定でヘッドホンをペアリングしてください。ここに表示されます。";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1183,6 +1219,12 @@ void I18nManager::_initTranslations() {
     ru["eq_bands_hint"]                   = "Потяните полосу, чтобы задать свою кривую.";
     ru["per_hour"]                        = "в час";
     ru["battery_estimate_pending"]        = "Пока мало данных";
+    ru["devices_rescan"]                  = "Обновить";
+    ru["devices_current"]                 = "Текущее устройство";
+    ru["devices_others"]                  = "Другие сопряжённые устройства";
+    ru["devices_none_others"]             = "Других устройств Sony с этим компьютером не сопряжено.";
+    ru["devices_none_title"]              = "Нет сопряжённых устройств";
+    ru["devices_none_desc"]               = "Сначала сопрягите наушники в настройках Bluetooth системы — они появятся здесь.";
 }
 
 } // namespace sony::devicecenter
