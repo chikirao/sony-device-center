@@ -109,6 +109,13 @@ int main(int argc, char *argv[]) {
     if (parser.isSet(simulatedOption) || parser.isSet(simulatedModelOption)) {
         auto simulated = sony::core::createSimulatedDevice(parser.value(simulatedModelOption).toStdString());
         simulatedAddress = QString::fromStdString(simulated.address);
+        // Two more paired-but-idle sets so the Devices page has a list to
+        // lay out. They share the one simulated transport: "connecting" to
+        // either simply reconnects the same fake headset under that name.
+        simulated.discovery->addDevice({.name = "WH-1000XM4", .address = sony::transport::DeviceAddress("CC:98:8B:00:11:33"),
+                                        .paired = true, .connected = false});
+        simulated.discovery->addDevice({.name = "LinkBuds S", .address = sony::transport::DeviceAddress("CC:98:8B:00:11:44"),
+                                        .paired = true, .connected = false});
         auto simulatedService = std::make_shared<sony::core::DeviceService>(simulated.transport, simulated.discovery);
         simulatedService->startAutoConnect(simulated.address);
         service = std::move(simulatedService);
