@@ -232,6 +232,7 @@ void I18nManager::_initTranslations() {
     en["eq_save"]                         = "Save";
     en["eq_cancel"]                       = "Cancel";
     en["eq_import_failed"]                = "Import failed: %1";
+    en["battery_estimate_pending"]        = "Not enough data yet";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -422,6 +423,7 @@ void I18nManager::_initTranslations() {
     pt["eq_save"]                         = "Salvar";
     pt["eq_cancel"]                       = "Cancelar";
     pt["eq_import_failed"]                = "Falha na importação: %1";
+    pt["battery_estimate_pending"]        = "Ainda faltam dados";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -612,6 +614,7 @@ void I18nManager::_initTranslations() {
     es["eq_save"]                         = "Guardar";
     es["eq_cancel"]                       = "Cancelar";
     es["eq_import_failed"]                = "Error al importar: %1";
+    es["battery_estimate_pending"]        = "Aún faltan datos";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -802,6 +805,7 @@ void I18nManager::_initTranslations() {
     de["eq_save"]                         = "Speichern";
     de["eq_cancel"]                       = "Abbrechen";
     de["eq_import_failed"]                = "Import fehlgeschlagen: %1";
+    de["battery_estimate_pending"]        = "Noch zu wenig Daten";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -992,6 +996,7 @@ void I18nManager::_initTranslations() {
     fr["eq_save"]                         = "Enregistrer";
     fr["eq_cancel"]                       = "Annuler";
     fr["eq_import_failed"]                = "Échec de l’import : %1";
+    fr["battery_estimate_pending"]        = "Pas encore assez de données";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1182,6 +1187,7 @@ void I18nManager::_initTranslations() {
     ja["eq_save"]                         = "保存";
     ja["eq_cancel"]                       = "キャンセル";
     ja["eq_import_failed"]                = "読み込みに失敗しました: %1";
+    ja["battery_estimate_pending"]        = "データがまだ不足しています";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1372,6 +1378,7 @@ void I18nManager::_initTranslations() {
     ru["eq_save"]                         = "Сохранить";
     ru["eq_cancel"]                       = "Отмена";
     ru["eq_import_failed"]                = "Не удалось импортировать: %1";
+    ru["battery_estimate_pending"]        = "Пока мало данных";
 }
 
 } // namespace sony::devicecenter

@@ -35,9 +35,11 @@ public:
 
     // Samples older than this are dropped on load and save.
     static constexpr qint64 kRetentionMs = 180LL * 24 * 3600 * 1000;
-    // A rate is only trusted after the session has both lost a couple of
-    // percent and lasted a while; before that the estimate is "unknown".
-    static constexpr int kMinDropPercent = 2;
+    // A rate is only trusted once two level changes have been seen a while
+    // apart; before that the estimate is "unknown". One percent is enough
+    // because both ends of the measurement sit on a reported change, so the
+    // interval between them is a whole percent of use.
+    static constexpr int kMinDropPercent = 1;
     static constexpr qint64 kMinSessionSpanMs = 5LL * 60 * 1000;
 
     explicit BatteryHistory(QString storageDir, QObject* parent = nullptr);

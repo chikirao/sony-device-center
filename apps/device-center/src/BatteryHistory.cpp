@@ -19,13 +19,37 @@ constexpr int kFileVersion = 1;
 // A Bluetooth drop shorter than this, with the link coming straight back,
 // is a hiccup rather than a break in use; the discharge session survives it.
 constexpr qint64 kShortGapMs = 2LL * 60 * 1000;
+// While the app is closed the log sees nothing. A "connected" marker that
+// follows plain samples is such a gap; the headset kept draining on its own
+// unless the level says otherwise, so the session carries on across it as
+// long as the gap is not so long that it could hide a night on the shelf.
+constexpr qint64 kMaxUnseenGapMs = 6LL * 3600 * 1000;
+// No Sony headset drains faster than this. A bigger drop across an unseen
+// gap means the charge was spent elsewhere (or on another cycle).
+constexpr double kMaxPlausiblePercentPerHour = 15.0;
+// ...and none lasts longer than a few days: a slower rate means the session
+// swallowed hours the headset spent switched off, and the estimate would
+// promise days.
+constexpr double kMinPlausiblePercentPerHour = 1.0;
 
-// A "connected" marker that follows the previous sample closely is a resumed
-// session, not a new one: the link came straight back after a drop-out, or
-// the app was restarted while the headset stayed on at the same level.
+constexpr double hoursBetween(qint64 fromMs, qint64 toMs) {
+    return static_cast<double>(toMs - fromMs) / (3600.0 * 1000.0);
+}
+
+// Whether a "connected" marker continues the discharge session the previous
+// sample belongs to rather than starting a new one.
 bool resumesSession(const BatteryHistory::Sample& previous, const BatteryHistory::Sample& connected) {
-    if (connected.timeMs - previous.timeMs > kShortGapMs) return false;
-    return previous.event == BatteryHistory::Event::Disconnected || previous.level == connected.level;
+    const qint64 gap = connected.timeMs - previous.timeMs;
+    // A higher level means the charger was involved in between.
+    if (connected.level > previous.level) return false;
+    // The link was seen dropping: the headset went off or away, and only a
+    // hiccup keeps the session.
+    if (previous.event == BatteryHistory::Event::Disconnected) return gap <= kShortGapMs;
+    // Unseen gap (app restart): the same charge as long as the drop across
+    // it could have happened in use.
+    if (gap > kMaxUnseenGapMs) return false;
+    const int drop = previous.level - connected.level;
+    return drop == 0 || drop / hoursBetween(previous.timeMs, connected.timeMs) <= kMaxPlausiblePercentPerHour;
 }
 
 const char* eventName(BatteryHistory::Event event) {
@@ -142,24 +166,29 @@ BatteryHistory::Estimate BatteryHistory::estimate(qint64 nowMs) const {
     }
     result.sessionStartMs = _samples[start].timeMs;
 
-    // The session's first sample sits at an unknown fraction of a percent
-    // (whenever the charger came off or the link came up), so the rate is
-    // measured from the first real level change after it.
-    int anchor = -1;
+    // Connect markers sit at an unknown fraction of a percent (whenever the
+    // charger came off, the link came up or the app started), so the rate is
+    // measured between level changes only: the first one after the session
+    // began and the last one seen.
+    int anchor = -1, tail = -1;
     for (int i = start + 1; i < _samples.size(); ++i) {
-        if (_samples[i].event == Event::Level) { anchor = i; break; }
+        if (_samples[i].event != Event::Level) continue;
+        if (anchor < 0) anchor = i;
+        tail = i;
     }
     if (anchor < 0) return result;
-    const auto& a = _samples[anchor];
-    const int drop = a.level - end.level;
-    const qint64 span = end.timeMs - a.timeMs;
+    const int drop = _samples[anchor].level - _samples[tail].level;
+    const qint64 span = _samples[tail].timeMs - _samples[anchor].timeMs;
     if (drop < kMinDropPercent || span < kMinSessionSpanMs) return result;
 
     const double perMs = static_cast<double>(drop) / static_cast<double>(span);
-    result.valid = true;
     result.percentPerHour = perMs * 3600.0 * 1000.0;
-    // The level has kept falling since the last sample; count that time off.
-    const double sinceEnd = static_cast<double>(std::max<qint64>(0, nowMs - end.timeMs));
+    if (result.percentPerHour < kMinPlausiblePercentPerHour) return result;
+    result.valid = true;
+    // The level has kept falling since it was last seen changing (or, after
+    // an unseen gap, since the marker that reported it); count that time off.
+    const qint64 reachedMs = end.level == _samples[tail].level ? _samples[tail].timeMs : end.timeMs;
+    const double sinceEnd = static_cast<double>(std::max<qint64>(0, nowMs - reachedMs));
     result.remainingMs = static_cast<qint64>(std::max(0.0, end.level / perMs - sinceEnd));
     return result;
 }
