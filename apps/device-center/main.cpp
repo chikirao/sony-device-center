@@ -1,5 +1,8 @@
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QFontDatabase>
+#include <QDir>
+#include <QQuickWindow>
 #include <QDateTime>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -18,6 +21,10 @@
 int main(int argc, char *argv[]) {
     // QApplication rather than QGuiApplication: the tray icon and its menu
     // come from QtWidgets. The QML side is unaffected.
+    // Screenshot mode must not depend on the window being visible on screen:
+    // the threaded render loop only advances animations while exposed, so an
+    // occluded or locked desktop would grab frozen first frames.
+    if (!qEnvironmentVariable("SONY_UI_SCREENSHOTS").isEmpty()) qputenv("QSG_RENDER_LOOP", "basic");
     QApplication app(argc, argv);
     sony::devicecenter::WindowsToast::registerApplication();
 
@@ -28,6 +35,14 @@ int main(int argc, char *argv[]) {
     QQuickStyle::setStyle("Basic");
     app.setApplicationName("Sony Device Center");
     app.setOrganizationName("SonyBridge");
+
+    // Manrope is the body face (Latin + Cyrillic); anything it lacks (kana)
+    // falls through to the system font per glyph, which Qt handles itself.
+    for (const auto* face : {"Regular", "Medium", "SemiBold", "Bold"})
+        QFontDatabase::addApplicationFont(QString(":/fonts/Manrope-%1.ttf").arg(face));
+    QFont bodyFont("Manrope");
+    bodyFont.setPixelSize(13);
+    app.setFont(bodyFont);
     app.setApplicationVersion(SONY_DEVICE_CENTER_VERSION);
 
     // Wayland and the GNOME/KDE shells match a window to its .desktop entry by
@@ -103,6 +118,22 @@ int main(int argc, char *argv[]) {
 
     engine.load(url);
     if (!engine.rootObjects().isEmpty()) tray.setWindow(qobject_cast<QWindow*>(engine.rootObjects().first()));
+
+    // SONY_UI_SCREENSHOTS=<dir>: walk every page, save a capture of each and
+    // quit. Used to review the UI without driving the real mouse.
+    const auto shotDir = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
+    auto* window = engine.rootObjects().isEmpty() ? nullptr : qobject_cast<QQuickWindow*>(engine.rootObjects().first());
+    if (!shotDir.isEmpty() && window) {
+        QDir().mkpath(shotDir);
+        auto* ticker = new QTimer(&app);
+        int page = 0;
+        QObject::connect(ticker, &QTimer::timeout, &app, [&, ticker, window]() mutable {
+            if (page > 0) window->grabWindow().save(QString("%1/page%2.png").arg(shotDir).arg(page - 1));
+            if (page > 6) { ticker->stop(); app.quit(); return; }
+            window->setProperty("navIndex", page++);
+        });
+        ticker->start(1500);
+    }
 
     return app.exec();
 }
