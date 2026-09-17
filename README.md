@@ -216,10 +216,30 @@ sonyctl eq bass-boost           # Switch to preset (bright, excited, vocal, bass
 sonyctl eq custom 5 0 1 2 1 0   # Custom Clear Bass (+5) and bands: 400Hz, 1kHz, 2.5kHz, 6.3kHz, 16kHz
 sonyctl dsee on                 # Enable DSEE audio upscaling
 sonyctl apo 3                   # Set Auto Power-Off preset (0=Off, 1=5m, 2=15m, 3=30m, 4=1h, 5=3h)
+sonyctl stc on                  # Speak-to-Chat on/off
+sonyctl adaptive off            # Adaptive Volume on/off
+sonyctl connect CC:98:8B:00:11:22   # Connect to a specific paired device; `sonyctl disconnect` drops it
 
 # Standalone execution (stop sonyd first; only one Bluetooth owner is allowed)
 sonyctl --direct battery
 sonyctl --direct anc on
+
+# Machine-readable output for Waybar / Polybar / PowerToys scripts: one line of JSON,
+# exit code 0 when ok. `battery`, `eq get` and `status` print just that object;
+# `info` prints the whole snapshot; errors keep the same envelope.
+sonyctl --json battery          # {"version":1,"id":1,"ok":true,"data":{"main":85,"left":null,...,"charging":false}}
+sonyctl --json status           # {"...","data":{"connected":true,"name":"WH-1000XM5","codec":"LDAC",...}}
+sonyctl --json anc on           # {"...","ok":true,"data":{<full snapshot>}}
+sonyctl --json ambient 99       # {"...","ok":false,"error":{"code":"InvalidRequest","message":"ambient level must be a number from 1 to 20"}}
+```
+
+A Waybar module, for example:
+
+```json
+"custom/headphones": {
+  "exec": "sonyctl --json battery | jq -r 'if .ok then \"\\(.data.main)%\" else \"—\" end'",
+  "interval": 30
+}
 ```
 
 ### 3. Background Daemon (`sonyd`)

@@ -58,10 +58,11 @@ no hardware verification or release publication is implied by the automated test
   daemon clients poll cached snapshots once per second. Add IPC subscriptions only
   after backpressure and per-client event limits are designed. Rotating hardware
   refreshes take longer than five seconds when requests time out.
-- **Typed CLI output.** The GUI has stopped parsing prose. Legacy human-readable
-  formatting still lives in IpcProtocol for compatibility; move presentation to
-  sonyctl when introducing a structured CLI mode. Some optional controls exist only
-  in the structured API, not the legacy CLI parser.
+- **Typed CLI output.** The GUI has stopped parsing prose, and `sonyctl --json`
+  (CliRequest) now maps every command onto the structured request. Legacy
+  human-readable formatting still lives in IpcProtocol for compatibility; the
+  remaining step is to render the prose in sonyctl from the typed reply and
+  drop the legacy formatter from the daemon.
 
 ## UI, packaging, and maintenance
 
