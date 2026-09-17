@@ -47,6 +47,11 @@ Button {
         }
         Text {
             textFormat: Text.PlainText
+            // A button squeezed below its content (fillWidth in a narrow
+            // card, "Открыть эквалайзер" at the minimum window) elides
+            // rather than running out over its own edge.
+            Layout.fillWidth: true
+            elide: Text.ElideRight
             text: pill.text
             color: pill.ink
             font.pixelSize: pill.compact ? 12 : 13
