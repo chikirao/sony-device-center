@@ -21,6 +21,11 @@ public:
     [[nodiscard]] QString lastMessage() const { return _lastMessage; }
     [[nodiscard]] int messageCount() const { return _messageCount; }
 
+public slots:
+    // A newer release was found (UpdateChecker::updateAvailable); one toast
+    // if the user wants them.
+    void announceUpdate(const QString& version);
+
 private:
     void _evaluate();
     void _notify(const QString& title, const QString& body);
