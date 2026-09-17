@@ -87,18 +87,36 @@ private slots:
         // The connect sample sits at an unknown fraction, so the first level
         // change is only the anchor, not yet a drop.
         h.observe(kT0 + 10 * kMinute, true, 99, false);
-        QVERIFY(!h.estimate(kT0 + 10 * kMinute).valid);
+        QVERIFY2(!h.estimate(kT0 + 10 * kMinute).valid, "one level change is an anchor, not a rate");
         h.observe(kT0 + 20 * kMinute, true, 98, false);
-        QVERIFY2(!h.estimate(kT0 + 20 * kMinute).valid, "1% drop is below the minimum");
+        const auto e = h.estimate(kT0 + 20 * kMinute);
+        QVERIFY2(e.valid, "one whole percent between two reported changes is a rate");
+        QCOMPARE(e.sessionStartMs, kT0);
+        // 1% over 10 minutes = 6%/h; 98% lasts 980 minutes.
+        QCOMPARE(e.percentPerHour, 6.0);
+        QCOMPARE(e.remainingMs / kMinute, 980);
+        // Time keeps running between samples.
+        QCOMPARE(h.estimate(kT0 + 25 * kMinute).remainingMs / kMinute, 975);
         h.observe(kT0 + 30 * kMinute, true, 97, false);
-        const auto e = h.estimate(kT0 + 30 * kMinute);
+        QCOMPARE(h.estimate(kT0 + 30 * kMinute).remainingMs / kMinute, 970);
+    }
+
+    void restartsMeasureBetweenLevelChangesOnly() {
+        BatteryHistory h(dir());
+        h.setDevice(kAddress);
+        discharge(h, kT0, 60, 3, 10 * kMinute);   // 6%/h, 57 at +30 min
+        // Relaunched at the same level five minutes later: the marker is a
+        // resumed session, and it must not pass as the end of the measured
+        // span (57 at +35 min would read as a slower rate).
+        BatteryHistory again(dir());
+        again.setDevice(kAddress);
+        again.observe(kT0 + 35 * kMinute, true, 57, false);
+        const auto e = again.estimate(kT0 + 35 * kMinute);
         QVERIFY(e.valid);
         QCOMPARE(e.sessionStartMs, kT0);
-        // 2% over 20 minutes = 6%/h; 97% lasts 970 minutes.
         QCOMPARE(e.percentPerHour, 6.0);
-        QCOMPARE(e.remainingMs / kMinute, 970);
-        // Time keeps running between samples.
-        QCOMPARE(h.estimate(kT0 + 35 * kMinute).remainingMs / kMinute, 965);
+        // 57% at 6%/h is 570 min, minus the five minutes since the change.
+        QCOMPARE(e.remainingMs / kMinute, 565);
     }
 
     void tooShortASessionIsNotTrusted() {
@@ -172,11 +190,148 @@ private slots:
             QCOMPARE(e.sessionStartMs, kT0);
             QCOMPARE(e.percentPerHour, 6.0);
         }
-        // Relaunched at a different level: the headset was used elsewhere.
+        // Relaunched far below the last point: 13% in a minute is no
+        // discharge, the charge was spent elsewhere.
         BatteryHistory later(dir());
         later.setDevice(kAddress);
         later.observe(kT0 + 71 * kMinute, true, 40, false);
         QVERIFY(!later.estimate(kT0 + 71 * kMinute).valid);
+        QCOMPARE(later.estimate(kT0 + 71 * kMinute).sessionStartMs, kT0 + 71 * kMinute);
+    }
+
+    void restartAfterUnseenUseKeepsTheSession() {
+        BatteryHistory h(dir());
+        h.setDevice(kAddress);
+        discharge(h, kT0, 60, 6, 10 * kMinute);   // 6%/h, 54 at +60 min
+        // The app was closed for an hour and a half while the headset played
+        // on: 9% down at the relaunch, the same rate as before.
+        BatteryHistory again(dir());
+        again.setDevice(kAddress);
+        again.observe(kT0 + 150 * kMinute, true, 45, false);
+        auto e = again.estimate(kT0 + 150 * kMinute);
+        QVERIFY2(e.valid, "the earlier changes still count");
+        QCOMPARE(e.sessionStartMs, kT0);
+        QCOMPARE(e.percentPerHour, 6.0);
+        // The next change refines the rate across the gap.
+        again.observe(kT0 + 160 * kMinute, true, 44, false);
+        e = again.estimate(kT0 + 160 * kMinute);
+        QCOMPARE(e.sessionStartMs, kT0);
+        QCOMPARE(e.percentPerHour, 15.0 * 60 / 150);
+    }
+
+    void restartAtAHigherLevelStartsANewSession() {
+        BatteryHistory h(dir());
+        h.setDevice(kAddress);
+        discharge(h, kT0, 60, 6, 10 * kMinute);
+        // Charged while the app was closed. Headphones that cannot play on
+        // the charger never log a charging sample, so the rise is the only clue.
+        BatteryHistory again(dir());
+        again.setDevice(kAddress);
+        const qint64 back = kT0 + 3 * kHour;
+        again.observe(back, true, 100, false);
+        QVERIFY(!again.estimate(back).valid);
+        QCOMPARE(again.estimate(back).sessionStartMs, back);
+    }
+
+    void restartAfterALongGapStartsANewSession() {
+        BatteryHistory h(dir());
+        h.setDevice(kAddress);
+        discharge(h, kT0, 60, 6, 10 * kMinute);
+        // Same level a night later: the headset sat switched off, and the
+        // hours in between would make the old rate meaningless.
+        BatteryHistory again(dir());
+        again.setDevice(kAddress);
+        const qint64 back = kT0 + 12 * kHour;
+        again.observe(back, true, 54, false);
+        QCOMPARE(again.estimate(back).sessionStartMs, back);
+    }
+
+    void implausiblySlowRateIsNotTrusted() {
+        BatteryHistory h(dir());
+        h.setDevice(kAddress);
+        // 1% in three hours can only mean the headset was off for most of
+        // it; "300 hours left" helps nobody.
+        h.observe(kT0, true, 60, false);
+        h.observe(kT0 + 10 * kMinute, true, 59, false);
+        h.observe(kT0 + 3 * kHour, true, 58, false);
+        QVERIFY(!h.estimate(kT0 + 3 * kHour).valid);
+    }
+
+    // A log recorded by a WH-1000XM5 on Windows during an evening of
+    // development: the app was relaunched many times, so most markers are
+    // "connected" with no "disconnected" before them, and the charge that
+    // happened after 01:03 never shows because these headphones cannot play
+    // while charging.
+    static void writeXm5Log(const QString& dir, int count = 14) {
+        static const char* const samples[] = {
+            R"({"t":1789587216150,"level":59,"charging":false,"event":"connected"})",     // 22:33 first launch
+            R"({"t":1789587376622,"level":59,"charging":false,"event":"connected"})",     // 22:36 relaunch
+            R"({"t":1789587829646,"level":59,"charging":false,"event":"connected"})",     // 22:43 relaunch
+            R"({"t":1789587890606,"level":58,"charging":false,"event":"level"})",         // 22:44
+            R"({"t":1789588185850,"level":58,"charging":false,"event":"connected"})",     // 22:49 relaunch
+            R"({"t":1789588474983,"level":58,"charging":false,"event":"connected"})",     // 22:54 relaunch
+            R"({"t":1789594130300,"level":53,"charging":false,"event":"connected"})",     // 00:28 relaunch, 94 min unseen
+            R"({"t":1789594632311,"level":52,"charging":false,"event":"level"})",         // 00:37
+            R"({"t":1789595478866,"level":52,"charging":false,"event":"connected"})",     // 00:51 relaunch
+            R"({"t":1789595673359,"level":51,"charging":false,"event":"level"})",         // 00:54
+            R"({"t":1789596222937,"level":51,"charging":false,"event":"disconnected"})",  // 01:03 headset off
+            R"({"t":1789641009471,"level":100,"charging":false,"event":"connected"})",    // 13:30 charged overnight
+            R"({"t":1789641101351,"level":100,"charging":false,"event":"connected"})",    // 13:31 relaunch
+            R"({"t":1789642092844,"level":100,"charging":false,"event":"disconnected"})", // 13:48 headset off
+        };
+        QByteArray json = R"({"version":1,"address":"CC:98:8B:00:11:22","samples":[)";
+        for (int i = 0; i < count; ++i) json += (i ? "," : "") + QByteArray(samples[i]);
+        json += "]}";
+        QDir().mkpath(dir + "/battery-history");
+        QFile file(dir + "/battery-history/CC-98-8B-00-11-22.json");
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write(json);
+    }
+
+    void realXm5LogGivesAnEstimate() {
+        // As the app stood at 00:54, right after the change to 51%: the
+        // session runs from the first launch at 22:33, across every relaunch
+        // and the 94-minute gap in which 5% went (3.2%/h, in use).
+        writeXm5Log(dir(), 10);
+        BatteryHistory h(dir());
+        h.setDevice(kAddress);
+        QCOMPARE(h.samples().size(), 10);
+        const qint64 at0054 = 1789595673359;
+        const auto e = h.estimate(at0054);
+        QVERIFY(e.valid);
+        QCOMPARE(e.sessionStartMs, 1789587216150);
+        // 58 -> 51 between the two changes at 22:44:50 and 00:54:33.
+        QVERIFY2(e.percentPerHour > 3.2 && e.percentPerHour < 3.3, qPrintable(QString::number(e.percentPerHour)));
+        QCOMPARE(e.remainingMs / kHour, 15);
+    }
+
+    void realXm5LogAfterChargingHasNoEstimateYet() {
+        // Back at 100% after a night on the charger: a new session from
+        // 13:30 (the relaunch at 13:31 resumes it) with no level change yet,
+        // which is what the card showed on the day.
+        writeXm5Log(dir(), 12);
+        BatteryHistory h(dir());
+        h.setDevice(kAddress);
+        const qint64 at1331 = 1789641101351;
+        h.observe(at1331, true, 100, false);   // the relaunch that wrote sample 13
+        QCOMPARE(h.samples().last().event, BatteryHistory::Event::Connected);
+        auto e = h.estimate(at1331 + 5 * kMinute);
+        QVERIFY(!e.valid);
+        QCOMPARE(e.sessionStartMs, 1789641009471);
+        // Carry on as the headset would have: the first change is still only
+        // the anchor, the second one gives the rate.
+        h.observe(at1331 + 10 * kMinute, true, 99, false);
+        QVERIFY(!h.estimate(at1331 + 10 * kMinute).valid);
+        h.observe(at1331 + 28 * kMinute, true, 98, false);
+        e = h.estimate(at1331 + 28 * kMinute);
+        QVERIFY(e.valid);
+        QCOMPARE(e.sessionStartMs, 1789641009471);
+        QVERIFY(e.percentPerHour > 3.3 && e.percentPerHour < 3.4);
+        // Gone at 13:48: nothing to estimate while the headset is off.
+        writeXm5Log(dir(), 14);
+        BatteryHistory full(dir());
+        full.setDevice(kAddress);
+        QVERIFY(!full.estimate(1789642092844 + kMinute).valid);
     }
 
     void longReconnectStartsANewSession() {
