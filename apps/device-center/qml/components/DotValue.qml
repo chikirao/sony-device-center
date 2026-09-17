@@ -14,7 +14,10 @@ Item {
     signal edited(int v)
 
     readonly property bool editing: field.visible
-    implicitWidth: Math.max(display.implicitWidth, field.visible ? field.implicitWidth : 0)
+    // The width is reserved for the widest value in range, sign included.
+    // Otherwise "0" (no sign) is narrower than "+8", the slider next to it
+    // grows by a glyph mid-drag and the handle lands on another value.
+    implicitWidth: Math.max(widest.implicitWidth, field.visible ? field.implicitWidth : 0)
     implicitHeight: display.implicitHeight
 
     function open() {
@@ -33,6 +36,13 @@ Item {
         if (v !== value) root.edited(v)
     }
 
+    DotText {
+        id: widest
+        visible: false
+        dot: root.dot
+        text: (root.signed || root.from < 0 ? "-" : "")
+            + "8".repeat(Math.max(String(Math.abs(root.from)).length, String(Math.abs(root.to)).length))
+    }
     DotText {
         id: display
         anchors.right: parent.right
