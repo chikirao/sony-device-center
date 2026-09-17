@@ -236,11 +236,13 @@ ViewPage {
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 18
-                    spacing: 12
+                    anchors.topMargin: 16
+                    anchors.bottomMargin: 14
+                    spacing: 8
                     CardTitle { appWindow: root.appWindow; text: appWindow.tr("battery_title"); onClicked: appWindow.navIndex = 5 }
                     RowLayout {
                         Layout.fillHeight: true
-                        spacing: 18
+                        spacing: 12
                         Stat { appWindow: root.appWindow;
                             label: appWindow.tr("time_left")
                             value: !controller.connected ? "—" : controller.isCharging ? appWindow.tr("charging")
@@ -252,7 +254,11 @@ ViewPage {
                         Stat { appWindow: root.appWindow;
                             label: appWindow.tr("battery_rate")
                             value: controller.connected && controller.batteryDischargeRate > 0 ? controller.batteryDischargeRate.toFixed(1) + "%" : "—"
-                            note: controller.connected && controller.batteryDischargeRate > 0 ? appWindow.tr("per_hour") : ""
+                            // A session with no rate yet is the normal state
+                            // for the first half hour after a charge; say so
+                            // rather than leave two dashes unexplained.
+                            note: !controller.connected || controller.isCharging ? ""
+                                : controller.batteryDischargeRate > 0 ? appWindow.tr("per_hour") : appWindow.tr("battery_estimate_pending")
                         }
                     }
                 }
@@ -337,11 +343,21 @@ ViewPage {
         property string value: ""
         property string note: ""
         Layout.fillWidth: true
+        // Equal columns: otherwise the row splits by label width and the
+        // narrower stat is left with no room for its note.
+        Layout.preferredWidth: 1
         Layout.alignment: Qt.AlignTop
-        spacing: 8
-        Text { textFormat: Text.PlainText; text: stat.label; color: Theme.txtDim; font.pixelSize: 11 }
-        DotText { text: stat.value; dot: 4.2; maxWidth: stat.width; color: Theme.txt }
-        Text { textFormat: Text.PlainText; visible: text !== ""; text: stat.note; color: Theme.txtDim; font.pixelSize: 11; elide: Text.ElideRight; Layout.fillWidth: true }
+        spacing: 6
+        // One line, elided: the card has no height for a wrapped label on
+        // top of a two-line note, so the labels are kept short in every
+        // language instead ("Разряд", "Décharge").
+        Text { textFormat: Text.PlainText; text: stat.label; color: Theme.txtDim; font.pixelSize: 11
+               elide: Text.ElideRight; Layout.fillWidth: true }
+        DotText { text: stat.value; dot: 3.6; maxWidth: stat.width; color: Theme.txt }
+        // Two lines: "Discharging since 13:30" does not fit one at the
+        // minimum window width, and the card has the height to spare.
+        Text { textFormat: Text.PlainText; visible: text !== ""; text: stat.note; color: Theme.txtDim; font.pixelSize: 11
+               wrapMode: Text.Wrap; maximumLineCount: 2; elide: Text.ElideRight; Layout.fillWidth: true }
         Item { Layout.fillHeight: true }
     }
 }
