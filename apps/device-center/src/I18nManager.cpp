@@ -232,6 +232,12 @@ void I18nManager::_initTranslations() {
     en["eq_save"]                         = "Save";
     en["eq_cancel"]                       = "Cancel";
     en["eq_import_failed"]                = "Import failed: %1";
+    en["devices_rescan"]                  = "Rescan";
+    en["devices_current"]                 = "Current device";
+    en["devices_others"]                  = "Other paired devices";
+    en["devices_none_others"]             = "No other Sony devices are paired with this computer.";
+    en["devices_none_title"]              = "No paired devices";
+    en["devices_none_desc"]               = "Pair the headphones in the system's Bluetooth settings first; they will show up here.";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -422,6 +428,12 @@ void I18nManager::_initTranslations() {
     pt["eq_save"]                         = "Salvar";
     pt["eq_cancel"]                       = "Cancelar";
     pt["eq_import_failed"]                = "Falha na importação: %1";
+    pt["devices_rescan"]                  = "Procurar de novo";
+    pt["devices_current"]                 = "Dispositivo atual";
+    pt["devices_others"]                  = "Outros dispositivos pareados";
+    pt["devices_none_others"]             = "Nenhum outro dispositivo Sony está pareado com este computador.";
+    pt["devices_none_title"]              = "Nenhum dispositivo pareado";
+    pt["devices_none_desc"]               = "Pareie os fones nas configurações Bluetooth do sistema; eles aparecerão aqui.";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -612,6 +624,12 @@ void I18nManager::_initTranslations() {
     es["eq_save"]                         = "Guardar";
     es["eq_cancel"]                       = "Cancelar";
     es["eq_import_failed"]                = "Error al importar: %1";
+    es["devices_rescan"]                  = "Volver a buscar";
+    es["devices_current"]                 = "Dispositivo actual";
+    es["devices_others"]                  = "Otros dispositivos emparejados";
+    es["devices_none_others"]             = "No hay otros dispositivos Sony emparejados con este equipo.";
+    es["devices_none_title"]              = "Sin dispositivos emparejados";
+    es["devices_none_desc"]               = "Empareja los auriculares en los ajustes Bluetooth del sistema; aparecerán aquí.";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -802,6 +820,12 @@ void I18nManager::_initTranslations() {
     de["eq_save"]                         = "Speichern";
     de["eq_cancel"]                       = "Abbrechen";
     de["eq_import_failed"]                = "Import fehlgeschlagen: %1";
+    de["devices_rescan"]                  = "Neu suchen";
+    de["devices_current"]                 = "Aktuelles Gerät";
+    de["devices_others"]                  = "Weitere gekoppelte Geräte";
+    de["devices_none_others"]             = "Mit diesem Computer sind keine weiteren Sony-Geräte gekoppelt.";
+    de["devices_none_title"]              = "Keine gekoppelten Geräte";
+    de["devices_none_desc"]               = "Koppeln Sie die Kopfhörer zuerst in den Bluetooth-Einstellungen des Systems; sie erscheinen dann hier.";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -992,6 +1016,12 @@ void I18nManager::_initTranslations() {
     fr["eq_save"]                         = "Enregistrer";
     fr["eq_cancel"]                       = "Annuler";
     fr["eq_import_failed"]                = "Échec de l’import : %1";
+    fr["devices_rescan"]                  = "Rechercher à nouveau";
+    fr["devices_current"]                 = "Appareil actuel";
+    fr["devices_others"]                  = "Autres appareils appairés";
+    fr["devices_none_others"]             = "Aucun autre appareil Sony n'est appairé avec cet ordinateur.";
+    fr["devices_none_title"]              = "Aucun appareil appairé";
+    fr["devices_none_desc"]               = "Appairez d'abord le casque dans les réglages Bluetooth du système ; il apparaîtra ici.";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1182,6 +1212,12 @@ void I18nManager::_initTranslations() {
     ja["eq_save"]                         = "保存";
     ja["eq_cancel"]                       = "キャンセル";
     ja["eq_import_failed"]                = "読み込みに失敗しました: %1";
+    ja["devices_rescan"]                  = "再検索";
+    ja["devices_current"]                 = "現在のデバイス";
+    ja["devices_others"]                  = "他のペアリング済みデバイス";
+    ja["devices_none_others"]             = "このパソコンにペアリングされている他のSonyデバイスはありません。";
+    ja["devices_none_title"]              = "ペアリング済みデバイスがありません";
+    ja["devices_none_desc"]               = "まずシステムのBluetooth設定でヘッドホンをペアリングしてください。ここに表示されます。";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1372,6 +1408,12 @@ void I18nManager::_initTranslations() {
     ru["eq_save"]                         = "Сохранить";
     ru["eq_cancel"]                       = "Отмена";
     ru["eq_import_failed"]                = "Не удалось импортировать: %1";
+    ru["devices_rescan"]                  = "Обновить";
+    ru["devices_current"]                 = "Текущее устройство";
+    ru["devices_others"]                  = "Другие сопряжённые устройства";
+    ru["devices_none_others"]             = "Других устройств Sony с этим компьютером не сопряжено.";
+    ru["devices_none_title"]              = "Нет сопряжённых устройств";
+    ru["devices_none_desc"]               = "Сначала сопрягите наушники в настройках Bluetooth системы — они появятся здесь.";
 }
 
 } // namespace sony::devicecenter
