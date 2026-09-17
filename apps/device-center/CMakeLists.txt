@@ -44,6 +44,8 @@ add_executable(sony-device-center
     include/BatteryHistory.h
     src/HotkeyManager.cpp
     include/HotkeyManager.h
+    src/EqualizerLibrary.cpp
+    include/EqualizerLibrary.h
     qml.qrc
 )
 
@@ -167,7 +169,8 @@ if(BUILD_TESTING)
             src/NotificationController.cpp include/NotificationController.h
             src/WindowsToast.cpp include/WindowsToast.h
             src/BatteryHistory.cpp include/BatteryHistory.h
-            src/HotkeyManager.cpp include/HotkeyManager.h)
+            src/HotkeyManager.cpp include/HotkeyManager.h
+            src/EqualizerLibrary.cpp include/EqualizerLibrary.h)
         target_include_directories(sony-ui-tests PRIVATE include)
         if(WIN32)
             target_link_libraries(sony-ui-tests PRIVATE WindowsApp)

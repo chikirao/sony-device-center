@@ -14,6 +14,68 @@ ViewPage {
         return controller.equalizerBands && controller.equalizerBands[i] !== undefined ? controller.equalizerBands[i] : 0
     }
 
+    // Name entry for "save current" and "rename". Enter saves, Escape closes.
+    Popup {
+        id: namePopup
+        property string presetId: ""
+        function openFor(id, name) {
+            presetId = id
+            nameField.text = name
+            open()
+            nameField.forceActiveFocus()
+            nameField.selectAll()
+        }
+        function commit() {
+            if (presetId === "") eqLibrary.saveCurrent(nameField.text)
+            else eqLibrary.rename(presetId, nameField.text)
+            close()
+        }
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        focus: true
+        padding: 22
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        background: Rectangle {
+            radius: Theme.cardRadius
+            color: Theme.surface
+            border.width: 1
+            border.color: Theme.lineHi
+        }
+        Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.35) }
+        contentItem: ColumnLayout {
+            spacing: 14
+            Eyebrow { appWindow: root.appWindow; text: appWindow.tr("eq_preset_name") }
+            TextField {
+                id: nameField
+                objectName: "eqPresetName"
+                Layout.preferredWidth: 300
+                implicitHeight: 40
+                leftPadding: 14; rightPadding: 14
+                color: Theme.txt
+                placeholderTextColor: Theme.txtFaint
+                placeholderText: appWindow.tr("eq_preset_name")
+                font.pixelSize: 13
+                selectByMouse: true
+                maximumLength: 40
+                background: Rectangle {
+                    radius: Theme.controlRadius
+                    color: Theme.surfaceSunk
+                    border.width: 1
+                    border.color: nameField.activeFocus ? Theme.accent : Theme.line
+                }
+                onAccepted: namePopup.commit()
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                Item { Layout.fillWidth: true }
+                PillButton { appWindow: root.appWindow; compact: true; text: appWindow.tr("eq_cancel"); onClicked: namePopup.close() }
+                PillButton { appWindow: root.appWindow; compact: true; active: true; text: appWindow.tr("eq_save"); onClicked: namePopup.commit() }
+            }
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 32
@@ -50,6 +112,96 @@ ViewPage {
                             compact: true
                             onClicked: controller.setEqualizerPreset(modelData)
                         }
+                    }
+                }
+
+                Rectangle { Layout.fillWidth: true; height: 1; color: Theme.line }
+
+                // The user's own curves. The headphones hold one custom
+                // slot; applying a preset fills it, and the pill lights up
+                // while the slot still carries exactly that curve.
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Eyebrow { appWindow: root.appWindow; text: appWindow.tr("eq_my_presets") }
+                    Text {
+                        textFormat: Text.PlainText
+                        Layout.fillWidth: true
+                        text: eqLibrary.lastError !== "" ? appWindow.tr("eq_import_failed").arg(eqLibrary.lastError)
+                                                         : appWindow.tr("eq_my_presets_hint")
+                        color: eqLibrary.lastError !== "" ? Theme.danger : Theme.txtFaint
+                        font.pixelSize: 11
+                        elide: Text.ElideRight
+                    }
+                }
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Repeater {
+                        model: eqLibrary.presets
+                        delegate: PillButton { appWindow: root.appWindow;
+                            id: userPill
+                            required property var modelData
+                            objectName: "eqUserPreset"
+                            text: modelData.name
+                            active: eqLibrary.activeId === modelData.id
+                            enabled: root.available
+                            compact: true
+                            onClicked: eqLibrary.apply(modelData.id)
+
+                            // Management lives in the context menu so the
+                            // pill row stays as plain as the built-in one.
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.RightButton
+                                onClicked: presetMenu.popup()
+                            }
+                            Menu {
+                                id: presetMenu
+                                padding: 6
+                                background: Rectangle {
+                                    implicitWidth: 240
+                                    radius: Theme.controlRadius
+                                    color: Theme.surface
+                                    border.width: 1
+                                    border.color: Theme.lineHi
+                                }
+                                delegate: MenuItem {
+                                    id: menuItem
+                                    implicitHeight: 34
+                                    contentItem: Text {
+                                        textFormat: Text.PlainText
+                                        leftPadding: 8
+                                        text: menuItem.text
+                                        color: menuItem.enabled ? Theme.txt : Theme.txtFaint
+                                        font.pixelSize: 13
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                    background: Rectangle {
+                                        radius: 8
+                                        color: menuItem.highlighted ? Theme.surfaceHi : "transparent"
+                                    }
+                                }
+                                Action { text: appWindow.tr("eq_rename"); onTriggered: namePopup.openFor(userPill.modelData.id, userPill.modelData.name) }
+                                Action { text: appWindow.tr("eq_overwrite"); enabled: root.available; onTriggered: eqLibrary.updateFromCurrent(userPill.modelData.id) }
+                                Action { text: appWindow.tr("eq_export"); onTriggered: eqLibrary.exportWithDialog(userPill.modelData.id) }
+                                Action { text: appWindow.tr("eq_export_all"); onTriggered: eqLibrary.exportWithDialog("") }
+                                Action { text: appWindow.tr("eq_delete"); onTriggered: eqLibrary.remove(userPill.modelData.id) }
+                            }
+                        }
+                    }
+                    PillButton { appWindow: root.appWindow;
+                        objectName: "eqSaveCurrent"
+                        text: appWindow.tr("eq_save_current")
+                        glyphPath: appWindow.icons.plus
+                        enabled: root.available
+                        compact: true
+                        onClicked: namePopup.openFor("", "")
+                    }
+                    PillButton { appWindow: root.appWindow;
+                        text: appWindow.tr("eq_import")
+                        compact: true
+                        onClicked: eqLibrary.importWithDialog()
                     }
                 }
             }

@@ -219,6 +219,19 @@ void I18nManager::_initTranslations() {
     en["hotkey_state_off"]                = "off";
     en["notify_hotkey_setting"]           = "Hotkey Feedback";
     en["notify_hotkey_setting_desc"]      = "Show which mode a global hotkey switched to.";
+    en["eq_my_presets"]                   = "My Presets";
+    en["eq_my_presets_hint"]              = "Save the current curve to reuse it later. Right-click a preset to rename, overwrite, export or delete it.";
+    en["eq_save_current"]                 = "Save current";
+    en["eq_import"]                       = "Import…";
+    en["eq_export"]                       = "Export…";
+    en["eq_export_all"]                   = "Export all…";
+    en["eq_rename"]                       = "Rename…";
+    en["eq_overwrite"]                    = "Overwrite with current curve";
+    en["eq_delete"]                       = "Delete";
+    en["eq_preset_name"]                  = "Preset name";
+    en["eq_save"]                         = "Save";
+    en["eq_cancel"]                       = "Cancel";
+    en["eq_import_failed"]                = "Import failed: %1";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -396,6 +409,19 @@ void I18nManager::_initTranslations() {
     pt["hotkey_state_off"]                = "desligado";
     pt["notify_hotkey_setting"]           = "Resposta dos atalhos";
     pt["notify_hotkey_setting_desc"]      = "Mostrar para qual modo o atalho global mudou.";
+    pt["eq_my_presets"]                   = "Meus presets";
+    pt["eq_my_presets_hint"]              = "Salve a curva atual para reutilizá-la. Clique com o botão direito em um preset para renomear, sobrescrever, exportar ou excluir.";
+    pt["eq_save_current"]                 = "Salvar atual";
+    pt["eq_import"]                       = "Importar…";
+    pt["eq_export"]                       = "Exportar…";
+    pt["eq_export_all"]                   = "Exportar tudo…";
+    pt["eq_rename"]                       = "Renomear…";
+    pt["eq_overwrite"]                    = "Sobrescrever com a curva atual";
+    pt["eq_delete"]                       = "Excluir";
+    pt["eq_preset_name"]                  = "Nome do preset";
+    pt["eq_save"]                         = "Salvar";
+    pt["eq_cancel"]                       = "Cancelar";
+    pt["eq_import_failed"]                = "Falha na importação: %1";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -573,6 +599,19 @@ void I18nManager::_initTranslations() {
     es["hotkey_state_off"]                = "desactivado";
     es["notify_hotkey_setting"]           = "Respuesta de atajos";
     es["notify_hotkey_setting_desc"]      = "Mostrar a qué modo cambió el atajo global.";
+    es["eq_my_presets"]                   = "Mis presets";
+    es["eq_my_presets_hint"]              = "Guarda la curva actual para reutilizarla. Haz clic derecho en un preset para renombrarlo, sobrescribirlo, exportarlo o eliminarlo.";
+    es["eq_save_current"]                 = "Guardar actual";
+    es["eq_import"]                       = "Importar…";
+    es["eq_export"]                       = "Exportar…";
+    es["eq_export_all"]                   = "Exportar todo…";
+    es["eq_rename"]                       = "Renombrar…";
+    es["eq_overwrite"]                    = "Sobrescribir con la curva actual";
+    es["eq_delete"]                       = "Eliminar";
+    es["eq_preset_name"]                  = "Nombre del preset";
+    es["eq_save"]                         = "Guardar";
+    es["eq_cancel"]                       = "Cancelar";
+    es["eq_import_failed"]                = "Error al importar: %1";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -750,6 +789,19 @@ void I18nManager::_initTranslations() {
     de["hotkey_state_off"]                = "aus";
     de["notify_hotkey_setting"]           = "Tastenkürzel-Rückmeldung";
     de["notify_hotkey_setting_desc"]      = "Anzeigen, in welchen Modus ein globales Kürzel gewechselt hat.";
+    de["eq_my_presets"]                   = "Meine Presets";
+    de["eq_my_presets_hint"]              = "Aktuelle Kurve speichern und später wiederverwenden. Rechtsklick auf ein Preset zum Umbenennen, Überschreiben, Exportieren oder Löschen.";
+    de["eq_save_current"]                 = "Aktuelle speichern";
+    de["eq_import"]                       = "Importieren…";
+    de["eq_export"]                       = "Exportieren…";
+    de["eq_export_all"]                   = "Alle exportieren…";
+    de["eq_rename"]                       = "Umbenennen…";
+    de["eq_overwrite"]                    = "Mit aktueller Kurve überschreiben";
+    de["eq_delete"]                       = "Löschen";
+    de["eq_preset_name"]                  = "Name des Presets";
+    de["eq_save"]                         = "Speichern";
+    de["eq_cancel"]                       = "Abbrechen";
+    de["eq_import_failed"]                = "Import fehlgeschlagen: %1";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -927,6 +979,19 @@ void I18nManager::_initTranslations() {
     fr["hotkey_state_off"]                = "désactivé";
     fr["notify_hotkey_setting"]           = "Retour des raccourcis";
     fr["notify_hotkey_setting_desc"]      = "Indiquer le mode activé par un raccourci global.";
+    fr["eq_my_presets"]                   = "Mes presets";
+    fr["eq_my_presets_hint"]              = "Enregistrez la courbe actuelle pour la réutiliser. Clic droit sur un preset pour le renommer, l’écraser, l’exporter ou le supprimer.";
+    fr["eq_save_current"]                 = "Enregistrer l’actuelle";
+    fr["eq_import"]                       = "Importer…";
+    fr["eq_export"]                       = "Exporter…";
+    fr["eq_export_all"]                   = "Tout exporter…";
+    fr["eq_rename"]                       = "Renommer…";
+    fr["eq_overwrite"]                    = "Écraser avec la courbe actuelle";
+    fr["eq_delete"]                       = "Supprimer";
+    fr["eq_preset_name"]                  = "Nom du preset";
+    fr["eq_save"]                         = "Enregistrer";
+    fr["eq_cancel"]                       = "Annuler";
+    fr["eq_import_failed"]                = "Échec de l’import : %1";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1104,6 +1169,19 @@ void I18nManager::_initTranslations() {
     ja["hotkey_state_off"]                = "オフ";
     ja["notify_hotkey_setting"]           = "ホットキーの通知";
     ja["notify_hotkey_setting_desc"]      = "グローバルホットキーで切り替えたモードを表示します。";
+    ja["eq_my_presets"]                   = "マイプリセット";
+    ja["eq_my_presets_hint"]              = "現在のカーブを保存して後で再利用できます。プリセットを右クリックすると名前変更・上書き・書き出し・削除ができます。";
+    ja["eq_save_current"]                 = "現在の設定を保存";
+    ja["eq_import"]                       = "読み込み…";
+    ja["eq_export"]                       = "書き出し…";
+    ja["eq_export_all"]                   = "すべて書き出し…";
+    ja["eq_rename"]                       = "名前を変更…";
+    ja["eq_overwrite"]                    = "現在のカーブで上書き";
+    ja["eq_delete"]                       = "削除";
+    ja["eq_preset_name"]                  = "プリセット名";
+    ja["eq_save"]                         = "保存";
+    ja["eq_cancel"]                       = "キャンセル";
+    ja["eq_import_failed"]                = "読み込みに失敗しました: %1";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1281,6 +1359,19 @@ void I18nManager::_initTranslations() {
     ru["hotkey_state_off"]                = "выкл";
     ru["notify_hotkey_setting"]           = "Отклик на хоткеи";
     ru["notify_hotkey_setting_desc"]      = "Показывать, в какой режим переключил хоткей.";
+    ru["eq_my_presets"]                   = "Мои пресеты";
+    ru["eq_my_presets_hint"]              = "Сохраните текущую кривую, чтобы вернуться к ней позже. Правый клик по пресету — переименовать, перезаписать, экспортировать или удалить.";
+    ru["eq_save_current"]                 = "Сохранить текущий";
+    ru["eq_import"]                       = "Импорт…";
+    ru["eq_export"]                       = "Экспорт…";
+    ru["eq_export_all"]                   = "Экспортировать все…";
+    ru["eq_rename"]                       = "Переименовать…";
+    ru["eq_overwrite"]                    = "Перезаписать текущей кривой";
+    ru["eq_delete"]                       = "Удалить";
+    ru["eq_preset_name"]                  = "Название пресета";
+    ru["eq_save"]                         = "Сохранить";
+    ru["eq_cancel"]                       = "Отмена";
+    ru["eq_import_failed"]                = "Не удалось импортировать: %1";
 }
 
 } // namespace sony::devicecenter
