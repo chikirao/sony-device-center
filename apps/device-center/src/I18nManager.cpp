@@ -232,6 +232,7 @@ void I18nManager::_initTranslations() {
     en["eq_save"]                         = "Save";
     en["eq_cancel"]                       = "Cancel";
     en["eq_import_failed"]                = "Import failed: %1";
+    en["battery_estimate_pending"]        = "Not enough data yet";
     en["updates"]                         = "Updates";
     en["update_idle"]                     = "Not checked yet";
     en["update_checking"]                 = "Checking for updates…";
@@ -377,7 +378,7 @@ void I18nManager::_initTranslations() {
     pt["battery_time_left_short"]         = "~%1 restantes";
     pt["duration_hours_minutes"]          = "%1 h %2 min";
     pt["duration_minutes"]                = "%1 min";
-    pt["battery_rate"]                    = "Taxa de descarga";
+    pt["battery_rate"]                    = "Descarga";
     pt["battery_rate_value"]              = "%1% por hora";
     pt["battery_session"]                 = "Sessão atual";
     pt["battery_session_since"]           = "Descarregando desde %1";
@@ -436,6 +437,7 @@ void I18nManager::_initTranslations() {
     pt["eq_save"]                         = "Salvar";
     pt["eq_cancel"]                       = "Cancelar";
     pt["eq_import_failed"]                = "Falha na importação: %1";
+    pt["battery_estimate_pending"]        = "Ainda faltam dados";
     pt["updates"]                         = "Atualizações";
     pt["update_idle"]                     = "Ainda não verificado";
     pt["update_checking"]                 = "Verificando atualizações…";
@@ -581,7 +583,7 @@ void I18nManager::_initTranslations() {
     es["battery_time_left_short"]         = "~%1 restantes";
     es["duration_hours_minutes"]          = "%1 h %2 min";
     es["duration_minutes"]                = "%1 min";
-    es["battery_rate"]                    = "Velocidad de descarga";
+    es["battery_rate"]                    = "Descarga";
     es["battery_rate_value"]              = "%1% por hora";
     es["battery_session"]                 = "Sesión actual";
     es["battery_session_since"]           = "Descargando desde %1";
@@ -640,6 +642,7 @@ void I18nManager::_initTranslations() {
     es["eq_save"]                         = "Guardar";
     es["eq_cancel"]                       = "Cancelar";
     es["eq_import_failed"]                = "Error al importar: %1";
+    es["battery_estimate_pending"]        = "Aún faltan datos";
     es["updates"]                         = "Actualizaciones";
     es["update_idle"]                     = "Aún no comprobado";
     es["update_checking"]                 = "Buscando actualizaciones…";
@@ -844,6 +847,7 @@ void I18nManager::_initTranslations() {
     de["eq_save"]                         = "Speichern";
     de["eq_cancel"]                       = "Abbrechen";
     de["eq_import_failed"]                = "Import fehlgeschlagen: %1";
+    de["battery_estimate_pending"]        = "Noch zu wenig Daten";
     de["updates"]                         = "Updates";
     de["update_idle"]                     = "Noch nicht geprüft";
     de["update_checking"]                 = "Suche nach Updates…";
@@ -985,11 +989,11 @@ void I18nManager::_initTranslations() {
     fr["battery_subtitle"]                = "Niveau de charge du dernier jour ou de la dernière semaine, et autonomie estimée de la charge actuelle.";
     fr["battery_range_24h"]               = "24 h";
     fr["battery_range_7d"]                = "7 jours";
-    fr["time_left"]                       = "Autonomie restante";
+    fr["time_left"]                       = "Autonomie";
     fr["battery_time_left_short"]         = "~%1 restantes";
     fr["duration_hours_minutes"]          = "%1 h %2 min";
     fr["duration_minutes"]                = "%1 min";
-    fr["battery_rate"]                    = "Vitesse de décharge";
+    fr["battery_rate"]                    = "Décharge";
     fr["battery_rate_value"]              = "%1 % par heure";
     fr["battery_session"]                 = "Session en cours";
     fr["battery_session_since"]           = "En décharge depuis %1";
@@ -1048,6 +1052,7 @@ void I18nManager::_initTranslations() {
     fr["eq_save"]                         = "Enregistrer";
     fr["eq_cancel"]                       = "Annuler";
     fr["eq_import_failed"]                = "Échec de l’import : %1";
+    fr["battery_estimate_pending"]        = "Pas encore assez de données";
     fr["updates"]                         = "Mises à jour";
     fr["update_idle"]                     = "Pas encore vérifié";
     fr["update_checking"]                 = "Recherche de mises à jour…";
@@ -1252,6 +1257,7 @@ void I18nManager::_initTranslations() {
     ja["eq_save"]                         = "保存";
     ja["eq_cancel"]                       = "キャンセル";
     ja["eq_import_failed"]                = "読み込みに失敗しました: %1";
+    ja["battery_estimate_pending"]        = "データがまだ不足しています";
     ja["updates"]                         = "アップデート";
     ja["update_idle"]                     = "まだ確認していません";
     ja["update_checking"]                 = "アップデートを確認中…";
@@ -1397,7 +1403,7 @@ void I18nManager::_initTranslations() {
     ru["battery_time_left_short"]         = "≈ %1 осталось";
     ru["duration_hours_minutes"]          = "%1 ч %2 мин";
     ru["duration_minutes"]                = "%1 мин";
-    ru["battery_rate"]                    = "Скорость разряда";
+    ru["battery_rate"]                    = "Разряд";
     ru["battery_rate_value"]              = "%1% в час";
     ru["battery_session"]                 = "Текущая сессия";
     ru["battery_session_since"]           = "Разряжается с %1";
@@ -1456,6 +1462,7 @@ void I18nManager::_initTranslations() {
     ru["eq_save"]                         = "Сохранить";
     ru["eq_cancel"]                       = "Отмена";
     ru["eq_import_failed"]                = "Не удалось импортировать: %1";
+    ru["battery_estimate_pending"]        = "Пока мало данных";
     ru["updates"]                         = "Обновления";
     ru["update_idle"]                     = "Ещё не проверялось";
     ru["update_checking"]                 = "Проверяем обновления…";
