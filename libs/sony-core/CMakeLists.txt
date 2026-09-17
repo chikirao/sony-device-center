@@ -8,6 +8,7 @@ add_library(sony-core
     src/IpcServer.cpp
     src/IpcClient.cpp
     src/JsonProtocol.cpp
+    src/CliRequest.cpp
     src/SimulatedDevice.cpp
 )
 

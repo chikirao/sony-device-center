@@ -81,9 +81,14 @@
   График на QML `Canvas` (без QtCharts), 24 ч / 7 дней. Для симулятора —
   `--simulated-history`. Решено: JSON, а не Qt Sql — без нового модуля и
   плагина в инсталляторе.
-- [ ] **`sonyctl --json`.** Типизированный вывод для скриптов и виджетов
-  (Waybar / Polybar / PowerToys). Связано с «Typed CLI output» в
-  `technical-debt.md`.
+- [x] **`sonyctl --json`** (`CliRequest` в sony-core). Слова команды
+  превращаются в тот же типизированный JSON-запрос, что шлёт GUI, ответ
+  печатается одной строкой (`{"version":1,"ok":true,"data":…}` или
+  `error`), код выхода 0/1; `battery`, `eq get`, `status` печатают только
+  свой объект. Заодно в CLI появились `stc`, `adaptive`, `connect`,
+  `disconnect` — они идут через типизированный путь и в текстовом режиме.
+  Legacy-парсер и его прозу не трогали (см. «Typed CLI output» в
+  `technical-debt.md`).
 - [ ] **Автоподключение при появлении наушников.** Windows: подписка на
   события подключения Bluetooth-устройства вместо периодического retry.
   Смежное в upstream: PR #53 (Windows: показывать спаренные, но не
