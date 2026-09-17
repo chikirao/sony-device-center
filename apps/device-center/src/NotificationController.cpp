@@ -56,6 +56,11 @@ void NotificationController::_evaluate() {
     }
 }
 
+void NotificationController::announceUpdate(const QString& version) {
+    if (!_controller.notifyUpdates()) return;
+    _notify(_controller.t("notify_update_title").arg(version), _controller.t("notify_update_body"));
+}
+
 void NotificationController::_notify(const QString& title, const QString& body) {
     _lastMessage = title + ": " + body;
     ++_messageCount;

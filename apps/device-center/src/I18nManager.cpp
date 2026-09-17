@@ -233,6 +233,26 @@ void I18nManager::_initTranslations() {
     en["eq_cancel"]                       = "Cancel";
     en["eq_import_failed"]                = "Import failed: %1";
     en["battery_estimate_pending"]        = "Not enough data yet";
+    en["devices_rescan"]                  = "Rescan";
+    en["devices_current"]                 = "Current device";
+    en["devices_others"]                  = "Other paired devices";
+    en["devices_none_others"]             = "No other Sony devices are paired with this computer.";
+    en["devices_none_title"]              = "No paired devices";
+    en["devices_none_desc"]               = "Pair the headphones in the system's Bluetooth settings first; they will show up here.";
+    en["updates"]                         = "Updates";
+    en["update_idle"]                     = "Not checked yet";
+    en["update_checking"]                 = "Checking for updates…";
+    en["update_up_to_date"]               = "You have the latest version";
+    en["update_available"]                = "Version %1 is available";
+    en["update_failed"]                   = "Couldn't check for updates";
+    en["update_download"]                 = "Download";
+    en["update_release_page"]             = "Release page";
+    en["update_check_now"]                = "Check for updates";
+    en["update_check_on_start"]           = "Check for updates at launch";
+    en["notify_update_setting"]           = "New version";
+    en["notify_update_setting_desc"]      = "When a newer release is published on GitHub";
+    en["notify_update_title"]             = "Version %1 is available";
+    en["notify_update_body"]              = "Download it from Settings.";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -424,6 +444,26 @@ void I18nManager::_initTranslations() {
     pt["eq_cancel"]                       = "Cancelar";
     pt["eq_import_failed"]                = "Falha na importação: %1";
     pt["battery_estimate_pending"]        = "Ainda faltam dados";
+    pt["devices_rescan"]                  = "Procurar de novo";
+    pt["devices_current"]                 = "Dispositivo atual";
+    pt["devices_others"]                  = "Outros dispositivos pareados";
+    pt["devices_none_others"]             = "Nenhum outro dispositivo Sony está pareado com este computador.";
+    pt["devices_none_title"]              = "Nenhum dispositivo pareado";
+    pt["devices_none_desc"]               = "Pareie os fones nas configurações Bluetooth do sistema; eles aparecerão aqui.";
+    pt["updates"]                         = "Atualizações";
+    pt["update_idle"]                     = "Ainda não verificado";
+    pt["update_checking"]                 = "Verificando atualizações…";
+    pt["update_up_to_date"]               = "Você tem a versão mais recente";
+    pt["update_available"]                = "A versão %1 está disponível";
+    pt["update_failed"]                   = "Não foi possível verificar atualizações";
+    pt["update_download"]                 = "Baixar";
+    pt["update_release_page"]             = "Página da versão";
+    pt["update_check_now"]                = "Verificar atualizações";
+    pt["update_check_on_start"]           = "Verificar atualizações ao iniciar";
+    pt["notify_update_setting"]           = "Nova versão";
+    pt["notify_update_setting_desc"]      = "Quando uma versão mais nova é publicada no GitHub";
+    pt["notify_update_title"]             = "A versão %1 está disponível";
+    pt["notify_update_body"]              = "Baixe em Configurações.";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -615,6 +655,26 @@ void I18nManager::_initTranslations() {
     es["eq_cancel"]                       = "Cancelar";
     es["eq_import_failed"]                = "Error al importar: %1";
     es["battery_estimate_pending"]        = "Aún faltan datos";
+    es["devices_rescan"]                  = "Volver a buscar";
+    es["devices_current"]                 = "Dispositivo actual";
+    es["devices_others"]                  = "Otros dispositivos emparejados";
+    es["devices_none_others"]             = "No hay otros dispositivos Sony emparejados con este equipo.";
+    es["devices_none_title"]              = "Sin dispositivos emparejados";
+    es["devices_none_desc"]               = "Empareja los auriculares en los ajustes Bluetooth del sistema; aparecerán aquí.";
+    es["updates"]                         = "Actualizaciones";
+    es["update_idle"]                     = "Aún no comprobado";
+    es["update_checking"]                 = "Buscando actualizaciones…";
+    es["update_up_to_date"]               = "Tienes la última versión";
+    es["update_available"]                = "La versión %1 está disponible";
+    es["update_failed"]                   = "No se pudo comprobar si hay actualizaciones";
+    es["update_download"]                 = "Descargar";
+    es["update_release_page"]             = "Página de la versión";
+    es["update_check_now"]                = "Buscar actualizaciones";
+    es["update_check_on_start"]           = "Buscar actualizaciones al iniciar";
+    es["notify_update_setting"]           = "Nueva versión";
+    es["notify_update_setting_desc"]      = "Cuando se publica una versión más nueva en GitHub";
+    es["notify_update_title"]             = "La versión %1 está disponible";
+    es["notify_update_body"]              = "Descárgala desde Ajustes.";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -806,6 +866,26 @@ void I18nManager::_initTranslations() {
     de["eq_cancel"]                       = "Abbrechen";
     de["eq_import_failed"]                = "Import fehlgeschlagen: %1";
     de["battery_estimate_pending"]        = "Noch zu wenig Daten";
+    de["devices_rescan"]                  = "Neu suchen";
+    de["devices_current"]                 = "Aktuelles Gerät";
+    de["devices_others"]                  = "Weitere gekoppelte Geräte";
+    de["devices_none_others"]             = "Mit diesem Computer sind keine weiteren Sony-Geräte gekoppelt.";
+    de["devices_none_title"]              = "Keine gekoppelten Geräte";
+    de["devices_none_desc"]               = "Koppeln Sie die Kopfhörer zuerst in den Bluetooth-Einstellungen des Systems; sie erscheinen dann hier.";
+    de["updates"]                         = "Updates";
+    de["update_idle"]                     = "Noch nicht geprüft";
+    de["update_checking"]                 = "Suche nach Updates…";
+    de["update_up_to_date"]               = "Sie haben die neueste Version";
+    de["update_available"]                = "Version %1 ist verfügbar";
+    de["update_failed"]                   = "Updates konnten nicht geprüft werden";
+    de["update_download"]                 = "Herunterladen";
+    de["update_release_page"]             = "Release-Seite";
+    de["update_check_now"]                = "Nach Updates suchen";
+    de["update_check_on_start"]           = "Beim Start nach Updates suchen";
+    de["notify_update_setting"]           = "Neue Version";
+    de["notify_update_setting_desc"]      = "Wenn auf GitHub eine neuere Version erscheint";
+    de["notify_update_title"]             = "Version %1 ist verfügbar";
+    de["notify_update_body"]              = "In den Einstellungen herunterladen.";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -997,6 +1077,26 @@ void I18nManager::_initTranslations() {
     fr["eq_cancel"]                       = "Annuler";
     fr["eq_import_failed"]                = "Échec de l’import : %1";
     fr["battery_estimate_pending"]        = "Pas encore assez de données";
+    fr["devices_rescan"]                  = "Rechercher à nouveau";
+    fr["devices_current"]                 = "Appareil actuel";
+    fr["devices_others"]                  = "Autres appareils appairés";
+    fr["devices_none_others"]             = "Aucun autre appareil Sony n'est appairé avec cet ordinateur.";
+    fr["devices_none_title"]              = "Aucun appareil appairé";
+    fr["devices_none_desc"]               = "Appairez d'abord le casque dans les réglages Bluetooth du système ; il apparaîtra ici.";
+    fr["updates"]                         = "Mises à jour";
+    fr["update_idle"]                     = "Pas encore vérifié";
+    fr["update_checking"]                 = "Recherche de mises à jour…";
+    fr["update_up_to_date"]               = "Vous avez la dernière version";
+    fr["update_available"]                = "La version %1 est disponible";
+    fr["update_failed"]                   = "Impossible de vérifier les mises à jour";
+    fr["update_download"]                 = "Télécharger";
+    fr["update_release_page"]             = "Page de la version";
+    fr["update_check_now"]                = "Rechercher des mises à jour";
+    fr["update_check_on_start"]           = "Vérifier les mises à jour au lancement";
+    fr["notify_update_setting"]           = "Nouvelle version";
+    fr["notify_update_setting_desc"]      = "Quand une version plus récente paraît sur GitHub";
+    fr["notify_update_title"]             = "La version %1 est disponible";
+    fr["notify_update_body"]              = "Téléchargez-la depuis les Réglages.";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1188,6 +1288,26 @@ void I18nManager::_initTranslations() {
     ja["eq_cancel"]                       = "キャンセル";
     ja["eq_import_failed"]                = "読み込みに失敗しました: %1";
     ja["battery_estimate_pending"]        = "データがまだ不足しています";
+    ja["devices_rescan"]                  = "再検索";
+    ja["devices_current"]                 = "現在のデバイス";
+    ja["devices_others"]                  = "他のペアリング済みデバイス";
+    ja["devices_none_others"]             = "このパソコンにペアリングされている他のSonyデバイスはありません。";
+    ja["devices_none_title"]              = "ペアリング済みデバイスがありません";
+    ja["devices_none_desc"]               = "まずシステムのBluetooth設定でヘッドホンをペアリングしてください。ここに表示されます。";
+    ja["updates"]                         = "アップデート";
+    ja["update_idle"]                     = "まだ確認していません";
+    ja["update_checking"]                 = "アップデートを確認中…";
+    ja["update_up_to_date"]               = "最新バージョンです";
+    ja["update_available"]                = "バージョン %1 が利用可能です";
+    ja["update_failed"]                   = "アップデートを確認できませんでした";
+    ja["update_download"]                 = "ダウンロード";
+    ja["update_release_page"]             = "リリースページ";
+    ja["update_check_now"]                = "アップデートを確認";
+    ja["update_check_on_start"]           = "起動時にアップデートを確認";
+    ja["notify_update_setting"]           = "新しいバージョン";
+    ja["notify_update_setting_desc"]      = "GitHubで新しいリリースが公開されたとき";
+    ja["notify_update_title"]             = "バージョン %1 が利用可能です";
+    ja["notify_update_body"]              = "設定からダウンロードできます。";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1379,6 +1499,26 @@ void I18nManager::_initTranslations() {
     ru["eq_cancel"]                       = "Отмена";
     ru["eq_import_failed"]                = "Не удалось импортировать: %1";
     ru["battery_estimate_pending"]        = "Пока мало данных";
+    ru["devices_rescan"]                  = "Обновить";
+    ru["devices_current"]                 = "Текущее устройство";
+    ru["devices_others"]                  = "Другие сопряжённые устройства";
+    ru["devices_none_others"]             = "Других устройств Sony с этим компьютером не сопряжено.";
+    ru["devices_none_title"]              = "Нет сопряжённых устройств";
+    ru["devices_none_desc"]               = "Сначала сопрягите наушники в настройках Bluetooth системы — они появятся здесь.";
+    ru["updates"]                         = "Обновления";
+    ru["update_idle"]                     = "Ещё не проверялось";
+    ru["update_checking"]                 = "Проверяем обновления…";
+    ru["update_up_to_date"]               = "У вас последняя версия";
+    ru["update_available"]                = "Доступна версия %1";
+    ru["update_failed"]                   = "Не удалось проверить обновления";
+    ru["update_download"]                 = "Скачать";
+    ru["update_release_page"]             = "Страница релиза";
+    ru["update_check_now"]                = "Проверить";
+    ru["update_check_on_start"]           = "Проверять обновления при запуске";
+    ru["notify_update_setting"]           = "Новая версия";
+    ru["notify_update_setting_desc"]      = "Когда на GitHub выходит новый релиз";
+    ru["notify_update_title"]             = "Доступна версия %1";
+    ru["notify_update_body"]              = "Скачать можно в настройках.";
 }
 
 } // namespace sony::devicecenter

@@ -12,16 +12,40 @@
 #include <QIcon>
 #include <QTimer>
 #include <QWindow>
+#include <algorithm>
 
 #include "DeviceCenterController.h"
 #include "TrayController.h"
 #include "NotificationController.h"
+#include "UpdateChecker.h"
 #include "HotkeyManager.h"
 #include "EqualizerLibrary.h"
 #include "BluetoothWatcher.h"
 #include "WindowsToast.h"
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
+
+namespace {
+// --simulated-update <version>: what GitHub would say about a release of
+// that version, with the usual asset names, so the Settings card and the
+// toast can be looked at without a network or a real release.
+class CannedReleaseFetcher : public sony::devicecenter::ReleaseFetcher {
+public:
+    explicit CannedReleaseFetcher(QString version) : _version(std::move(version)) {}
+    void fetch(const QUrl&) override {
+        const auto tag = "v" + _version;
+        const auto base = "https://github.com/chikirao/sony-device-center/releases/";
+        QStringList assets;
+        for (const char* suffix : {"Linux.deb", "macOS.dmg", "win64.msi"})
+            assets << QString(R"({"name":"sony-device-center-%1-%2","browser_download_url":"%3download/%4/sony-device-center-%1-%2"})")
+                          .arg(_version, suffix, base, tag);
+        const auto body = QString(R"({"tag_name":"%1","html_url":"%2tag/%1","assets":[%3]})").arg(tag, base, assets.join(',')).toUtf8();
+        QTimer::singleShot(600, this, [this, body] { emit finished(200, body, {}); });
+    }
+private:
+    QString _version;
+};
+}
 
 int main(int argc, char *argv[]) {
     // QApplication rather than QGuiApplication: the tray icon and its menu
@@ -73,6 +97,9 @@ int main(int argc, char *argv[]) {
     QCommandLineOption simulatedHistoryOption("simulated-history",
         "With --simulated: replace the battery log with a synthetic week of use so the chart and the estimate are populated.");
     parser.addOption(simulatedHistoryOption);
+    QCommandLineOption simulatedUpdateOption("simulated-update",
+        "Answer the update check with a canned release of the given version instead of asking GitHub.", "version");
+    parser.addOption(simulatedUpdateOption);
     QCommandLineOption minimizedOption("minimized", "Start hidden in the system tray (used by autostart).");
     parser.addOption(minimizedOption);
     parser.process(app);
@@ -82,6 +109,13 @@ int main(int argc, char *argv[]) {
     if (parser.isSet(simulatedOption) || parser.isSet(simulatedModelOption)) {
         auto simulated = sony::core::createSimulatedDevice(parser.value(simulatedModelOption).toStdString());
         simulatedAddress = QString::fromStdString(simulated.address);
+        // Two more paired-but-idle sets so the Devices page has a list to
+        // lay out. They share the one simulated transport: "connecting" to
+        // either simply reconnects the same fake headset under that name.
+        simulated.discovery->addDevice({.name = "WH-1000XM4", .address = sony::transport::DeviceAddress("CC:98:8B:00:11:33"),
+                                        .paired = true, .connected = false});
+        simulated.discovery->addDevice({.name = "LinkBuds S", .address = sony::transport::DeviceAddress("CC:98:8B:00:11:44"),
+                                        .paired = true, .connected = false});
         auto simulatedService = std::make_shared<sony::core::DeviceService>(simulated.transport, simulated.discovery);
         simulatedService->startAutoConnect(simulated.address);
         service = std::move(simulatedService);
@@ -106,6 +140,18 @@ int main(int argc, char *argv[]) {
     // Global shortcuts (Windows only); disabled until the user binds them.
     sony::devicecenter::HotkeyManager hotkeys(controller, tray);
     sony::devicecenter::EqualizerLibrary eqLibrary(controller);
+    // One GET to the GitHub Releases API on launch (unless switched off) and
+    // whenever Settings asks; nothing waits for it, and offline just fails
+    // quietly into the Settings card.
+    sony::devicecenter::ReleaseFetcher* fetcher = new sony::devicecenter::NetworkReleaseFetcher;
+    if (parser.isSet(simulatedUpdateOption)) fetcher = new CannedReleaseFetcher(parser.value(simulatedUpdateOption));
+    sony::devicecenter::UpdateChecker updates(SONY_DEVICE_CENTER_VERSION, fetcher);
+    QObject::connect(&updates, &sony::devicecenter::UpdateChecker::updateAvailable, &notifications,
+                     &sony::devicecenter::NotificationController::announceUpdate);
+    // Screenshot runs stay off the network unless the reply is canned.
+    const bool canned = parser.isSet(simulatedUpdateOption);
+    if (controller.checkUpdatesOnStart() && (canned || qEnvironmentVariable("SONY_UI_SCREENSHOTS").isEmpty()))
+        QTimer::singleShot(canned ? 0 : 1500, &updates, &sony::devicecenter::UpdateChecker::check);
     // Reconnect the moment the OS sees the headphones come up, instead of at
     // the next backed-off retry. Any device's link counts: the retry itself
     // is cheap and the watcher cannot tell Sony from a mouse.
@@ -131,6 +177,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("controller", &controller);
     engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
     engine.rootContext()->setContextProperty("eqLibrary", &eqLibrary);
+    engine.rootContext()->setContextProperty("updates", &updates);
     engine.rootContext()->setContextProperty("trayAvailable", tray.isAvailable());
     engine.rootContext()->setContextProperty("startHidden", startHidden);
 
@@ -158,14 +205,25 @@ int main(int argc, char *argv[]) {
         int page = 0;
         QObject::connect(ticker, &QTimer::timeout, &app, [&, ticker, window]() mutable {
             if (page > 0 && page <= 7) window->grabWindow().save(QString("%1/page%2.png").arg(shotDir).arg(page - 1));
-            // Settings is taller than the window: one more capture, scrolled
-            // to the hotkeys card.
-            if (page == 7) {
+            // Settings is taller than the window: two more captures, scrolled
+            // to the hotkeys card and then to the About/updates card.
+            auto scrollTo = [window](const char* card) {
                 auto* flick = window->findChild<QQuickItem*>("settingsFlick");
-                auto* card = window->findChild<QQuickItem*>("hotkeysCard");
-                if (flick && card) flick->setProperty("contentY", card->y() - 16);
+                auto* item = window->findChild<QQuickItem*>(card);
+                auto* content = flick ? flick->property("contentItem").value<QQuickItem*>() : nullptr;
+                if (flick && item && content) {
+                    const qreal max = flick->property("contentHeight").toReal() - flick->height();
+                    const qreal y = item->mapToItem(content, QPointF(0, 0)).y();
+                    flick->setProperty("contentY", std::clamp(y - 16, 0.0, std::max(0.0, max)));
+                }
+            };
+            if (page == 7) {
+                scrollTo("hotkeysCard");
             } else if (page == 8) {
                 window->grabWindow().save(QString("%1/page6-hotkeys.png").arg(shotDir));
+                scrollTo("aboutCard");
+            } else if (page == 9) {
+                window->grabWindow().save(QString("%1/page6-about.png").arg(shotDir));
                 ticker->stop(); app.quit(); return;
             }
             if (page <= 6) window->setProperty("navIndex", page);

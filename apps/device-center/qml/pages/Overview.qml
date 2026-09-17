@@ -170,11 +170,13 @@ ViewPage {
             Layout.preferredHeight: 158
             spacing: 16
 
+            // The three cards share the row 6:5:4 (preferred widths are
+            // proportions, in pixels so a minimum can sit beside them).
             // Battery & connection
             Card { appWindow: root.appWindow;
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.preferredWidth: 6
+                Layout.preferredWidth: 300
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 18
@@ -232,7 +234,7 @@ ViewPage {
             Card { appWindow: root.appWindow;
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.preferredWidth: 5
+                Layout.preferredWidth: 250
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 18
@@ -264,12 +266,17 @@ ViewPage {
                 }
             }
 
-            // Quick actions
+            // Quick actions. Never narrower than its widest button: the
+            // labels are the point of the card, so at the minimum window
+            // width the two cards beside it give way (their values elide
+            // and wrap) rather than "Открыть эквалайзер" losing its tail.
             Card { appWindow: root.appWindow;
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.preferredWidth: 4
+                Layout.preferredWidth: 200
+                Layout.minimumWidth: quickActions.implicitWidth + 36
                 ColumnLayout {
+                    id: quickActions
                     anchors.fill: parent
                     anchors.margins: 18
                     spacing: 10
