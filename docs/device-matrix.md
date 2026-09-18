@@ -53,6 +53,23 @@ This document tracks hardware-level verification and protocol capability support
 
 ---
 
+## System Peripherals (Device Hub)
+
+The Device Hub also lists non-Sony Bluetooth devices, read from the OS rather
+than from the Sony protocol. This does not touch the headphones' protocol
+path; it is a separate `IPeripheralSource` per platform.
+
+| Platform | Source | Device list | Battery | Verified |
+| :--- | :--- | :--- | :--- | :--- |
+| Windows | `WindowsPeripheralSource` (WinRT `Windows.Devices.Enumeration` + SetupAPI) | Paired classic and LE endpoints, `System.Devices.Aep.IsConnected` | `DEVPKEY_Bluetooth_Battery` on the Hands-Free device node (classic, fed over HFP); GATT Battery Service `0x180F` for connected LE devices | Windows 11 (build 26200): WH-1000XM5 (90 %, HFP), DualShock (class of device 5/2 → gamepad), a Bluetooth speaker (4/5 → "other"). GATT path not yet seen on hardware. |
+| Linux | `NullPeripheralSource` | — | — | Not implemented (BlueZ `org.bluez.Battery1` would be the way) |
+| macOS | `NullPeripheralSource` | — | — | Not implemented (IOBluetooth `batteryPercent` would be the way) |
+
+Sony sets known to the controller are merged with the OS rows by address;
+the controller's own battery and connection state win.
+
+---
+
 ## Hardware Validation Instructions with `sonyctl`
 
 To validate a newly connected physical device:
