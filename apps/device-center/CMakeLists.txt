@@ -56,6 +56,10 @@ add_executable(sony-device-center
     include/WindowsPeripheralSource.h
     src/PeripheralModel.cpp
     include/PeripheralModel.h
+    src/HubWindow.cpp
+    include/HubWindow.h
+    src/HubSettings.cpp
+    include/HubSettings.h
     qml.qrc
 )
 
@@ -188,7 +192,9 @@ if(BUILD_TESTING)
             src/UpdateChecker.cpp include/UpdateChecker.h
             src/PeripheralSource.cpp include/PeripheralSource.h
             src/WindowsPeripheralSource.cpp include/WindowsPeripheralSource.h
-            src/PeripheralModel.cpp include/PeripheralModel.h)
+            src/PeripheralModel.cpp include/PeripheralModel.h
+            src/HubWindow.cpp include/HubWindow.h
+            src/HubSettings.cpp include/HubSettings.h)
         target_include_directories(sony-ui-tests PRIVATE include)
         if(WIN32)
             target_link_libraries(sony-ui-tests PRIVATE WindowsApp bthprops setupapi)
@@ -196,7 +202,9 @@ if(BUILD_TESTING)
         target_compile_definitions(sony-ui-tests PRIVATE SONY_DEVICE_CENTER_VERSION="${SonyDeviceCenter_VERSION}")
         target_link_libraries(sony-ui-tests PRIVATE Qt6::Test Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Qml Qt6::Quick Qt6::QuickControls2 sony-core)
         add_test(NAME "device-controller-worker-integration" COMMAND sony-ui-tests -o -,txt -o ui-test-results.txt,txt)
-        set_tests_properties("device-controller-worker-integration" PROPERTIES TIMEOUT 60)
+        # Eight QML load passes, each now opening the hub as well: about a
+        # minute on a laptop, longer on a shared CI runner.
+        set_tests_properties("device-controller-worker-integration" PROPERTIES TIMEOUT 150)
         # The tray icon renderer needs a GUI platform. Headless CI runners
         # have none; Windows always has one, and its deployed plugin folder
         # next to the binaries carries only qwindows.

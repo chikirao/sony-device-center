@@ -24,6 +24,9 @@ class PeripheralModel : public QAbstractListModel {
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
     Q_PROPERTY(int connectedCount READ connectedCount NOTIFY countChanged)
     Q_PROPERTY(bool systemSourceAvailable READ systemSourceAvailable CONSTANT)
+    // False: only Sony sets (the controller's, plus OS rows whose address
+    // prefix or name says Sony); true: everything the OS reports.
+    Q_PROPERTY(bool includeSystem READ includeSystem WRITE setIncludeSystem NOTIFY includeSystemChanged)
 public:
     enum Role {
         AddressRole = Qt::UserRole + 1,
@@ -63,6 +66,8 @@ public:
     [[nodiscard]] QHash<int, QByteArray> roleNames() const override;
 
     [[nodiscard]] int connectedCount() const;
+    [[nodiscard]] bool includeSystem() const { return _includeSystem; }
+    void setIncludeSystem(bool on);
     [[nodiscard]] bool systemSourceAvailable() const { return _source.isAvailable(); }
     [[nodiscard]] const QList<Row>& rows() const { return _rows; }
     // Every role of one row as a map; handy from QML outside a delegate.
@@ -73,6 +78,7 @@ public:
 
 signals:
     void countChanged();
+    void includeSystemChanged();
 
 private:
     [[nodiscard]] QList<Row> _compose() const;
@@ -83,6 +89,7 @@ private:
     QList<Row> _rows;
     int _lastConnected{0};
     int _lastCount{0};
+    bool _includeSystem{true};
 };
 
 } // namespace sony::devicecenter

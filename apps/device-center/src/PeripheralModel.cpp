@@ -1,5 +1,6 @@
 #include "PeripheralModel.h"
 #include "DeviceCenterController.h"
+#include "sony/transport/SonyDeviceFilter.h"
 
 #include <algorithm>
 
@@ -74,6 +75,13 @@ int PeripheralModel::indexOf(const QString& address) const {
 
 void PeripheralModel::refresh() { _source.refresh(); }
 
+void PeripheralModel::setIncludeSystem(bool on) {
+    if (_includeSystem == on) return;
+    _includeSystem = on;
+    emit includeSystemChanged();
+    _rebuild();
+}
+
 QList<PeripheralModel::Row> PeripheralModel::_compose() const {
     QList<Row> rows;
     auto find = [&rows](const QString& address) -> Row* {
@@ -127,9 +135,14 @@ QList<PeripheralModel::Row> PeripheralModel::_compose() const {
         row->noiseMode = _controller.noiseControlMode();
     }
 
-    // Everything the OS reports; Sony rows only take what they lack.
+    // Everything the OS reports; Sony rows only take what they lack. A Sony
+    // set the controller does not list (nothing connected yet on a platform
+    // whose discovery is empty) is still recognised as Sony by its address
+    // prefix or name, so "Sony only" keeps it.
     for (const auto& system : _source.peripherals()) {
         const auto address = normalizePeripheralAddress(system.address);
+        const bool sony = transport::hasSonyOui(address.toStdString()) || transport::hasSonyName(system.name.toStdString());
+        if (!_includeSystem && !sony && !find(address)) continue;
         if (Row* row = find(address)) {
             auto& p = row->peripheral;
             p.connected = p.connected || system.connected;
@@ -142,6 +155,7 @@ QList<PeripheralModel::Row> PeripheralModel::_compose() const {
             continue;
         }
         Row row;
+        row.sony = sony;
         row.peripheral = system;
         row.peripheral.address = address;
         rows.append(row);

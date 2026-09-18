@@ -1,11 +1,15 @@
 #include "TrayController.h"
 #include "DeviceCenterController.h"
+#include "HubSettings.h"
+#include "PeripheralModel.h"
 #include "WindowsToast.h"
 
 #include <QAction>
 #include <QActionGroup>
 #include <QFont>
 #include <QGuiApplication>
+#include <QPolygonF>
+#include <QAbstractItemModel>
 #include <QMenu>
 #include <QPainter>
 #include <QPixmap>
@@ -38,15 +42,128 @@ TrayController::TrayController(DeviceCenterController& controller, QObject* pare
     _tray->show();
 
     connect(_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
-        // Left click toggles the window; the context menu is Qt's own.
-        if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) toggleWindow();
+        // Left click opens the hub, double click the main window (the first
+        // click of a double click has already opened the hub by then, so it
+        // is sent away again); the context menu is Qt's own.
+        if (reason == QSystemTrayIcon::Trigger) {
+            if (_settings && _settings->trayClickAction() == "window") toggleWindow();
+            else emit hubToggleRequested(_tray->geometry());
+        } else if (reason == QSystemTrayIcon::DoubleClick) { emit hubDismissRequested(); showWindow(); }
     });
     connect(&_controller, &DeviceCenterController::stateChanged, this, &TrayController::_update);
     connect(&_controller, &DeviceCenterController::capabilitiesChanged, this, &TrayController::_update);
     connect(&_controller, &DeviceCenterController::languageChanged, this, &TrayController::_update);
 }
 
-TrayController::~TrayController() = default;
+TrayController::~TrayController() {
+    for (auto& entry : _deviceIcons) delete entry.icon;
+}
+
+void TrayController::setHubSettings(HubSettings* settings) {
+    if (_settings) disconnect(_settings, nullptr, this, nullptr);
+    _settings = settings;
+    if (_settings) connect(_settings, &HubSettings::changed, this, &TrayController::_syncDeviceIcons);
+    _syncDeviceIcons();
+}
+
+void TrayController::setPeripherals(PeripheralModel* peripherals) {
+    if (_peripherals) disconnect(_peripherals, nullptr, this, nullptr);
+    _peripherals = peripherals;
+    if (_peripherals) {
+        for (auto signal : {&QAbstractItemModel::rowsInserted, &QAbstractItemModel::rowsRemoved})
+            connect(_peripherals, signal, this, &TrayController::_syncDeviceIcons);
+        connect(_peripherals, &QAbstractItemModel::dataChanged, this, &TrayController::_syncDeviceIcons);
+        connect(_peripherals, &QAbstractItemModel::modelReset, this, &TrayController::_syncDeviceIcons);
+        connect(_peripherals, &QAbstractItemModel::rowsMoved, this, &TrayController::_syncDeviceIcons);
+    }
+    _syncDeviceIcons();
+}
+
+void TrayController::_syncDeviceIcons() {
+    // Which addresses deserve an icon right now: chosen in the settings,
+    // present in the list, and the mode says so. Everything else goes.
+    QHash<QString, const PeripheralModel::Row*> wanted;
+    if (_tray && _settings && _peripherals && _settings->trayMode() == "perDevice")
+        for (const auto& row : _peripherals->rows())
+            if (_settings->isInTray(row.peripheral.address)) wanted.insert(row.peripheral.address, &row);
+
+    for (auto it = _deviceIcons.begin(); it != _deviceIcons.end();) {
+        if (wanted.contains(it.key())) { ++it; continue; }
+        delete it->icon;
+        it = _deviceIcons.erase(it);
+    }
+    for (auto it = wanted.begin(); it != wanted.end(); ++it) {
+        const auto& p = it.value()->peripheral;
+        auto& entry = _deviceIcons[it.key()];
+        if (!entry.icon) {
+            entry.icon = new QSystemTrayIcon;
+            connect(entry.icon, &QSystemTrayIcon::activated, this, [this, icon = entry.icon](QSystemTrayIcon::ActivationReason reason) {
+                if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) emit hubToggleRequested(icon->geometry());
+            });
+        }
+        if (entry.level != p.battery || entry.connected != p.connected || entry.kind != p.kind) {
+            entry.level = p.battery; entry.connected = p.connected; entry.kind = p.kind;
+            entry.icon->setIcon(renderDeviceIcon(p.battery, p.connected, p.kind));
+        }
+        QString tip = p.name;
+        if (!p.connected) tip += " — " + _controller.t("hub_not_connected");
+        else if (p.battery >= 0) tip += " — " + QString::number(p.battery) + "%";
+        if (entry.name != tip) { entry.name = tip; entry.icon->setToolTip(tip); }
+        if (!entry.icon->isVisible()) entry.icon->show();
+    }
+}
+
+QIcon TrayController::renderDeviceIcon(int level, bool connected, PeripheralKind kind, int size) {
+    QPixmap pixmap = renderIcon(level, false, connected, size).pixmap(size, size);
+    QPainter p(&pixmap);
+    p.setRenderHint(QPainter::Antialiasing);
+    // Badge in the lower right corner, on a disc so it reads on any ring.
+    const qreal badge = size * 0.42;
+    const QRectF disc(size - badge, size - badge, badge, badge);
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor(kRingTrack));
+    p.drawEllipse(disc);
+    QPen pen(QColor(kText), std::max(1.0, size * 0.045), Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    p.setPen(pen);
+    p.setBrush(Qt::NoBrush);
+    const QRectF g = disc.adjusted(badge * 0.24, badge * 0.24, -badge * 0.24, -badge * 0.24);
+    switch (kind) {
+    case PeripheralKind::Mouse:
+        p.drawRoundedRect(QRectF(g.left() + g.width() * 0.2, g.top(), g.width() * 0.6, g.height()), g.width() * 0.3, g.width() * 0.3);
+        p.drawLine(QPointF(g.center().x(), g.top()), QPointF(g.center().x(), g.top() + g.height() * 0.4));
+        break;
+    case PeripheralKind::Keyboard:
+        p.drawRoundedRect(QRectF(g.left(), g.top() + g.height() * 0.25, g.width(), g.height() * 0.5), 1.5, 1.5);
+        p.drawLine(QPointF(g.left() + g.width() * 0.3, g.center().y()), QPointF(g.right() - g.width() * 0.3, g.center().y()));
+        break;
+    case PeripheralKind::Gamepad:
+        p.drawRoundedRect(QRectF(g.left(), g.top() + g.height() * 0.25, g.width(), g.height() * 0.5), g.height() * 0.25, g.height() * 0.25);
+        p.setBrush(QColor(kText));
+        p.drawEllipse(QPointF(g.right() - g.width() * 0.28, g.center().y()), pen.widthF() * 0.9, pen.widthF() * 0.9);
+        p.drawEllipse(QPointF(g.left() + g.width() * 0.28, g.center().y()), pen.widthF() * 0.9, pen.widthF() * 0.9);
+        break;
+    case PeripheralKind::Earbuds:
+        p.setBrush(QColor(kText));
+        p.drawEllipse(QPointF(g.left() + g.width() * 0.3, g.center().y() - g.height() * 0.1), g.width() * 0.16, g.width() * 0.16);
+        p.drawEllipse(QPointF(g.right() - g.width() * 0.3, g.center().y() - g.height() * 0.1), g.width() * 0.16, g.width() * 0.16);
+        break;
+    case PeripheralKind::Headphones:
+        p.drawArc(QRectF(g.left(), g.top(), g.width(), g.height() * 1.3), 0, 180 * 16);
+        p.setBrush(QColor(kText));
+        p.drawRoundedRect(QRectF(g.left(), g.center().y(), g.width() * 0.22, g.height() * 0.45), 1, 1);
+        p.drawRoundedRect(QRectF(g.right() - g.width() * 0.22, g.center().y(), g.width() * 0.22, g.height() * 0.45), 1, 1);
+        break;
+    case PeripheralKind::Other:
+        // The Bluetooth rune, simplified to its zig-zag.
+        p.drawPolyline(QPolygonF({QPointF(g.left() + g.width() * 0.2, g.top() + g.height() * 0.3),
+                                  QPointF(g.right() - g.width() * 0.25, g.bottom() - g.height() * 0.3),
+                                  QPointF(g.center().x(), g.bottom()), QPointF(g.center().x(), g.top()),
+                                  QPointF(g.right() - g.width() * 0.25, g.top() + g.height() * 0.3),
+                                  QPointF(g.left() + g.width() * 0.2, g.bottom() - g.height() * 0.3)}));
+        break;
+    }
+    return QIcon(pixmap);
+}
 
 bool TrayController::isAvailable() const { return _tray != nullptr; }
 
