@@ -247,6 +247,51 @@ if the maintainer wants them.
 
 ---
 
+## Device Hub — quick panel for every Bluetooth device
+
+A compact panel off the tray icon, in the spirit of "Bluetooth Battery
+Level" (Workstation Master) but in this app's own visual language: every
+paired Bluetooth device on one list, charge as a dot-matrix number, and the
+Sony set's quick controls inline. Three PRs, stacked.
+
+- [x] **System peripherals behind an interface** (`feat/peripherals-source`).
+  `IPeripheralSource` (`refresh()`, `changed()`, a list of
+  `Peripheral {address, name, kind, connected, battery, L/R/case}`) with
+  three implementations: `WindowsPeripheralSource` (C++/WinRT enumeration
+  of paired classic + LE endpoints with `System.Devices.Aep.IsConnected`;
+  battery from `DEVPKEY_Bluetooth_Battery` on the Hands-Free device node,
+  linked by container id, and from GATT `0x180F` for connected LE devices;
+  device class from CoD major/minor and GAP appearance, name heuristics as
+  a fallback; polled every 30 s on a worker thread, plus a debounced re-read
+  after every `BluetoothWatcher::connectionChanged`), `NullPeripheralSource`
+  for Linux/macOS, `FakePeripheralSource` for tests and `--simulated` (a
+  mouse at 50 %, a keyboard at 100 %, an idle DualSense at 90 %).
+  `PeripheralModel` merges the controller's Sony sets (paired list plus the
+  live state of the connected one) with the OS rows by address, Sony side
+  winning; connected first, the active set on top, Sony before the rest,
+  then by name; incremental updates, never a reset. Decided along the way:
+  the stock `GetDeviceSelectorFromPairingState(true)` selectors must be
+  used verbatim — a hand-written `ProtocolId AND IsPaired` query makes
+  Windows run a 30-second inquiry before answering. Checked on the XM5
+  (90 % over HFP), a DualShock and a
+  Bluetooth speaker; `SONY_PERIPHERALS_LOG=<file>` dumps every scan.
+  11 QtTest cases in `sony-peripheral-tests`, no WinRT involved.
+- [ ] **The hub window** (`feat/device-hub`). `qml/Hub.qml` + `HubWindow`:
+  frameless tool window by the tray icon, 360 px wide, 56 px rows, three to
+  six of them, light/dark from `Theme`, slide+fade honouring
+  `Theme.motionEnabled`, closes on focus loss / Esc. Row: class glyph, name,
+  status ("Connected · LDAC · ANC" for Sony), dot-matrix percentage (three
+  small ones for earbuds), NC / Ambient / Off segment and power for the
+  connected Sony set. Left click on the tray icon opens it; double click the
+  main window; right click the menu. `hub.png` joins the screenshot run.
+- [ ] **A tray icon per device** (`feat/tray-per-device`). Main icon as
+  today plus one per device with "Show in tray" on; settings card "Device
+  Hub" (system devices on/off, poll interval, tray click action); QSettings
+  group `hub/`. Windows hides new icons in the overflow until dragged out —
+  said so in the UI.
+
+---
+
 ## Phase 3 — Protocol V2 features ⚠
 
 Ordered by value to an XM5 owner. For each item: `sonyctl` command →

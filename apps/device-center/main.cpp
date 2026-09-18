@@ -3,6 +3,8 @@
 #include <QFontDatabase>
 #include <QDebug>
 #include <QDir>
+#include <QFile>
+#include <QTextStream>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QDateTime>
@@ -21,6 +23,8 @@
 #include "HotkeyManager.h"
 #include "EqualizerLibrary.h"
 #include "BluetoothWatcher.h"
+#include "PeripheralModel.h"
+#include "PeripheralSource.h"
 #include "WindowsToast.h"
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
@@ -161,6 +165,35 @@ int main(int argc, char *argv[]) {
         qInfo().noquote() << "Bluetooth link" << (connected ? "up:" : "down:") << address;
         if (connected) controller.wakeConnection();
     });
+    // Every paired Bluetooth device the OS knows, with whatever charge it
+    // reports; the simulator brings a mouse, a keyboard and a controller so
+    // the list has company. Merged with the controller's Sony sets below.
+    sony::devicecenter::IPeripheralSource* peripheralSource = nullptr;
+    if (!simulatedAddress.isEmpty()) {
+        auto* fake = new sony::devicecenter::FakePeripheralSource(&app);
+        fake->setPeripherals(sony::devicecenter::FakePeripheralSource::simulatedSet());
+        peripheralSource = fake;
+    } else {
+        peripheralSource = sony::devicecenter::createPlatformPeripheralSource(&app);
+    }
+    sony::devicecenter::PeripheralModel peripherals(controller, *peripheralSource);
+    // SONY_PERIPHERALS_LOG=<file>: append every scan result, for checking
+    // what the OS reports about a device without a debugger attached (the
+    // GUI-subsystem binary has no console).
+    if (const auto logPath = qEnvironmentVariable("SONY_PERIPHERALS_LOG"); !logPath.isEmpty()) {
+        QObject::connect(peripheralSource, &sony::devicecenter::IPeripheralSource::changed, peripheralSource, [peripheralSource, logPath] {
+            QFile file(logPath);
+            if (!file.open(QIODevice::Append | QIODevice::Text)) return;
+            QTextStream out(&file);
+            out << QDateTime::currentDateTime().toString(Qt::ISODate) << " peripherals:\n";
+            for (const auto& p : peripheralSource->peripherals())
+                out << "  " << p.address << "  " << sony::devicecenter::peripheralKindName(p.kind) << "  "
+                    << (p.connected ? "connected" : "idle") << "  " << p.battery << "  " << p.name << "\n";
+        });
+    }
+    // A link event means the OS list is stale; re-read it once things settle.
+    QObject::connect(&bluetoothWatcher, &sony::devicecenter::BluetoothWatcher::connectionChanged, peripheralSource,
+                     [peripheralSource] { peripheralSource->refreshLater(); });
     auto logWatcher = [&bluetoothWatcher] {
         qInfo() << (bluetoothWatcher.isAvailable() ? "Bluetooth link events on; reconnecting on arrival"
                                                    : "Bluetooth link events unavailable; relying on periodic retries");
@@ -178,6 +211,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
     engine.rootContext()->setContextProperty("eqLibrary", &eqLibrary);
     engine.rootContext()->setContextProperty("updates", &updates);
+    engine.rootContext()->setContextProperty("peripherals", &peripherals);
     engine.rootContext()->setContextProperty("trayAvailable", tray.isAvailable());
     engine.rootContext()->setContextProperty("startHidden", startHidden);
 

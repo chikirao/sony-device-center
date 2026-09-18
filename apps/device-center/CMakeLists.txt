@@ -50,6 +50,12 @@ add_executable(sony-device-center
     include/BluetoothWatcher.h
     src/UpdateChecker.cpp
     include/UpdateChecker.h
+    src/PeripheralSource.cpp
+    include/PeripheralSource.h
+    src/WindowsPeripheralSource.cpp
+    include/WindowsPeripheralSource.h
+    src/PeripheralModel.cpp
+    include/PeripheralModel.h
     qml.qrc
 )
 
@@ -135,10 +141,11 @@ if(WIN32)
     target_sources(sony-device-center PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/../../packaging/windows/sony-device-center.rc")
 
-    # C++/WinRT (toast notifications) resolves activation factories through
-    # the umbrella library; the Bluetooth watcher enumerates radios through
-    # bthprops.
-    target_link_libraries(sony-device-center PRIVATE WindowsApp bthprops)
+    # C++/WinRT (toast notifications, peripheral enumeration) resolves
+    # activation factories through the umbrella library; the Bluetooth
+    # watcher enumerates radios through bthprops; the peripheral source reads
+    # device-node battery properties through setupapi.
+    target_link_libraries(sony-device-center PRIVATE WindowsApp bthprops setupapi)
 
     # A bare .exe cannot start without the Qt DLLs and QML module tree beside
     # it, so let windeployqt populate the install prefix at install time.
@@ -178,10 +185,13 @@ if(BUILD_TESTING)
             src/HotkeyManager.cpp include/HotkeyManager.h
             src/EqualizerLibrary.cpp include/EqualizerLibrary.h
             src/BluetoothWatcher.cpp include/BluetoothWatcher.h
-            src/UpdateChecker.cpp include/UpdateChecker.h)
+            src/UpdateChecker.cpp include/UpdateChecker.h
+            src/PeripheralSource.cpp include/PeripheralSource.h
+            src/WindowsPeripheralSource.cpp include/WindowsPeripheralSource.h
+            src/PeripheralModel.cpp include/PeripheralModel.h)
         target_include_directories(sony-ui-tests PRIVATE include)
         if(WIN32)
-            target_link_libraries(sony-ui-tests PRIVATE WindowsApp bthprops)
+            target_link_libraries(sony-ui-tests PRIVATE WindowsApp bthprops setupapi)
         endif()
         target_compile_definitions(sony-ui-tests PRIVATE SONY_DEVICE_CENTER_VERSION="${SonyDeviceCenter_VERSION}")
         target_link_libraries(sony-ui-tests PRIVATE Qt6::Test Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Qml Qt6::Quick Qt6::QuickControls2 sony-core)
@@ -216,6 +226,29 @@ if(BUILD_TESTING)
         target_link_libraries(sony-update-checker-tests PRIVATE Qt6::Test Qt6::Core Qt6::Network)
         add_test(NAME "update-checker" COMMAND sony-update-checker-tests)
         set_tests_properties("update-checker" PROPERTIES TIMEOUT 25)
+
+        # The hub's device list: merging the controller's Sony sets with a
+        # hand-fed peripheral source. Real hardware and WinRT stay out of it,
+        # so it only needs the controller (driven by SimulatedDevice), not
+        # the tray or the QML shell.
+        add_executable(sony-peripheral-tests
+            ../../tests/ui/PeripheralModelTests.cpp
+            src/PeripheralSource.cpp include/PeripheralSource.h
+            src/WindowsPeripheralSource.cpp include/WindowsPeripheralSource.h
+            src/PeripheralModel.cpp include/PeripheralModel.h
+            src/DeviceCenterController.cpp include/DeviceCenterController.h
+            src/DeviceBackend.cpp include/DeviceBackend.h
+            src/I18nManager.cpp include/I18nManager.h
+            src/BatteryHistory.cpp include/BatteryHistory.h)
+        target_include_directories(sony-peripheral-tests PRIVATE include)
+        target_compile_features(sony-peripheral-tests PRIVATE cxx_std_20)
+        target_compile_definitions(sony-peripheral-tests PRIVATE SONY_DEVICE_CENTER_VERSION="${SonyDeviceCenter_VERSION}")
+        target_link_libraries(sony-peripheral-tests PRIVATE Qt6::Test Qt6::Core Qt6::Gui Qt6::Network sony-core)
+        if(WIN32)
+            target_link_libraries(sony-peripheral-tests PRIVATE WindowsApp bthprops setupapi)
+        endif()
+        add_test(NAME "peripheral-model" COMMAND sony-peripheral-tests)
+        set_tests_properties("peripheral-model" PROPERTIES TIMEOUT 60)
     endif()
 endif()
 
