@@ -258,6 +258,7 @@ Window {
             // the row opens the main window.
             onTapped: function(point) {
                 if (quickControls.visible && quickControls.contains(quickControls.mapFromItem(row, point.position))) return
+                if (pin.visible && pin.contains(pin.mapFromItem(row, point.position))) return
                 hub.mainWindowRequested(row.active ? 0 : 4)
             }
         }
@@ -276,11 +277,32 @@ Window {
                     color: row.connected ? Theme.txt : Theme.txtFaint }
         }
 
+        // "Show in tray", only while the tray is in per-device mode: shown
+        // on hover, and always while the device is pinned.
+        Rectangle {
+            id: pin
+            objectName: "hubPin"
+            readonly property bool pinned: hubSettings.trayDevices.indexOf(row.address) !== -1
+            visible: hubSettings.trayMode === "perDevice" && (pinned || rowHover.hovered)
+            anchors.right: rightBlock.left
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            width: 22; height: 22
+            radius: 6
+            color: pinned ? Theme.accent : pinHover.hovered ? hub.hoverColor : "transparent"
+            border.width: 1
+            border.color: pinned ? Theme.accent : pinHover.hovered ? Theme.lineHi : Theme.line
+            HoverHandler { id: pinHover; cursorShape: Qt.PointingHandCursor }
+            TapHandler { onTapped: hubSettings.setInTray(row.address, !pin.pinned) }
+            Glyph { appWindow: hub.appWindow; anchors.centerIn: parent; path: appWindow.icons.pin; size: 13; weight: 1.8
+                    color: pin.pinned ? Theme.accentText : Theme.txtDim }
+        }
+
         // Name and status; elides against whatever the right block needs.
         ColumnLayout {
             anchors.left: tile.right
             anchors.leftMargin: 12
-            anchors.right: rightBlock.left
+            anchors.right: pin.visible ? pin.left : rightBlock.left
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter
             spacing: 2

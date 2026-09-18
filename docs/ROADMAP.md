@@ -304,11 +304,26 @@ Sony set's quick controls inline. Three PRs, stacked.
   tests. Decided along the way: ListView delegates are visual, not
   QObject, children, so tests walk `childItems()`; the UI test's CTest
   timeout went 60 → 150 s.
-- [ ] **A tray icon per device** (`feat/tray-per-device`). Main icon as
-  today plus one per device with "Show in tray" on; settings card "Device
-  Hub" (system devices on/off, poll interval, tray click action); QSettings
-  group `hub/`. Windows hides new icons in the overflow until dragged out —
-  said so in the UI.
+- [x] **Hub settings, Sony-only filter, optional per-device tray icons**
+  (`feat/tray-per-device`). Starts with upstream PR #52 cherry-picked
+  (`SonyDeviceDiscovery`: a paired device counts as Sony when its address
+  prefix is in the IEEE OUI table for Sony or its name carries a model
+  prefix) — before it, every paired Bluetooth device (a Yandex speaker,
+  say) landed on the Devices page and among the "Sony" rows. `HubSettings`
+  (QSettings group `hub/`, exposed as `hubSettings`): `showSystemDevices`
+  (hub lists everything the OS reports, or Sony sets only — OS rows with a
+  Sony OUI/name stay either way), `pollIntervalSeconds` (15/30/60/120),
+  `trayClickAction` (hub or main window), `trayMode` (`single`: the one
+  icon following the connected Sony set, as always; `perDevice`: that plus
+  one icon per address in `trayDevices`). The per-device icons are the
+  same ring and number with a class badge in the corner drawn with
+  QPainter primitives (no QtSvg), tooltip = name and charge, click = hub;
+  chosen with a pin that appears on hub rows in per-device mode and with
+  switches in the new Settings card "Device Hub", which also states that
+  Windows parks new icons in the overflow until dragged out. Tests: 137 →
+  143 (upstream's 5 filter cases, `sonyOnlyKeepsSonyLookingSystemRows`,
+  `hubSettingsPersistAndValidate`, `trayIconsFollowHubSettings` — the last
+  skips without a system tray).
 
 ---
 

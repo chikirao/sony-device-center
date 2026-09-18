@@ -624,6 +624,160 @@ ViewPage {
             }
         }
 
+        // Card 4: the Device Hub and the tray. Only where there is a tray to
+        // put the hub on.
+        Card { appWindow: root.appWindow;
+            objectName: "hubCard"
+            visible: trayAvailable
+            Layout.fillWidth: true
+            Layout.preferredHeight: hubColumn.implicitHeight + 44
+
+            ColumnLayout {
+                id: hubColumn
+                anchors.fill: parent
+                anchors.margins: 22
+                spacing: 16
+
+                Eyebrow { appWindow: root.appWindow; text: appWindow.tr("hub_card_title") }
+
+                // All Bluetooth devices, or Sony only.
+                HubSettingRow {
+                    title: appWindow.tr("hub_show_system")
+                    desc: peripherals.systemSourceAvailable ? appWindow.tr("hub_show_system_desc") : appWindow.tr("hub_show_system_unavailable")
+                    glyph: appWindow.icons.bluetooth
+                    NeoSwitch {
+                        appWindow: root.appWindow
+                        objectName: "hubShowSystemSwitch"
+                        enabled: peripherals.systemSourceAvailable
+                        confirmedChecked: hubSettings.showSystemDevices && peripherals.systemSourceAvailable
+                        onToggled: hubSettings.showSystemDevices = checked
+                    }
+                }
+
+                // How often the OS list is re-read.
+                HubSettingRow {
+                    visible: peripherals.systemSourceAvailable
+                    title: appWindow.tr("hub_poll_interval")
+                    desc: appWindow.tr("hub_poll_interval_desc")
+                    glyph: appWindow.icons.refresh
+                    RowLayout {
+                        spacing: 6
+                        Repeater {
+                            model: [15, 30, 60, 120]
+                            delegate: PillButton { appWindow: root.appWindow;
+                                required property int modelData
+                                compact: true
+                                text: modelData < 60 ? appWindow.tr("seconds_short").arg(modelData) : appWindow.tr("duration_minutes").arg(modelData / 60)
+                                active: hubSettings.pollIntervalSeconds === modelData
+                                onClicked: hubSettings.pollIntervalSeconds = modelData
+                            }
+                        }
+                    }
+                }
+
+                // What the tray icon's left click opens.
+                HubSettingRow {
+                    title: appWindow.tr("hub_tray_click")
+                    desc: appWindow.tr("hub_tray_click_desc")
+                    glyph: appWindow.icons.home
+                    RowLayout {
+                        objectName: "hubTrayClickSelector"
+                        spacing: 6
+                        Repeater {
+                            model: [
+                                { action: "hub",    label: appWindow.tr("hub_card_title") },
+                                { action: "window", label: appWindow.tr("main_window") }
+                            ]
+                            delegate: PillButton { appWindow: root.appWindow;
+                                required property var modelData
+                                compact: true
+                                text: modelData.label
+                                active: hubSettings.trayClickAction === modelData.action
+                                onClicked: hubSettings.trayClickAction = modelData.action
+                            }
+                        }
+                    }
+                }
+
+                // One icon, or one per chosen device.
+                HubSettingRow {
+                    title: appWindow.tr("hub_tray_mode")
+                    desc: appWindow.tr("hub_tray_mode_desc")
+                    glyph: appWindow.icons.battery
+                    RowLayout {
+                        objectName: "hubTrayModeSelector"
+                        spacing: 6
+                        Repeater {
+                            model: [
+                                { mode: "single",    label: appWindow.tr("hub_tray_mode_single") },
+                                { mode: "perDevice", label: appWindow.tr("hub_tray_mode_per_device") }
+                            ]
+                            delegate: PillButton { appWindow: root.appWindow;
+                                required property var modelData
+                                compact: true
+                                text: modelData.label
+                                active: hubSettings.trayMode === modelData.mode
+                                onClicked: hubSettings.trayMode = modelData.mode
+                            }
+                        }
+                    }
+                }
+
+                // Per-device choice, and the honest word about where Windows
+                // puts new tray icons.
+                ColumnLayout {
+                    visible: hubSettings.trayMode === "perDevice"
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 54
+                    spacing: 10
+                    Repeater {
+                        model: peripherals
+                        delegate: RowLayout {
+                            id: trayDeviceRow
+                            required property string address
+                            required property string name
+                            required property string kind
+                            required property bool connected
+                            Layout.fillWidth: true
+                            spacing: 12
+                            Glyph { appWindow: root.appWindow; path: appWindow.icons[trayDeviceRow.kind === "other" ? "bluetooth" : trayDeviceRow.kind]; size: 16; weight: 1.6
+                                    color: trayDeviceRow.connected ? Theme.txt : Theme.txtFaint }
+                            Text {
+                                Layout.fillWidth: true
+                                textFormat: Text.PlainText
+                                text: trayDeviceRow.name
+                                color: trayDeviceRow.connected ? Theme.txt : Theme.txtDim
+                                font.pixelSize: 13
+                                elide: Text.ElideRight
+                            }
+                            NeoSwitch {
+                                appWindow: root.appWindow
+                                objectName: "trayDeviceSwitch-" + trayDeviceRow.address
+                                confirmedChecked: hubSettings.trayDevices.indexOf(trayDeviceRow.address) !== -1
+                                onToggled: hubSettings.setInTray(trayDeviceRow.address, checked)
+                            }
+                        }
+                    }
+                    Text {
+                        visible: peripherals.count === 0
+                        textFormat: Text.PlainText
+                        text: appWindow.tr("hub_tray_no_devices")
+                        color: Theme.txtFaint
+                        font.pixelSize: 12
+                    }
+                    Text {
+                        visible: Qt.platform.os === "windows"
+                        Layout.fillWidth: true
+                        textFormat: Text.PlainText
+                        text: appWindow.tr("hub_tray_overflow_note")
+                        color: Theme.txtFaint
+                        font.pixelSize: 12
+                        wrapMode: Text.Wrap
+                    }
+                }
+            }
+        }
+
         // Split Cards: About Application & Community/Donate
         RowLayout {
             Layout.fillWidth: true
@@ -930,5 +1084,53 @@ ViewPage {
         }
 
     }
+    }
+
+    // One hub setting: glyph tile, title and description, control on the right.
+    component HubSettingRow: RowLayout {
+        id: settingRow
+        property string title: ""
+        property string desc: ""
+        property string glyph: ""
+        default property alias control: controlSlot.data
+        Layout.fillWidth: true
+        spacing: 16
+        Rectangle {
+            Layout.preferredWidth: 38
+            Layout.preferredHeight: 38
+            Layout.alignment: Qt.AlignTop
+            radius: Theme.controlRadius
+            color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
+            border.width: 1
+            border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
+            Glyph { appWindow: root.appWindow; anchors.centerIn: parent; path: settingRow.glyph; size: 18; color: Theme.accentSoft }
+        }
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 3
+            Text {
+                textFormat: Text.PlainText
+                Layout.fillWidth: true
+                text: settingRow.title
+                color: Theme.txt
+                font.pixelSize: 14
+                font.weight: Font.DemiBold
+            }
+            Text {
+                textFormat: Text.PlainText
+                Layout.fillWidth: true
+                visible: settingRow.desc !== ""
+                text: settingRow.desc
+                color: Theme.txtDim
+                font.pixelSize: 12
+                wrapMode: Text.Wrap
+            }
+        }
+        Item {
+            id: controlSlot
+            Layout.alignment: Qt.AlignVCenter
+            implicitWidth: childrenRect.width
+            implicitHeight: childrenRect.height
+        }
     }
 }

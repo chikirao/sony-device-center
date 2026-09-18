@@ -6,6 +6,7 @@
 #include "EqualizerLibrary.h"
 #include "BluetoothWatcher.h"
 #include "UpdateChecker.h"
+#include "HubSettings.h"
 #include "HubWindow.h"
 #include "PeripheralModel.h"
 #include "PeripheralSource.h"
@@ -102,7 +103,11 @@ private slots:
         peripheralSource.setPeripherals(FakePeripheralSource::simulatedSet());
         PeripheralModel peripherals(controller, peripheralSource);
         engine.rootContext()->setContextProperty("peripherals", &peripherals);
-        engine.rootContext()->setContextProperty("trayAvailable", false);
+        QTemporaryDir hubSettingsDir;
+        HubSettings hubSettings(hubSettingsDir.path() + "/hub.ini");
+        engine.rootContext()->setContextProperty("hubSettings", &hubSettings);
+        // The hub card is tray-only; pretend there is one so it renders.
+        engine.rootContext()->setContextProperty("trayAvailable", true);
         engine.rootContext()->setContextProperty("startHidden", false);
         engine.load(QUrl("qrc:/qml/Main.qml"));
         controller.setLanguage(previousLanguage);
@@ -190,6 +195,33 @@ private slots:
         // Rows follow the source without the list being rebuilt.
         peripheralSource.update("F4:73:35:AA:10:03", [](Peripheral& p) { p.connected = true; });
         QTRY_COMPARE(hubList->property("count").toInt(), peripherals.rowCount());
+        // The Settings card is there, and the per-device pin appears in the
+        // rows only once the tray is in per-device mode.
+        QVERIFY(window->findChild<QObject*>("hubCard"));
+        QVERIFY(window->findChild<QObject*>("hubShowSystemSwitch"));
+        auto* pinItem = findItem(hub.window()->contentItem(), "hubPin");
+        QVERIFY(pinItem);
+        QVERIFY(!pinItem->isVisible());
+        hubSettings.setTrayMode("perDevice");
+        hubSettings.setInTray(peripherals.rows().first().peripheral.address, true);
+        QTRY_VERIFY(pinItem->isVisible());
+        if (!output.isEmpty()) {
+            // The hub with a pinned row, and the Settings card in per-device
+            // mode with its device list open.
+            QTest::qWait(300);
+            QVERIFY(hub.window()->grabWindow().save(QString("%1/hub-%2-%3-pinned.png").arg(output, model, language)));
+            window->setProperty("navIndex", 6);
+            auto* flick = window->findChild<QQuickItem*>("settingsFlick");
+            auto* card = window->findChild<QQuickItem*>("hubCard");
+            auto* content = flick ? flick->property("contentItem").value<QQuickItem*>() : nullptr;
+            QVERIFY(flick && card && content);
+            QTest::qWait(300);
+            const qreal max = flick->property("contentHeight").toReal() - flick->height();
+            flick->setProperty("contentY", (std::clamp)(card->mapToItem(content, QPointF(0, 0)).y() - 16, 0.0, (std::max)(0.0, max)));
+            QTest::qWait(400);
+            QVERIFY(window->grabWindow().save(QString("%1/settings-hub-%2-%3-%4.png").arg(output, model, language).arg(size.width())));
+        }
+        hubSettings.setTrayMode("single");
         // The footer opens the main window on the requested page.
         QSignalSpy mainRequests(&hub, &HubWindow::mainWindowRequested);
         QVERIFY(hub.window()->findChild<QObject*>("hubSettings"));
@@ -373,6 +405,9 @@ private slots:
         UpdateChecker updates(SONY_DEVICE_CENTER_VERSION, new test::FakeReleaseFetcher);
         FakePeripheralSource peripheralSource;
         PeripheralModel peripherals(controller, peripheralSource);
+        QTemporaryDir hubSettingsDir;
+        HubSettings hubSettings(hubSettingsDir.path() + "/hub.ini");
+        engine.rootContext()->setContextProperty("hubSettings", &hubSettings);
         engine.rootContext()->setContextProperty("controller", &controller);
         engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
         engine.rootContext()->setContextProperty("eqLibrary", &eqLibrary);
@@ -401,6 +436,78 @@ private slots:
         QCOMPARE(hub.window()->findChild<QObject*>("hubList")->property("count").toInt(), 3);
         hub.close();
         QTRY_VERIFY(!hub.isVisible());
+    }
+    void hubSettingsPersistAndValidate() {
+        QTemporaryDir dir;
+        const auto ini = dir.path() + "/hub.ini";
+        {
+            HubSettings settings(ini);
+            QCOMPARE(settings.showSystemDevices(), true);
+            QCOMPARE(settings.pollIntervalSeconds(), 30);
+            QCOMPARE(settings.trayClickAction(), QString("hub"));
+            QCOMPARE(settings.trayMode(), QString("single"));
+            QSignalSpy changed(&settings, &HubSettings::changed);
+            settings.setShowSystemDevices(false);
+            settings.setPollIntervalSeconds(5);        // clamped to 15
+            settings.setTrayClickAction("nonsense");   // ignored
+            settings.setTrayClickAction("window");
+            settings.setTrayMode("perDevice");
+            settings.setInTray("f4:73:35:aa:10:01", true);
+            settings.setInTray("F4:73:35:AA:10:01", true);  // same device, no change
+            QCOMPARE(changed.count(), 5);
+            QCOMPARE(settings.pollIntervalSeconds(), 15);
+            QVERIFY(settings.isInTray("F4-73-35-AA-10-01"));
+        }
+        HubSettings again(ini);
+        QCOMPARE(again.showSystemDevices(), false);
+        QCOMPARE(again.pollIntervalSeconds(), 15);
+        QCOMPARE(again.trayClickAction(), QString("window"));
+        QCOMPARE(again.trayMode(), QString("perDevice"));
+        QCOMPARE(again.trayDevices(), QStringList{"F4:73:35:AA:10:01"});
+        again.setInTray("F4:73:35:AA:10:01", false);
+        QVERIFY(again.trayDevices().isEmpty());
+    }
+    void trayIconsFollowHubSettings() {
+        // Rendering first: badge disc in the lower right corner on top of
+        // the usual ring and number, for every class.
+        for (auto kind : {PeripheralKind::Mouse, PeripheralKind::Keyboard, PeripheralKind::Gamepad, PeripheralKind::Headphones,
+                          PeripheralKind::Earbuds, PeripheralKind::Other}) {
+            const auto image = TrayController::renderDeviceIcon(50, true, kind).pixmap(64, 64).toImage();
+            QVERIFY(!image.isNull());
+            QCOMPARE(image.pixelColor(40, 54).name(), QColor("#3A3D48").name());  // the badge disc, clear of the glyph
+            QCOMPARE(image.pixelColor(32, 3).name(), QColor("#2DD4A7").name());   // the ring is still there
+        }
+        auto simulated = core::createSimulatedDevice();
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        FakePeripheralSource source;
+        source.setPeripherals(FakePeripheralSource::simulatedSet());
+        PeripheralModel peripherals(controller, source);
+        QTemporaryDir dir;
+        HubSettings settings(dir.path() + "/hub.ini");
+        TrayController tray(controller);
+        if (!tray.isAvailable()) QSKIP("no system tray on this platform");
+        tray.setHubSettings(&settings);
+        tray.setPeripherals(&peripherals);
+        QCOMPARE(tray.deviceIconCount(), 0);
+        // Chosen devices count only in per-device mode.
+        settings.setInTray("F4:73:35:AA:10:01", true);
+        QCOMPARE(tray.deviceIconCount(), 0);
+        settings.setTrayMode("perDevice");
+        QCOMPARE(tray.deviceIconCount(), 1);
+        settings.setInTray("F4:73:35:AA:10:02", true);
+        QCOMPARE(tray.deviceIconCount(), 2);
+        // An unpaired device loses its icon; back in the list it returns.
+        auto rest = source.peripherals();
+        rest.removeIf([](const Peripheral& p) { return p.kind == PeripheralKind::Keyboard; });
+        source.setPeripherals(rest);
+        QCOMPARE(tray.deviceIconCount(), 1);
+        source.setPeripherals(FakePeripheralSource::simulatedSet());
+        QCOMPARE(tray.deviceIconCount(), 2);
+        settings.setTrayMode("single");
+        QCOMPARE(tray.deviceIconCount(), 0);
     }
     void hubPlacementStaysOnScreen() {
         const QSize hub(360, 400);
