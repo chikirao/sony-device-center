@@ -38,8 +38,11 @@ TrayController::TrayController(DeviceCenterController& controller, QObject* pare
     _tray->show();
 
     connect(_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
-        // Left click toggles the window; the context menu is Qt's own.
-        if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) toggleWindow();
+        // Left click opens the hub, double click the main window (the first
+        // click of a double click has already opened the hub by then, so it
+        // is sent away again); the context menu is Qt's own.
+        if (reason == QSystemTrayIcon::Trigger) emit hubToggleRequested(_tray->geometry());
+        else if (reason == QSystemTrayIcon::DoubleClick) { emit hubDismissRequested(); showWindow(); }
     });
     connect(&_controller, &DeviceCenterController::stateChanged, this, &TrayController::_update);
     connect(&_controller, &DeviceCenterController::capabilitiesChanged, this, &TrayController::_update);

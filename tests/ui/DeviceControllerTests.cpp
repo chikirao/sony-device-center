@@ -6,12 +6,17 @@
 #include "EqualizerLibrary.h"
 #include "BluetoothWatcher.h"
 #include "UpdateChecker.h"
+#include "HubWindow.h"
+#include "PeripheralModel.h"
+#include "PeripheralSource.h"
 #include "../support/FakeReleaseFetcher.h"
 #include <QTemporaryDir>
 #include <QImage>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickWindow>
+#include <QQuickItem>
+#include <functional>
 #include <QQuickStyle>
 #include <QDir>
 #include <QSettings>
@@ -91,6 +96,12 @@ private slots:
         engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
         engine.rootContext()->setContextProperty("eqLibrary", &eqLibrary);
         engine.rootContext()->setContextProperty("updates", &updates);
+        // The hub's list: the simulator's Sony sets plus the three fake
+        // peripherals, exactly what --simulated shows.
+        FakePeripheralSource peripheralSource;
+        peripheralSource.setPeripherals(FakePeripheralSource::simulatedSet());
+        PeripheralModel peripherals(controller, peripheralSource);
+        engine.rootContext()->setContextProperty("peripherals", &peripherals);
         engine.rootContext()->setContextProperty("trayAvailable", false);
         engine.rootContext()->setContextProperty("startHidden", false);
         engine.load(QUrl("qrc:/qml/Main.qml"));
@@ -112,6 +123,36 @@ private slots:
             QTest::qWait(400);
             QVERIFY(window->grabWindow().save(QString("%1/light-%2-%3-%4.png").arg(output, model, language).arg(size.width())));
         }
+        // The Device Hub over the same engine: one row per model entry, the
+        // connected set on top with its controls.
+        HubWindow hub(engine, window);
+        QVERIFY2(hub.isReady(), qPrintable(warnings.join("\n")));
+        QTRY_VERIFY_WITH_TIMEOUT(peripherals.rowCount() >= 4, 5000);
+        hub.open(QRect(window->x() + 300, window->y() + 500, 24, 24));
+        QTRY_VERIFY(hub.isVisible());
+        auto* hubList = hub.window()->findChild<QObject*>("hubList");
+        QVERIFY(hubList);
+        QTRY_COMPARE(hubList->property("count").toInt(), peripherals.rowCount());
+        QCOMPARE(hub.window()->width(), 360);
+        // Delegates are visual children of the list, not QObject children,
+        // so findChild cannot see them; walk the item tree instead. They
+        // come up a frame after the model, and the connected set's power
+        // control is the sign they have.
+        std::function<QQuickItem*(QQuickItem*, const QString&)> findItem = [&](QQuickItem* item, const QString& name) -> QQuickItem* {
+            if (!item) return nullptr;
+            if (item->objectName() == name) return item;
+            for (auto* child : item->childItems())
+                if (auto* found = findItem(child, name)) return found;
+            return nullptr;
+        };
+        QTRY_VERIFY(findItem(hub.window()->contentItem(), "hubPower"));
+        QVERIFY(!hub.window()->findChild<QObject*>("hubEmpty")->property("visible").toBool());
+        if (!output.isEmpty()) {
+            QTest::qWait(700);
+            QVERIFY(hub.window()->grabWindow().save(QString("%1/hub-%2-%3-light.png").arg(output, model, language)));
+        }
+        hub.close();
+        QTRY_VERIFY(!hub.isVisible());
         const bool previousSmoothing = controller.iconAntialiasing();
         controller.setIconAntialiasing(false);
         QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("iconAntialiasing").toBool(), false);
@@ -123,6 +164,38 @@ private slots:
         QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("animationsEnabled").toBool(), false);
         controller.setThemeMode("invalid");
         QCOMPARE(controller.themeMode(), QString("dark"));
+        // Hub behaviour, with motion off so nothing here waits on a slide.
+        hub.open(QRect(window->x() + 300, window->y() + 500, 24, 24));
+        QTRY_VERIFY(hub.isVisible());
+        if (!output.isEmpty()) {
+            QTest::qWait(700);
+            QVERIFY(hub.window()->grabWindow().save(QString("%1/hub-%2-%3-dark.png").arg(output, model, language)));
+        }
+        // Esc closes; key events only reach the card once the window holds
+        // focus, which is also what a real Esc press implies.
+        hub.window()->requestActivate();
+        QTRY_VERIFY(hub.window()->isActive());
+        QTest::keyClick(hub.window(), Qt::Key_Escape);
+        QTRY_VERIFY(!hub.isVisible());
+        // A tray click right after the hub closed on focus loss is the click
+        // that closed it, so it must not reopen; a later one does.
+        hub.toggle();
+        QTest::qWait(50);
+        QVERIFY(!hub.isVisible());
+        QTest::qWait(400);
+        hub.toggle();
+        QTRY_VERIFY(hub.isVisible());
+        hub.toggle();
+        QTRY_VERIFY(!hub.isVisible());
+        // Rows follow the source without the list being rebuilt.
+        peripheralSource.update("F4:73:35:AA:10:03", [](Peripheral& p) { p.connected = true; });
+        QTRY_COMPARE(hubList->property("count").toInt(), peripherals.rowCount());
+        // The footer opens the main window on the requested page.
+        QSignalSpy mainRequests(&hub, &HubWindow::mainWindowRequested);
+        QVERIFY(hub.window()->findChild<QObject*>("hubSettings"));
+        QVERIFY(QMetaObject::invokeMethod(hub.window(), "mainWindowRequested", Q_ARG(int, 6)));
+        QCOMPARE(mainRequests.count(), 1);
+        QCOMPARE(mainRequests.first().first().toInt(), 6);
         controller.setAnimationsEnabled(previousAnimations);
         for (int page = 0; page < 7; ++page) {
             QVERIFY(window->setProperty("navIndex", page));
@@ -264,6 +337,77 @@ private slots:
         QCOMPARE(pixel(low, 32, 3).name(), QColor("#FF5A5F").name());
         QCOMPARE(pixel(gone, 32, 3).name(), QColor("#3A3D48").name());
         QCOMPARE(pixel(TrayController::renderIcon(50, true, true), 32, 3).name(), QColor("#7C8CFF").name());
+    }
+    void hubShowsAnEmptyStateWithoutDevices() {
+        // Nothing paired, nothing connected: the hub keeps its three-row
+        // height and says so instead of showing a blank list.
+        auto service = std::make_shared<WakeCountingService>();
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QQmlApplicationEngine engine;
+        TrayController tray(controller);
+        HotkeyManager hotkeys(controller, tray, nullptr, "hotkeys-test");
+        QTemporaryDir libraryDir;
+        EqualizerLibrary eqLibrary(controller, libraryDir.path());
+        UpdateChecker updates(SONY_DEVICE_CENTER_VERSION, new test::FakeReleaseFetcher);
+        FakePeripheralSource peripheralSource;
+        PeripheralModel peripherals(controller, peripheralSource);
+        engine.rootContext()->setContextProperty("controller", &controller);
+        engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
+        engine.rootContext()->setContextProperty("eqLibrary", &eqLibrary);
+        engine.rootContext()->setContextProperty("updates", &updates);
+        engine.rootContext()->setContextProperty("peripherals", &peripherals);
+        engine.rootContext()->setContextProperty("trayAvailable", false);
+        engine.rootContext()->setContextProperty("startHidden", true);
+        engine.load(QUrl("qrc:/qml/Main.qml"));
+        QVERIFY(!engine.rootObjects().isEmpty());
+        HubWindow hub(engine, engine.rootObjects().first());
+        QVERIFY(hub.isReady());
+        QCOMPARE(peripherals.rowCount(), 0);
+        hub.open(QRect(100, 100, 24, 24));
+        QTRY_VERIFY(hub.isVisible());
+        auto* empty = hub.window()->findChild<QObject*>("hubEmpty");
+        QVERIFY(empty && empty->property("visible").toBool());
+        QCOMPARE(hub.window()->findChild<QObject*>("hubList")->property("height").toInt(), 3 * 56);
+        const auto output = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
+        if (!output.isEmpty()) {
+            QTest::qWait(600);
+            QVERIFY(hub.window()->grabWindow().save(QString("%1/hub-empty.png").arg(output)));
+        }
+        // A device arriving replaces the empty state in place.
+        peripheralSource.setPeripherals(FakePeripheralSource::simulatedSet());
+        QTRY_VERIFY(!empty->property("visible").toBool());
+        QCOMPARE(hub.window()->findChild<QObject*>("hubList")->property("count").toInt(), 3);
+        hub.close();
+        QTRY_VERIFY(!hub.isVisible());
+    }
+    void hubPlacementStaysOnScreen() {
+        const QSize hub(360, 400);
+        auto fits = [&hub](const QPoint& at, const QRect& available) {
+            return available.contains(QRect(at, hub).adjusted(-7, -7, 7, 7));
+        };
+        // Bottom-right tray icon (a 40 px taskbar below the available area):
+        // above the icon, pulled in from the right edge.
+        QRect available(0, 0, 1920, 1040);
+        auto at = HubWindow::placeNear(QRect(1880, 1045, 24, 24), hub, available);
+        QVERIFY(fits(at, available));
+        QVERIFY(at.y() + hub.height() < 1045);
+        QCOMPARE(at.x(), 1919 - 360 - 8);
+        // Top taskbar: below the icon, centred on it.
+        available = QRect(0, 40, 1920, 1040);
+        at = HubWindow::placeNear(QRect(1000, 8, 24, 24), hub, available);
+        QVERIFY(fits(at, available));
+        QCOMPARE(at.x(), 1011 - 180);  // centre of a 24 px icon at x=1000
+        QVERIFY(at.y() >= 40 + 8);
+        // Left taskbar: to the right of the icon.
+        available = QRect(60, 0, 1860, 1080);
+        at = HubWindow::placeNear(QRect(18, 900, 24, 24), hub, available);
+        QVERIFY(fits(at, available));
+        QCOMPARE(at.x(), 60 + 8);
+        // The cursor in the very corner (no icon rectangle) still fits.
+        available = QRect(0, 0, 1920, 1040);
+        at = HubWindow::placeNear(QRect(1919, 1039, 1, 1), hub, available);
+        QVERIFY(fits(at, available));
     }
     void notificationsFireOnceAtEachEdge() {
         auto simulated = core::createSimulatedDevice();

@@ -253,6 +253,12 @@ void I18nManager::_initTranslations() {
     en["notify_update_setting_desc"]      = "When a newer release is published on GitHub";
     en["notify_update_title"]             = "Version %1 is available";
     en["notify_update_body"]              = "Download it from Settings.";
+    en["hub_title"]                       = "Device Hub";
+    en["hub_not_connected"]               = "Not connected";
+    en["hub_empty_title"]                 = "No devices";
+    en["hub_empty_desc"]                  = "Paired Bluetooth devices show up here.";
+    en["battery_left_short"]              = "L";
+    en["battery_right_short"]             = "R";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -464,6 +470,12 @@ void I18nManager::_initTranslations() {
     pt["notify_update_setting_desc"]      = "Quando uma versão mais nova é publicada no GitHub";
     pt["notify_update_title"]             = "A versão %1 está disponível";
     pt["notify_update_body"]              = "Baixe em Configurações.";
+    pt["hub_title"]                       = "Central de dispositivos";
+    pt["hub_not_connected"]               = "Não conectado";
+    pt["hub_empty_title"]                 = "Nenhum dispositivo";
+    pt["hub_empty_desc"]                  = "Dispositivos Bluetooth emparelhados aparecem aqui.";
+    pt["battery_left_short"]              = "E";
+    pt["battery_right_short"]             = "D";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -675,6 +687,12 @@ void I18nManager::_initTranslations() {
     es["notify_update_setting_desc"]      = "Cuando se publica una versión más nueva en GitHub";
     es["notify_update_title"]             = "La versión %1 está disponible";
     es["notify_update_body"]              = "Descárgala desde Ajustes.";
+    es["hub_title"]                       = "Centro de dispositivos";
+    es["hub_not_connected"]               = "No conectado";
+    es["hub_empty_title"]                 = "Sin dispositivos";
+    es["hub_empty_desc"]                  = "Los dispositivos Bluetooth emparejados aparecen aquí.";
+    es["battery_left_short"]              = "I";
+    es["battery_right_short"]             = "D";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -886,6 +904,12 @@ void I18nManager::_initTranslations() {
     de["notify_update_setting_desc"]      = "Wenn auf GitHub eine neuere Version erscheint";
     de["notify_update_title"]             = "Version %1 ist verfügbar";
     de["notify_update_body"]              = "In den Einstellungen herunterladen.";
+    de["hub_title"]                       = "Gerätezentrale";
+    de["hub_not_connected"]               = "Nicht verbunden";
+    de["hub_empty_title"]                 = "Keine Geräte";
+    de["hub_empty_desc"]                  = "Gekoppelte Bluetooth-Geräte erscheinen hier.";
+    de["battery_left_short"]              = "L";
+    de["battery_right_short"]             = "R";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1097,6 +1121,12 @@ void I18nManager::_initTranslations() {
     fr["notify_update_setting_desc"]      = "Quand une version plus récente paraît sur GitHub";
     fr["notify_update_title"]             = "La version %1 est disponible";
     fr["notify_update_body"]              = "Téléchargez-la depuis les Réglages.";
+    fr["hub_title"]                       = "Centre des appareils";
+    fr["hub_not_connected"]               = "Non connecté";
+    fr["hub_empty_title"]                 = "Aucun appareil";
+    fr["hub_empty_desc"]                  = "Les appareils Bluetooth appairés apparaissent ici.";
+    fr["battery_left_short"]              = "G";
+    fr["battery_right_short"]             = "D";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1308,6 +1338,12 @@ void I18nManager::_initTranslations() {
     ja["notify_update_setting_desc"]      = "GitHubで新しいリリースが公開されたとき";
     ja["notify_update_title"]             = "バージョン %1 が利用可能です";
     ja["notify_update_body"]              = "設定からダウンロードできます。";
+    ja["hub_title"]                       = "デバイスハブ";
+    ja["hub_not_connected"]               = "未接続";
+    ja["hub_empty_title"]                 = "デバイスなし";
+    ja["hub_empty_desc"]                  = "ペアリング済みの Bluetooth デバイスがここに表示されます。";
+    ja["battery_left_short"]              = "L";
+    ja["battery_right_short"]             = "R";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1519,6 +1555,12 @@ void I18nManager::_initTranslations() {
     ru["notify_update_setting_desc"]      = "Когда на GitHub выходит новый релиз";
     ru["notify_update_title"]             = "Доступна версия %1";
     ru["notify_update_body"]              = "Скачать можно в настройках.";
+    ru["hub_title"]                       = "Устройства";
+    ru["hub_not_connected"]               = "Не подключено";
+    ru["hub_empty_title"]                 = "Нет устройств";
+    ru["hub_empty_desc"]                  = "Здесь появятся сопряжённые Bluetooth-устройства.";
+    ru["battery_left_short"]              = "Л";
+    ru["battery_right_short"]             = "П";
 }
 
 } // namespace sony::devicecenter

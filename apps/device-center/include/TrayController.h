@@ -3,6 +3,7 @@
 #include <QIcon>
 #include <QObject>
 #include <QPointer>
+#include <QRect>
 
 class QAction;
 class QMenu;
@@ -39,6 +40,11 @@ public slots:
 
 signals:
     void quitRequested();
+    // Left click: the Device Hub, anchored to the icon (an empty rect when
+    // the shell will not say where the icon is). Double click goes to the
+    // main window and asks the hub to step aside first.
+    void hubToggleRequested(const QRect& iconGeometry);
+    void hubDismissRequested();
 
 private:
     void _buildMenu();

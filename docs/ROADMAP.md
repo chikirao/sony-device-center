@@ -276,14 +276,34 @@ Sony set's quick controls inline. Three PRs, stacked.
   (90 % over HFP), a DualShock and a
   Bluetooth speaker; `SONY_PERIPHERALS_LOG=<file>` dumps every scan.
   11 QtTest cases in `sony-peripheral-tests`, no WinRT involved.
-- [ ] **The hub window** (`feat/device-hub`). `qml/Hub.qml` + `HubWindow`:
-  frameless tool window by the tray icon, 360 px wide, 56 px rows, three to
-  six of them, light/dark from `Theme`, slide+fade honouring
-  `Theme.motionEnabled`, closes on focus loss / Esc. Row: class glyph, name,
-  status ("Connected · LDAC · ANC" for Sony), dot-matrix percentage (three
-  small ones for earbuds), NC / Ambient / Off segment and power for the
-  connected Sony set. Left click on the tray icon opens it; double click the
-  main window; right click the menu. `hub.png` joins the screenshot run.
+- [x] **The hub window** (`feat/device-hub`). `qml/Hub.qml` + `HubWindow`:
+  a frameless `Qt.Tool | WindowStaysOnTop` window created in the main
+  window's engine (so it shares `controller`, `peripherals`, `Theme` and
+  borrows Main.qml's icons and `tr` through a `mainWindow` context
+  property), 360 px wide, 56 px rows, three to six of them (the list
+  scrolls past six), placed by `QSystemTrayIcon::geometry()` with the
+  cursor as fallback and clamped into the screen's available area
+  (`HubWindow::placeNear`, pure and unit-tested for bottom / top / left
+  taskbars), slide+fade through `Theme.motionEnabled`, closed by Esc or by
+  losing focus — but only once it has actually held focus, and a tray click
+  within 350 ms of such a close is the click that closed it, so it does not
+  reopen. Row: class tile (new `earbuds` / `mouse` / `gamepad` /
+  `noiseOff` glyphs in Main.qml), name, status ("Connected · LDAC · ANC"
+  for the active Sony set, "Connected" / "Not connected" otherwise), a
+  dot-matrix percentage (hidden when the OS has no reading; earbuds get
+  "L 81 R 79 CASE 64" inline — three percent signs would have eaten the
+  name column), and for the active Sony set a glyph segment
+  NC / Ambient / Off plus power through the controller's existing
+  invokables. Sony rows open the main window (Overview for the active set,
+  Devices for the rest); footer: "Open Sony Device Center" and a gear to
+  Settings; an empty state when nothing is paired. Tray: left click
+  toggles the hub, double click opens the main window (and sends the hub
+  away first), right click is the menu as before. Screenshots:
+  `SONY_UI_SCREENSHOTS` saves `hub.png` from the app and
+  `hub-<model>-<lang>-{light,dark}.png` plus `hub-empty.png` from the UI
+  tests. Decided along the way: ListView delegates are visual, not
+  QObject, children, so tests walk `childItems()`; the UI test's CTest
+  timeout went 60 → 150 s.
 - [ ] **A tray icon per device** (`feat/tray-per-device`). Main icon as
   today plus one per device with "Show in tray" on; settings card "Device
   Hub" (system devices on/off, poll interval, tray click action); QSettings

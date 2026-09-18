@@ -23,6 +23,7 @@
 #include "HotkeyManager.h"
 #include "EqualizerLibrary.h"
 #include "BluetoothWatcher.h"
+#include "HubWindow.h"
 #include "PeripheralModel.h"
 #include "PeripheralSource.h"
 #include "WindowsToast.h"
@@ -225,6 +226,21 @@ int main(int argc, char *argv[]) {
     engine.load(url);
     if (!engine.rootObjects().isEmpty()) tray.setWindow(qobject_cast<QWindow*>(engine.rootObjects().first()));
 
+    // The Device Hub off the tray icon. It lives in the same engine as the
+    // main window and borrows its icons and translations.
+    sony::devicecenter::HubWindow hub(engine, engine.rootObjects().isEmpty() ? nullptr : engine.rootObjects().first());
+    QObject::connect(&tray, &sony::devicecenter::TrayController::hubToggleRequested, &hub, &sony::devicecenter::HubWindow::toggle);
+    QObject::connect(&tray, &sony::devicecenter::TrayController::hubDismissRequested, &hub, &sony::devicecenter::HubWindow::close);
+    QObject::connect(&hub, &sony::devicecenter::HubWindow::mainWindowRequested, &tray, [&tray, &hub, &engine](int page) {
+        if (page >= 0 && !engine.rootObjects().isEmpty()) engine.rootObjects().first()->setProperty("navIndex", page);
+        hub.close();
+        tray.showWindow();
+    });
+    // Opening the hub is the moment a stale OS list would show; re-read it.
+    QObject::connect(&hub, &sony::devicecenter::HubWindow::visibleChanged, peripheralSource, [peripheralSource](bool visible) {
+        if (visible) peripheralSource->refresh();
+    });
+
     // SONY_UI_SCREENSHOTS=<dir>: walk every page, save a capture of each and
     // quit. Used to review the UI without driving the real mouse.
     const auto shotDir = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
@@ -258,6 +274,10 @@ int main(int argc, char *argv[]) {
                 scrollTo("aboutCard");
             } else if (page == 9) {
                 window->grabWindow().save(QString("%1/page6-about.png").arg(shotDir));
+                // The hub, as it would sit above a bottom taskbar.
+                hub.open(QRect(window->x() + window->width() - 40, window->y() + window->height() - 1, 24, 1));
+            } else if (page == 10) {
+                if (hub.window()) hub.window()->grabWindow().save(QString("%1/hub.png").arg(shotDir));
                 ticker->stop(); app.quit(); return;
             }
             if (page <= 6) window->setProperty("navIndex", page);
