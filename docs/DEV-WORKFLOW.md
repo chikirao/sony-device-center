@@ -1,247 +1,266 @@
-# Dev workflow на Windows — как собирать, запускать и проверять
+# Windows dev workflow — building, running, and testing
 
-Документ для разработки на этой машине. Отличия от веб-разработки в двух
-вещах: **нет hot reload** (изменил → скомпилировал → запустил exe) и **нужен
-тулчейн** (компилятор + Qt), который ставится один раз.
+A guide for developing on Windows. Two things differ from typical web
+development: **there's no hot reload** (edit → compile → run the exe) and
+**a toolchain is required** (compiler + Qt), which you set up once.
 
-## Чем отличается от веба (коротко)
+## How this differs from web dev (short version)
 
-| Веб | Здесь |
+| Web | Here |
 |---|---|
-| `npm install` | Visual Studio 2022 + Qt 6 (один раз) |
-| `npm run dev`, изменения подхватываются сами | `cmake --build build` → запуск `.exe`. Инкрементальная сборка после правки одного файла — 5–30 секунд, первая полная — 5–10 минут |
-| Открыть localhost в браузере | Запустить `build\apps\device-center\sony-device-center.exe` |
-| DevTools / console.log | `qDebug()` / `std::cerr` → в консоль, из которой запущен exe; QML-ошибки туда же |
-| Jest / Vitest | CTest (`ctest --test-dir build`) — готовые тесты протокола, транспорта, IPC, UI-контроллера |
-| Деплой | Установщик собирает GitHub Actions (`release.yml`), локально ставим ничего не нужно — exe запускается прямо из `build/` |
+| `npm install` | Visual Studio 2022 + Qt 6 (once) |
+| `npm run dev`, changes picked up automatically | `cmake --build build` → run the `.exe`. Incremental build after editing one file: 5–30 seconds; first full build: 5–10 minutes |
+| Open localhost in a browser | Run `build\apps\device-center\sony-device-center.exe` |
+| DevTools / console.log | `qDebug()` / `std::cerr` → the console the exe was launched from; QML errors go there too |
+| Jest / Vitest | CTest (`ctest --test-dir build`) — existing tests for protocol, transport, IPC, and the UI controller |
+| Deploy | GitHub Actions (`release.yml`) builds the installer; nothing to install locally — the exe runs straight out of `build/` |
 
-Установленную через MSI версию трогать не надо: dev-сборка живёт в `build/`,
-они не мешают друг другу. Только не запускай обе одновременно — обе хотят
-Bluetooth-соединение с наушниками.
+Leave the MSI-installed version alone: the dev build lives in `build/` and
+the two don't interfere with each other. Just don't run both at once — they
+both want the Bluetooth connection to the headphones.
 
-## 1. Установка тулчейна (один раз)
+## 1. Toolchain setup (once)
 
-Что уже есть:
+What you likely already have if you're on a typical C++/Qt setup:
 - Visual Studio 2022 Community, MSVC 14.35 —
   `C:\Program Files\Microsoft Visual Studio\2022\Community`
-- CMake и Ninja в составе VS —
+- CMake and Ninja, bundled with VS —
   `...\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\{CMake,Ninja}`
 
-Чего нет — **Qt 6**. Ставим тем же способом, что и CI (`jurplel/install-qt-action`
-использует `aqtinstall`), без аккаунта Qt:
+What's missing is **Qt 6**. Install it the same way CI does
+(`jurplel/install-qt-action` uses `aqtinstall` under the hood), no Qt account
+needed:
 
 ```powershell
 pip install aqtinstall
 aqt install-qt windows desktop 6.10.0 win64_msvc2022_64 --outputdir D:\Qt
 ```
 
-Получится `D:\Qt\6.10.0\msvc2022_64`. Базовая установка включает всё, что нужно
-приложению (Core, Gui, Qml, Quick, QuickControls2, Shapes). ~1.5 ГБ.
+This produces `D:\Qt\6.10.0\msvc2022_64`. The base install includes
+everything the app needs (Core, Gui, Qml, Quick, QuickControls2, Shapes).
+~1.5 GB.
 
-Если `6.10.0` не находится — посмотреть доступные:
+If `6.10.0` isn't found, list what's available:
 `aqt list-qt windows desktop`.
 
-## 2. Сборка
+## 2. Building
 
-Всё обёрнуто в `scripts\win-dev.ps1` — он сам поднимает окружение MSVC
-(через `vcvars64.bat`), добавляет Qt в PATH и знает про особенности ниже.
-Запускать из обычного PowerShell в корне репозитория:
+Everything is wrapped in `scripts\win-dev.ps1` — it sets up the MSVC
+environment (via `vcvars64.bat`), puts Qt on `PATH`, and knows about the
+quirks below. Run it from a regular PowerShell at the repo root:
 
 ```powershell
-.\scripts\win-dev.ps1 configure   # один раз, и после правок CMakeLists / смены ветки
-.\scripts\win-dev.ps1 build       # инкрементальная сборка
-.\scripts\win-dev.ps1 test        # ctest (можно передать -R <regex>)
-.\scripts\win-dev.ps1 run         # сборка + windeployqt + запуск GUI
-.\scripts\win-dev.ps1 ctl info    # сборка + sonyctl с аргументами
+.\scripts\win-dev.ps1 configure   # once, and after CMakeLists changes / switching branches
+.\scripts\win-dev.ps1 build       # incremental build
+.\scripts\win-dev.ps1 test        # ctest (you can pass -R <regex>)
+.\scripts\win-dev.ps1 run         # build + windeployqt + launch the GUI
+.\scripts\win-dev.ps1 ctl info    # build + run sonyctl with arguments
 ```
 
-Что скрипт делает за кадром (на случай ручного запуска):
+What the script does under the hood (in case you need to run things
+manually):
 
 - `configure` = `git submodule update --init` + `cmake -B build -G Ninja
-  -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=D:\Qt.10.0\msvc2022_64
-  -DBUILD_TESTING=ON -DSONY_REQUIRE_QT=ON`. Сабмодуль `Client/imgui` нужен
-  legacy-клиенту, без него конфигурация падает.
-- Картинки устройств в `Client/resources/devices` держим не больше 800 px
-  (`python scripts/shrink-device-images.py` после добавления новых): они
-  упаковываются в exe через `qml.qrc`, и с оригиналами по 1.5 МБ MSVC падал
-  с `C1060: out of heap space`.
-- Окружение MSVC берётся из `vcvars64.bat`. `Launch-VsDevShell.ps1` на этой
-  машине не находит `vswhere` и не добавляет `rc.exe` — не использовать.
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=D:\Qt\6.10.0\msvc2022_64
+  -DBUILD_TESTING=ON -DSONY_REQUIRE_QT=ON`. The `Client/imgui` submodule is
+  required by the legacy client; configuration fails without it.
+- Device images in `Client/resources/devices` are kept under 800 px
+  (`python scripts/shrink-device-images.py` after adding new ones): they get
+  packed into the exe via `qml.qrc`, and with 1.5 MB originals MSVC used to
+  fail with `C1060: out of heap space`.
+- The MSVC environment comes from `vcvars64.bat`. `Launch-VsDevShell.ps1`
+  doesn't find `vswhere` on some machines and doesn't add `rc.exe` to `PATH`
+  — don't use it.
 
-Ninja сам понимает, какие файлы изменились. Правка `.cpp` — пересобирается
-один файл и линкуется exe. Правка `.h` — пересобирается всё, что его
-включает. Правка `.qml` — QML упакован в exe через `qml.qrc`, поэтому тоже
-нужна пересборка (пересобирается `qrc_qml.cpp`, ~15 с).
+Ninja figures out on its own which files changed. Editing a `.cpp` rebuilds
+just that file and relinks the exe. Editing a `.h` rebuilds everything that
+includes it. Editing a `.qml` file also needs a rebuild since QML is packed
+into the exe via `qml.qrc` (`qrc_qml.cpp` gets regenerated, ~15 s).
 
-`Release` вместо `Debug` — намеренно: Debug-сборка Qt-приложения заметно
-медленнее стартует, а отладчиком мы почти не пользуемся. Когда понадобится
-пошаговая отладка — отдельная папка `build-debug` с `-DCMAKE_BUILD_TYPE=Debug`.
+`Release` instead of `Debug` is intentional: a Debug build of a Qt app
+starts noticeably slower, and the debugger is rarely used. When step-through
+debugging is needed, use a separate `build-debug` folder with
+`-DCMAKE_BUILD_TYPE=Debug`.
 
-## 3. Запуск
+## 3. Running
 
-Exe нужны Qt DLL. Два варианта:
+The exe needs the Qt DLLs available. Two options:
 
-**A. Добавить Qt в PATH на время сессии** (быстро, для разработки):
+**A. Add Qt to `PATH` for the session** (quick, for development):
 
 ```powershell
 $env:PATH = "D:\Qt\6.10.0\msvc2022_64\bin;$env:PATH"
 .\build\apps\device-center\sony-device-center.exe
 ```
 
-**B. windeployqt** — копирует DLL рядом с exe, получается самодостаточная
-папка как у установленной версии (это же делает `cmake --install`):
+**B. `windeployqt`** — copies the DLLs next to the exe, producing a
+self-contained folder like the installed version (this is also what
+`cmake --install` does):
 
 ```powershell
 D:\Qt\6.10.0\msvc2022_64\bin\windeployqt.exe --qmldir apps\device-center\qml build\apps\device-center\sony-device-center.exe
 ```
 
-После этого exe запускается двойным кликом из Explorer. Делать заново не
-нужно, пока не меняется набор Qt-модулей.
+After this the exe can be double-clicked from Explorer. No need to redo it
+unless the set of Qt modules used changes.
 
-Приложение собрано как GUI-subsystem (`WIN32_EXECUTABLE ON`), поэтому
-консоли у него нет. Чтобы видеть `qDebug`/`std::cerr` — запускать из
-терминала: вывод пойдёт туда. Если не идёт — временно
-`$env:QT_LOGGING_RULES="*.debug=true"` или запускать `sonyctl -v` для
-диагностики протокола.
+The app is built as a GUI subsystem target (`WIN32_EXECUTABLE ON`), so it
+has no console of its own. To see `qDebug`/`std::cerr` output, launch it
+from a terminal — the output goes there. If nothing shows up, try
+`$env:QT_LOGGING_RULES="*.debug=true"` temporarily, or use `sonyctl -v` for
+protocol-level diagnostics.
 
-CLI собирается рядом:
+The CLI builds alongside it:
 
 ```powershell
 .\build\apps\sonyctl\sonyctl.exe info
 .\build\apps\sonyctl\sonyctl.exe -v battery
 ```
 
-На Windows `sonyd` (демон) не работает — IPC не реализован
-(`libs/sony-core/src/IpcServer.cpp`). GUI и `sonyctl` каждый открывают
-Bluetooth напрямую, поэтому **одновременно они не работают**: закрыть GUI
-перед `sonyctl`, и наоборот. Это в roadmap, фаза 5.
+`sonyd` (the daemon) doesn't work on Windows — IPC isn't implemented there
+(`libs/sony-core/src/IpcServer.cpp`). The GUI and `sonyctl` each open
+Bluetooth directly, so **they cannot run at the same time**: close the GUI
+before running `sonyctl`, and vice versa. This is tracked in the roadmap
+(Phase 5).
 
-## 4. Тесты
+## 4. Tests
 
 ```powershell
 .\scripts\win-dev.ps1 test
 ```
 
-Qt-тестам нужны Qt DLL в PATH — скрипт это делает. Голый `ctest` без PATH
-валит `device-controller-worker-integration` с кодом `0xc0000135` (DLL not
-found) — это не баг теста.
+The Qt tests need the Qt DLLs on `PATH` — the script handles that. Running
+bare `ctest` without `PATH` set fails
+`device-controller-worker-integration` with exit code `0xc0000135` (DLL not
+found) — that's not a bug in the test itself.
 
-Что покрыто: кодек фреймов, протоколы V1/V2 на фейковом транспорте (с
-литеральными байтами запросов/ответов), диспетчер уведомлений, IPC (на
-Windows часть пропускается), Qt-контроллер. Наушники для тестов не нужны.
+Coverage: frame codec, V1/V2 protocols against a fake transport (with
+literal request/response bytes), the notification dispatcher, IPC (the
+Windows portion is skipped), the Qt controller. No headphones are needed for
+any of this.
 
-Прогон одного набора: `.\build\tests\sony-protocol-tests.exe`.
+Run a single suite: `.\build\tests\sony-protocol-tests.exe`.
 
-Правило для протокольных фич: сначала снять реальные байты с XM5
-(`sonyctl -v <команда>` печатает hex-дамп фреймов), положить их в тест как
-фикстуру, потом писать реализацию под этот тест.
+Rule for protocol features: capture real bytes from the XM5 first
+(`sonyctl -v <command>` prints a hex dump of the frames), add them to the
+tests as a fixture, then write the implementation against that test.
 
-## 5. Цикл разработки одной фичи
+## 5. Feature development cycle
 
-1. Ветка: `git checkout -b feat/tray-icon`.
-2. Правим код (Claude Code делает это в редакторе / через инструменты).
-3. `cmake --build build --parallel` — компилируется? Ошибки компилятора
-   читаем как ошибки TypeScript, они точные.
-4. `ctest --test-dir build` — ничего не сломали?
-5. Запускаем exe, тыкаем руками с наушниками.
-   Для протокольных фич — сначала `sonyctl`, там проще смотреть байты.
-6. Коммит, PR в свой форк.
+1. Branch: `git checkout -b feat/tray-icon`.
+2. Make the change (an agent can do this directly in the editor / via tools).
+3. `cmake --build build --parallel` — does it compile? Read compiler errors
+   the way you'd read TypeScript errors — they're precise.
+4. `ctest --test-dir build` — did anything break?
+5. Run the exe and try it by hand with the headphones connected.
+   For protocol features, start with `sonyctl` — it's easier to inspect the
+   raw bytes there.
+6. Commit, open a PR against your fork.
 
-Пункты 3–4 Claude Code может гонять сам из чата; пункт 5 (GUI с реальными
-наушниками) — ты, потому что нужен взгляд на экран и уши. Скриншот окна
-можно кинуть в чат.
+Steps 3–4 can be run by an agent from chat; step 5 (GUI with real
+headphones) needs a human, since it requires eyes on the screen and ears on
+the audio. A screenshot of the window can be shared in chat instead of a
+live look.
 
-## 6. Проверка UI без наушников
+## 6. Checking the UI without headphones
 
 ```powershell
 .\scripts\win-dev.ps1 run --simulated
 ```
 
-GUI поднимает встроенный симулятор WH-1000XM5 прямо в процессе (тот же, что у
-`sonyd --simulated`, код в `libs/sony-core/src/SimulatedDevice.cpp`). Он
-отвечает на запросы, применяет SET-команды и шлёт уведомления, так что
-переключатели и слайдеры ведут себя как с настоящими наушниками. Для работы
-над UI, треем и темами — основной режим; наушники нужны только для
-протокольных фич.
+The GUI spins up a built-in WH-1000XM5 simulator in-process (the same one
+used by `sonyd --simulated`, implemented in
+`libs/sony-core/src/SimulatedDevice.cpp`). It answers requests, applies SET
+commands, and sends notifications, so toggles and sliders behave as they
+would with real headphones. This is the main mode for UI, tray, and theme
+work — real headphones are only needed for protocol features.
 
-Симулятор разряжается на 1 % каждые 3 с. Чтобы страница «Батарея» и оценка
-оставшегося времени были заполнены сразу, а не через сутки:
+The simulator drains 1% every 3 seconds. To have the Battery page and the
+remaining-time estimate populated immediately instead of waiting a full day:
 
 ```powershell
 .\scripts\win-dev.ps1 run --simulated --simulated-history
 ```
 
-Флаг заменяет лог батареи симулятора синтетической неделей использования
-(день разряда, вечером зарядка). Логи лежат в
-`%LOCALAPPDATA%\SonyBridge\Sony Device Center\battery-history\<адрес>.json`,
-по файлу на устройство; файл симулятора (`CC-98-8B-00-11-22.json`) можно
-удалять.
+This flag replaces the simulator's battery log with a synthetic week of
+usage (draining during the day, charging in the evening). Logs live in
+`%LOCALAPPDATA%\SonyBridge\Sony Device Center\battery-history\<address>.json`,
+one file per device; the simulator's file
+(`CC-98-8B-00-11-22.json`) can be deleted freely.
 
-`SONY_UI_WINDOW=980x660` вместе с `SONY_UI_SCREENSHOTS` снимает страницы на
-заданном размере окна — так проверяется минимальный размер.
+`SONY_UI_WINDOW=980x660` combined with `SONY_UI_SCREENSHOTS` captures every
+page at a given window size — useful for checking the minimum supported
+size.
 
-### Библиотека EQ-пресетов
+### EQ preset library
 
-`EqualizerLibrary` держит кривые в
+`EqualizerLibrary` stores curves in
 `%LOCALAPPDATA%\SonyBridge\Sony Device Center\equalizer-presets.json`
-(`AppConfigLocation`); формат тот же, что у экспорта — `{"format":
+(`AppConfigLocation`); the format matches the export format — `{"format":
 "sony-device-center-eq", "version": 1, "presets": [{name, clearBass,
-bands[5]}]}`, так что для скриншотов файл можно просто подложить. «Активный»
-пресет вычисляется из состояния наушников (custom-слот `0xa0` + совпадение
-кривой), а не из последнего клика. Тест
-`equalizerLibraryStoresAppliesAndImports` работает во временной папке.
+bands[5]}]}`, so for screenshots you can just drop a file in place. The
+"active" preset is computed from the headphones' current state (custom slot
+`0xa0` plus a curve match), not from the last click. The test
+`equalizerLibraryStoresAppliesAndImports` runs in a temp folder.
 
-### Глобальные хоткеи
+### Global hotkeys
 
-`HotkeyManager` регистрирует сочетания через `RegisterHotKey` без окна, так
-что `WM_HOTKEY` приходит как thread-message и ловится
-`QAbstractNativeEventFilter`. Пока поле захвата в настройках в фокусе,
-регистрации снимаются (`suspend(true)`), иначе уже назначенное сочетание
-сработало бы вместо записи. Чтобы посмотреть карточку с назначенными
-сочетаниями и конфликтом, достаточно положить значения в реестр —
-`HKCU\Software\SonyBridge\SonyDeviceCenter\hotkeys\<action>` с `shortcut`
-(portable-форма Qt, например `Ctrl+Alt+N`) и `enabled`; прогон
-`SONY_UI_SCREENSHOTS` дополнительно сохраняет `page6-hotkeys.png` —
-страницу настроек, прокрученную к этой карточке. Тесты
-(`hotkeyBindingsPersistAndParse`, `hotkeysRouteActionsToController`) работают
-в группе `hotkeys-test` и на Windows дополнительно шлют `WM_HOTKEY` через
-`PostThreadMessage`, не трогая клавиатуру.
+`HotkeyManager` registers key combinations via `RegisterHotKey` without a
+window, so `WM_HOTKEY` arrives as a thread message and is caught by
+`QAbstractNativeEventFilter`. While the capture field in Settings has focus,
+registrations are suspended (`suspend(true)`) — otherwise an already-bound
+combination would fire instead of being recorded. To see the card with
+assigned shortcuts and a conflict, it's enough to write values into the
+registry — `HKCU\Software\SonyBridge\SonyDeviceCenter\hotkeys\<action>` with
+a `shortcut` (Qt's portable form, e.g. `Ctrl+Alt+N`) and `enabled`; a
+`SONY_UI_SCREENSHOTS` run additionally saves `page6-hotkeys.png` — the
+Settings page scrolled to that card. The tests
+(`hotkeyBindingsPersistAndParse`, `hotkeysRouteActionsToController`) run in
+the `hotkeys-test` group and, on Windows, additionally send `WM_HOTKEY` via
+`PostThreadMessage` without touching the keyboard.
 
-### Автоподключение по событию Bluetooth
+### Auto-reconnect on Bluetooth events
 
-`BluetoothWatcher` (только Windows) держит message-only окно и подписку
-`RegisterDeviceNotification` на handle каждого радиомодуля; HCI-событие
-«соединение поднялось» → `DeviceCenterController::wakeConnection()` →
-`DeviceService::wake()` на рабочем потоке (сброс backoff, попытка на
-следующем тике, т.е. ≤ 0,5 с). Если `BluetoothFindFirstRadio` ничего не
-находит (Bluetooth выключен в системе) — доступности нет, работает обычный
-retry; при включении радиомодуля прилетает `DBT_DEVICEARRIVAL` по
-`GUID_BTHPORT_DEVICE_INTERFACE`, и watcher пересканирует. Состояние пишется
-через `qInfo` («Bluetooth link events on/unavailable», «Bluetooth link up:
-<адрес>») — GUI-приложение без консоли, смотреть через DebugView или запуск
-из отладчика. Проверить вживую: выключить наушники, подождать ~30 с (backoff
-дошёл до максимума), включить — приложение должно подключиться через
-секунду-две, а не через полминуты.
+`BluetoothWatcher` (Windows only) holds a message-only window and a
+`RegisterDeviceNotification` subscription on each radio's handle; an HCI
+"connection came up" event triggers
+`DeviceCenterController::wakeConnection()` → `DeviceService::wake()` on the
+worker thread (resets the backoff, retries on the next tick, i.e. ≤ 0.5 s).
+If `BluetoothFindFirstRadio` finds nothing (Bluetooth disabled system-wide),
+there's no availability and the regular retry loop takes over; when a radio
+comes back, a `DBT_DEVICEARRIVAL` for `GUID_BTHPORT_DEVICE_INTERFACE`
+arrives and the watcher rescans. Status is logged via `qInfo` ("Bluetooth
+link events on/unavailable", "Bluetooth link up: <address>") — the GUI app
+has no console, so use DebugView or run under a debugger to see it. To test
+live: turn the headphones off, wait ~30 s (backoff reaches its max), turn
+them back on — the app should reconnect within a second or two, not after
+half a minute.
 
-## 7. Установщик
+## 7. Installer
 
-Локально не нужен. `release.yml` в GitHub Actions при пуше тега `v*`
-собирает exe + NSIS-установщик и выкладывает в Releases форка. Когда
-захочется «поставить себе как нормальное приложение» — `cmake --install build
---prefix C:\Apps\SonyDeviceCenter` даст готовую папку с DLL, без установщика.
+Not needed locally. `release.yml` in GitHub Actions builds the exe + NSIS
+installer and publishes it to the fork's Releases when a `v*` tag is
+pushed. If you want to "install it properly" locally,
+`cmake --install build --prefix C:\Apps\SonyDeviceCenter` produces a ready
+folder with DLLs, no installer required.
 
-## Частые проблемы
+## Common problems
 
-- **`Qt6Config.cmake not found`** — не передан `CMAKE_PREFIX_PATH` или
-  другая версия/путь Qt.
-- **`cl` / `rc` не найден** — запускать через `scripts\win-dev.ps1`, не через Launch-VsDevShell.
-- **`C1060: compiler is out of heap space`** — в `qml.qrc` попали слишком большие картинки; прогнать `scripts/shrink-device-images.py`.
-- **`Cannot find source file: imgui/imgui.cpp`** — не скачан сабмодуль: `git submodule update --init --recursive`.
-- **Exe запускается и сразу закрывается** — не хватает Qt DLL; п. 3.
-- **Белое/пустое окно, в консоли `module "QtQuick.Shapes" is not installed`** —
-  windeployqt запущен без `--qmldir`, или Qt в PATH стоит не первым.
-- **`Bluetooth: connection refused / device busy`** — открыт второй экземпляр
-  (установленная версия, `sonyctl`, или Sound Connect на телефоне держит
-  соединение). Закрыть лишнее.
-- **После смены ветки странные ошибки сборки** — `cmake -B build ...` заново;
-  в крайнем случае удалить `build/`.
+- **`Qt6Config.cmake not found`** — `CMAKE_PREFIX_PATH` wasn't passed, or
+  it points at the wrong Qt version/path.
+- **`cl` / `rc` not found** — run through `scripts\win-dev.ps1`, not
+  `Launch-VsDevShell.ps1`.
+- **`C1060: compiler is out of heap space`** — oversized images ended up in
+  `qml.qrc`; run `scripts/shrink-device-images.py`.
+- **`Cannot find source file: imgui/imgui.cpp`** — the submodule wasn't
+  fetched: `git submodule update --init --recursive`.
+- **The exe launches and immediately closes** — missing Qt DLLs; see
+  section 3.
+- **White/blank window, console shows `module "QtQuick.Shapes" is not
+  installed`** — `windeployqt` was run without `--qmldir`, or a different
+  Qt install is ahead of the right one on `PATH`.
+- **`Bluetooth: connection refused / device busy`** — a second instance is
+  holding the connection (the installed version, `sonyctl`, or the Sound
+  Connect app on a phone). Close whichever one isn't needed.
+- **Odd build errors after switching branches** — rerun `cmake -B build
+  ...`; as a last resort, delete `build/`.

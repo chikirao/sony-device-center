@@ -1,391 +1,424 @@
-# Roadmap — план развития форка
+# Roadmap — fork development plan
 
-Рабочий план: что хотим добавить и в каком порядке. Статусы: `[ ]` не начато,
-`[~]` в работе, `[x]` сделано. Пункты, которые трогают протокол, помечены ⚠ —
-для них действует правило из `PROMPT.md`: сначала проверить ответ устройства
-через `sonyctl`, добавить фикстуру с реальными байтами в тесты, и только потом
-менять поведение приложения.
+Working plan: what to add, and in what order. Status markers: `[ ]` not
+started, `[~]` in progress, `[x]` done. Items that touch the protocol are
+marked ⚠ — for those, the rule from `PROMPT.md` applies: verify the device's
+actual response via `sonyctl` first, add a fixture with the real bytes to
+the tests, and only then change application behavior.
 
-Референс-устройство для верификации: **WH-1000XM5** (протокол V2, Windows).
-Как собирать и запускать — `docs/DEV-WORKFLOW.md`.
+Reference device for verification: **WH-1000XM5** (protocol V2, Windows).
+For build/run instructions, see `docs/DEV-WORKFLOW.md`.
 
-Опкоды ниже взяты из community reverse-engineering протокола Sony
-(SonyHeadphonesClient / mdr-protocol и т.п.). Они не проверены на нашем железе,
-пока рядом не стоит «✅ verified».
-
----
-
-## Фаза 0 — быстрые фиксы
-
-- [x] **`--simulated` для GUI на Windows.** `sonyd --simulated` на Windows
-  недоступен (нет IPC), а у GUI своего симулятора нет — UI нельзя проверить
-  без наушников. Добавить флаг, подставляющий `FakeTransport` в
-  `DeviceBackend`. Нужен для всей работы над UI, треем и темами.
-- [x] **Тяжёлый `qrc_qml.cpp`.** Было 21 МБ PNG → 110 МБ C++-файл, MSVC
-  падал по памяти. Картинки ужаты до 800 px (`scripts/shrink-device-images.py`),
-  файл стал 24 МБ, полная сборка на всех ядрах — 111 с без обходов.
-- [x] **Иконка Windows-exe.** `apps/device-center/CMakeLists.txt` собирает exe
-  без ресурсного `.rc`, поэтому у `sony-device-center.exe`, панели задач и
-  ярлыка из инсталлятора нет иконки (`.ico` сейчас используется только для
-  самого NSIS-инсталлятора). Добавить `packaging/windows/app.rc` с
-  `IDI_ICON1 ICON "sony-device-center.ico"` и подключить его к target под `WIN32`.
-- [x] **Раздельная батарея L/R/кейс в UI.** Данные уже есть в `BatteryState`
-  (`left`, `right`, `caseBattery`), показ отложен (см. `technical-debt.md`).
-- [x] **Коалесценция слайдеров.** Пока команда в полёте, промежуточные значения
-  Ambient level / EQ дропаются. Запоминать последнее желаемое значение и
-  отправлять его, когда предыдущая операция завершилась.
-- [x] **Power Off из приложения** ⚠. V2 — `0x24 0x03 0x01` ✅ verified на
-  WH-1000XM5 (2026-09-16). V1 — `0x22 0x00 0x01` по Gadgetbridge, на железе не
-  проверено. `sonyctl power off` + красная кнопка на Overview. В трей — вместе
-  с треем (Фаза 1).
+The opcodes below are taken from community reverse-engineering of the Sony
+protocol (SonyHeadphonesClient / mdr-protocol, etc.). They are not verified
+against our hardware until marked "✅ verified".
 
 ---
 
-## Фаза 1 — Desktop-удобства (без изменений протокола)
+## Phase 0 — quick fixes
 
-- [x] **Русский язык интерфейса.** Заодно вытащены все ~65 зашитых в QML
-  строк в ключи — до этого «переводилось» только меню и настройки, теперь
-  переводится всё на всех 7 языках.
-- [x] **Трей-иконка** (`QSystemTrayIcon`, `apps/device-center/src/TrayController.cpp`).
-  Кольцо батареи с цифрой (зелёное / красное <20% / синее при зарядке /
-  серое offline), меню NC / Ambient / Off / Speak-to-Chat / Выключить /
-  Открыть / Выход, закрытие окна → трей (настройка), автозапуск с
-  `--minimized`. Приложение переведено на `QApplication` + QtWidgets.
-- [x] **Системные уведомления** (`NotificationController`). Низкий заряд
-  (порог 10–30%, повтор на 10%), подключено/отключено, зарядка завершена;
-  каждое отключаемо в Settings. На Windows — нативные WinRT toast'ы
-  (`WindowsToast.cpp`, регистрация AppUserModelID в HKCU), потому что
-  balloon-уведомления `QSystemTrayIcon::showMessage` Windows 11 молча
-  отбрасывает; на других платформах — balloon через трей.
-- [x] **Глобальные хоткеи** (`HotkeyManager`, карточка «Горячие клавиши» в
-  настройках). NC↔Ambient, Off, Speak-to-Chat, «Показать окно»; по умолчанию
-  выключены, сочетания в `QSettings` (`hotkeys/<action>/{enabled,shortcut}`),
-  срабатывание идёт через `DeviceCenterController` как из трея плюс toast
-  (переключатель «Отклик на хоткеи» в уведомлениях). Пока только Windows
-  (`RegisterHotKey` + `QAbstractNativeEventFilter`); на Linux/macOS карточка
-  говорит «недоступно». Дальше: Linux/X11 `XGrabKey`, Wayland только через
-  портал.
-- [x] **Библиотека пользовательских EQ-пресетов** (`EqualizerLibrary`, ряд
-  «Мои пресеты» на странице эквалайзера). В наушниках один custom-слот, на
-  ПК — сколько угодно кривых с именами в
-  `AppConfigLocation/equalizer-presets.json`. Пилюля подсвечена, пока слот
-  несёт ровно эту кривую; правый клик — переименовать / перезаписать /
-  экспорт / удалить; импорт и экспорт — JSON того же формата через
-  `QFileDialog`.
-- [x] **История батареи** (`BatteryHistory`, вкладка «Батарея»). Точка на
-  каждое изменение уровня/зарядки плюс отметки подключения; JSON по файлу на
-  устройство в `AppLocalDataLocation/battery-history/`, 180 дней. Оценка —
-  по скорости разряда текущей сессии (с момента снятия с зарядки; короткий
-  обрыв связи или перезапуск приложения на том же уровне сессию не рвут),
-  «—» пока нет ≥2 % падения и ≥5 мин; в чипе Overview и тултипе трея.
-  Починено по реальному логу XM5 (`fix/battery-history-card`): скорость
-  считается только между двумя *изменениями* уровня (маркеры подключения —
-  не граница процента), достаточно 1 % и 5 мин; перезапуск приложения при
-  том же или правдоподобно упавшем уровне (≤15 %/ч, разрыв ≤6 ч) продолжает
-  сессию, рост уровня — новая сессия (XM5 не играет на зарядке, зарядки в
-  логе нет); скорость <1 %/ч не показывается. Пока оценки нет, карточка
-  пишет «Пока мало данных» вместо пустых «•••••». Фикстура — лог XM5 в
-  `BatteryHistoryTests`.
-  График на QML `Canvas` (без QtCharts), 24 ч / 7 дней. Для симулятора —
-  `--simulated-history`. Решено: JSON, а не Qt Sql — без нового модуля и
-  плагина в инсталляторе.
-- [x] **`sonyctl --json`** (`CliRequest` в sony-core). Слова команды
-  превращаются в тот же типизированный JSON-запрос, что шлёт GUI, ответ
-  печатается одной строкой (`{"version":1,"ok":true,"data":…}` или
-  `error`), код выхода 0/1; `battery`, `eq get`, `status` печатают только
-  свой объект. Заодно в CLI появились `stc`, `adaptive`, `connect`,
-  `disconnect` — они идут через типизированный путь и в текстовом режиме.
-  Legacy-парсер и его прозу не трогали (см. «Typed CLI output» в
+- [x] **`--simulated` for the GUI on Windows.** `sonyd --simulated` isn't
+  available on Windows (no IPC), and the GUI had no simulator of its own —
+  the UI couldn't be checked without headphones. Added a flag that swaps in
+  `FakeTransport` inside `DeviceBackend`. Needed for all UI, tray, and theme
+  work.
+- [x] **Bloated `qrc_qml.cpp`.** 21 MB of PNGs turned into a 110 MB C++
+  file, and MSVC ran out of memory. Images shrunk to 800 px
+  (`scripts/shrink-device-images.py`); the file dropped to 24 MB, and a full
+  build on all cores now takes 111 s with no workarounds.
+- [x] **Windows exe icon.** `apps/device-center/CMakeLists.txt` built the
+  exe without a resource `.rc`, so `sony-device-center.exe`, the taskbar,
+  and the installer shortcut had no icon (the `.ico` was only used for the
+  NSIS installer itself). Added `packaging/windows/app.rc` with
+  `IDI_ICON1 ICON "sony-device-center.ico"` and wired it into the target
+  under `WIN32`.
+- [x] **Separate L/R/case battery in the UI.** The data already existed in
+  `BatteryState` (`left`, `right`, `caseBattery`); display was deferred (see
   `technical-debt.md`).
-- [x] **Автоподключение при появлении наушников** (`BluetoothWatcher` +
-  `DeviceService::wake()`). Windows: message-only окно с
-  `RegisterDeviceNotification` на каждый радиомодуль ловит HCI-события
-  подключения (`GUID_BLUETOOTH_HCI_EVENT`); любое поднявшееся соединение
-  сбрасывает backoff и следующий тик пробует подключиться сразу, а не через
-  1…30 с. Радиомодули пересканируются при их появлении/исчезновении
-  (Bluetooth выключили-включили, донгл). Периодический retry остаётся как
-  запасной путь и единственный на Linux/macOS. Upstream PR #53 (Windows:
-  показывать спаренные, но не подключённые) и #52 (только Sony в discovery)
-  по-прежнему открыты — не дублировали.
-- [x] **Проверка обновлений** (`UpdateChecker`, ветка `feat/update-check`).
-  При запуске (через 1,5 с, если включено «Проверять обновления при
-  запуске», по умолчанию да) и по кнопке в Settings — один GET
-  `api.github.com/repos/chikirao/sony-device-center/releases/latest` через
-  `QNetworkAccessManager` с таймаутом 5 с; тег сравнивается с
-  `SONY_DEVICE_CENTER_VERSION` по semver (префикс `v`, pre-release раньше
-  финала, 0.2.1 < 0.2.10). Карточка «О приложении»: статус + «Скачать»
-  (ассет `-win64.msi` / `-macOS.dmg` / `-Linux.deb` для текущей платформы)
-  и «Страница релиза», либо «Проверить»; toast при находке, если включён
-  новый переключатель «Новая версия» в уведомлениях (один раз на версию).
-  Оффлайн / 403 rate-limit / 404 — тихо «Не удалось проверить». HTTP за
-  интерфейсом `ReleaseFetcher`; тесты (`sony-update-checker-tests`, 14) на
-  подменённых ответах, сети в тестах нет. `--simulated-update <версия>`
-  подкладывает ответ для скриншотов. Заодно карточка «О приложении» перестала
-  вылезать за край на 980 px (колонки фактов делят ширину и переносятся).
+- [x] **Slider coalescing.** While a command was in flight, intermediate
+  Ambient level / EQ values were dropped. Now the last desired value is
+  remembered and sent once the previous operation completes.
+- [x] **Power Off from the app** ⚠. V2 — `0x24 0x03 0x01` ✅ verified on
+  WH-1000XM5 (2026-09-16). V1 — `0x22 0x00 0x01` per Gadgetbridge, not
+  verified on hardware. `sonyctl power off` plus a red button on the
+  Overview page. Tray integration ships together with the tray icon
+  (Phase 1).
 
 ---
 
-## Фаза 2 — Редизайн (делается в Codex)
+## Phase 1 — Desktop conveniences (no protocol changes)
 
-Цель — новый визуальный язык по макетам (положить PNG в `docs/design/`):
-светлая рабочая область + чёрный сайдбар, крупные числа и заголовки
-«точечным» дисплейным шрифтом (dot-matrix), плоские карточки с тонкой
-рамкой, без градиентов и свечений. Текущая тёмная тема остаётся как
-альтернатива.
+- [x] **Russian UI language.** As part of this, all ~65 strings that were
+  hardcoded in QML were pulled out into translation keys — previously only
+  the menu and settings were "translated"; now everything is translated
+  across all 7 languages.
+- [x] **Tray icon** (`QSystemTrayIcon`,
+  `apps/device-center/src/TrayController.cpp`). A battery ring with a
+  number (green / red <20% / blue while charging / gray when offline), a
+  menu with NC / Ambient / Off / Speak-to-Chat / Power Off / Open / Quit,
+  window close → minimize to tray (configurable), autostart with
+  `--minimized`. The app switched to `QApplication` + QtWidgets for this.
+- [x] **System notifications** (`NotificationController`). Low battery
+  (10–30% threshold, repeats at 10%), connected/disconnected, charging
+  complete; each toggleable in Settings. On Windows these are native WinRT
+  toasts (`WindowsToast.cpp`, registering an AppUserModelID in `HKCU`),
+  because Windows 11 silently drops
+  `QSystemTrayIcon::showMessage` balloon notifications; other platforms use
+  the tray balloon.
+- [x] **Global hotkeys** (`HotkeyManager`, a "Hotkeys" card in Settings).
+  NC↔Ambient, Off, Speak-to-Chat, "Show window"; disabled by default,
+  bindings stored in `QSettings`
+  (`hotkeys/<action>/{enabled,shortcut}`), triggering routes through
+  `DeviceCenterController` the same way the tray menu does, plus a toast
+  (a "Hotkey feedback" toggle in notifications). Windows only for now
+  (`RegisterHotKey` + `QAbstractNativeEventFilter`); the card reads
+  "unavailable" on Linux/macOS. Next steps: Linux/X11 `XGrabKey`, Wayland
+  only via a portal.
+- [x] **Custom EQ preset library** (`EqualizerLibrary`, a "My presets" row
+  on the equalizer page). The headphones have exactly one custom slot; on
+  the PC side, any number of named curves can be stored in
+  `AppConfigLocation/equalizer-presets.json`. The active pill is
+  highlighted only while the slot actually holds that exact curve;
+  right-click gives rename / overwrite / export / delete; import and export
+  use the same JSON format through `QFileDialog`.
+- [x] **Battery history** (`BatteryHistory`, the "Battery" tab). A data
+  point on every level/charging change, plus connection markers; JSON, one
+  file per device, in `AppLocalDataLocation/battery-history/`, retained for
+  180 days. The estimate is based on the current session's drain rate
+  (starting from when it was taken off the charger; a brief disconnect or
+  app restart at the same level doesn't break the session), shown as "—"
+  until there's been at least a 2% drop over at least 5 minutes; surfaced in
+  the Overview chip and the tray tooltip. Fixed against a real XM5 log
+  (`fix/battery-history-card`): the rate is only computed between two level
+  *changes* (connection markers don't count as a percentage boundary), 1%
+  and 5 minutes is enough; restarting the app at the same or a plausibly
+  lower level (≤15%/h, gap ≤6h) continues the session, while a level
+  increase starts a new one (the XM5 doesn't play while charging, so there's
+  no charging entry in the log); rates below 1%/h aren't shown. Until an
+  estimate exists, the card reads "Not enough data yet" instead of empty
+  "•••••". Fixture: a real XM5 log used in `BatteryHistoryTests`. The chart
+  is drawn on QML `Canvas` (no QtCharts), 24h / 7-day views. For the
+  simulator, see `--simulated-history`. Chose JSON over Qt Sql deliberately
+  — avoids a new module and installer plugin.
+- [x] **`sonyctl --json`** (`CliRequest` in sony-core). CLI command words
+  are turned into the same typed JSON request the GUI sends, and the
+  response is printed as a single line
+  (`{"version":1,"ok":true,"data":…}` or `error`), exit code 0/1;
+  `battery`, `eq get`, `status` print just their own object. This also
+  brought `stc`, `adaptive`, `connect`, `disconnect` to the CLI — they go
+  through the typed path and work in text mode too. The legacy parser and
+  its prose output were left alone (see "Typed CLI output" in
+  `technical-debt.md`).
+- [x] **Auto-connect when headphones appear** (`BluetoothWatcher` +
+  `DeviceService::wake()`). Windows: a message-only window with
+  `RegisterDeviceNotification` on each radio catches HCI connection events
+  (`GUID_BLUETOOTH_HCI_EVENT`); any connection coming up resets the backoff
+  and the next tick tries to connect right away instead of waiting 1…30 s.
+  Radios are rescanned as they appear/disappear (Bluetooth toggled off and
+  on, a dongle plugged in). The periodic retry loop remains as a fallback,
+  and is the only path on Linux/macOS. Upstream PR #53 (Windows: show
+  paired-but-not-connected devices) and #52 (Sony-only discovery) are still
+  open — not duplicated here.
+- [x] **Update check** (`UpdateChecker`, branch `feat/update-check`). On
+  launch (after 1.5 s, if "Check for updates on startup" is enabled, which
+  it is by default) and via a Settings button — a single GET to
+  `api.github.com/repos/chikirao/sony-device-center/releases/latest`
+  through `QNetworkAccessManager` with a 5 s timeout; the tag is compared
+  against `SONY_DEVICE_CENTER_VERSION` using semver rules (`v` prefix,
+  pre-release ranks below the final release, 0.2.1 < 0.2.10). The "About"
+  card shows status plus "Download" (the `-win64.msi` / `-macOS.dmg` /
+  `-Linux.deb` asset for the current platform) and "Release page", or
+  "Check now"; a toast fires on finding a new version if the "New version"
+  notification toggle is enabled (once per version). Offline / 403
+  rate-limit / 404 all quietly resolve to "Couldn't check". HTTP sits
+  behind a `ReleaseFetcher` interface; tests
+  (`sony-update-checker-tests`, 14 of them) run against stubbed responses,
+  no real network calls. `--simulated-update <version>` injects a canned
+  response for screenshots. Also fixed the "About" card overflowing at
+  980 px (fact columns now share width and wrap).
 
-Что на макетах:
-- **Шапка** на каждой странице: eyebrow «CONNECTED DEVICE», имя модели
-  dot-matrix, подпись, три чипа с иконкой — CODEC / BATTERY / SOUND MODE.
-- **Home:** большая карточка режима (заголовок dot-matrix + описание +
-  три кнопки NC / Ambient / Off) с фото наушников; снизу три карточки:
-  Battery & Connection (процент + прогресс-бар, статус Bluetooth, кодек),
-  Current Session (время прослушивания, средняя громкость), Quick Actions
-  (Open Equalizer, Device Switcher).
-- **Sound Modes:** сегментный переключатель на всю ширину; слайдер Ambient
-  0–20 с dot-matrix значением; Focus on Voice; карточка Environment (Office
-  / Low noise / Indoor / Few people); ряд «Suggested for you» (Focus /
+---
+
+## Phase 2 — Redesign (done in Codex)
+
+Goal: a new visual language following mockups (dropped into
+`docs/design/`): light workspace + black sidebar, large numbers and
+headings in a dot-matrix display font, flat cards with a thin border, no
+gradients or glows. The current dark theme remains as an alternative.
+
+What the mockups show:
+- **Header** on every page: an eyebrow "CONNECTED DEVICE", the model name
+  in dot-matrix, a subtitle, three icon chips — CODEC / BATTERY / SOUND MODE.
+- **Home:** a large mode card (dot-matrix heading + description + three
+  buttons NC / Ambient / Off) with a headphone photo; below it, three cards:
+  Battery & Connection (percentage + progress bar, Bluetooth status, codec),
+  Current Session (listening time, average volume), Quick Actions (Open
+  Equalizer, Device Switcher).
+- **Sound Modes:** a full-width segmented control; an Ambient slider 0–20
+  with a dot-matrix value; Focus on Voice; an Environment card (Office /
+  Low noise / Indoor / Few people); a "Suggested for you" row (Focus /
   Commute / Work / Exercise).
-- **Equalizer:** ряд пресетов-пилюль; 5 вертикальных полос с сеткой дБ;
-  Clear Bass слайдер с dot-matrix значением; карточка Active Preset с
-  описанием и кнопкой «Save as Custom».
+- **Equalizer:** a row of preset pills; 5 vertical bars over a dB grid;
+  Clear Bass slider with a dot-matrix value; an Active Preset card with a
+  description and a "Save as Custom" button.
 
-Что из макетов требует данных, которых пока нет (сделать заглушки или
-скрыть до соответствующей фазы): Current Session — время и громкость
-(Фаза 3, playback/volume); Environment — на XM5 это телефонное Adaptive
-Sound Control, в протоколе недоступно, оставить декоративным или убрать;
-Suggested / сцены — Фаза «будущее»; Save as Custom — библиотека EQ (Фаза 1).
+Mockup elements that need data we don't have yet (stub out or hide until the
+relevant phase lands): Current Session — time and volume (Phase 3,
+playback/volume); Environment — on the XM5 this is the phone app's Adaptive
+Sound Control, unavailable over the protocol, so leave it decorative or
+remove it; Suggested / scenes — "future" phase; Save as Custom — EQ library
+(Phase 1, already done).
 
-Технически:
-- [x] **Extract Main.qml into components and pages.** Six pages, Sidebar and
-  eleven reusable controls; explicit window dependency, unchanged dark styling.
-  QML loading checks cover both simulated models, en/ru and both window sizes
-  (upstream #21).
-- [x] **Theme singleton.** Dark/light palettes, runtime system theme selection,
-  persisted appearance settings, reduced motion and optional MSAA icon smoothing.
-- [x] **Шрифты.** Manrope (OFL, `assets/fonts/Manrope/`, статические
-  начертания собраны из variable-шрифта Google Fonts через fontTools) —
-  основной шрифт с кириллицей, регистрируется в `main.cpp` и ставится
-  шрифтом приложения; кана падает на системный шрифт по глифам. Space
-  Grotesk отклонён: без кириллицы. Точечный текст (имя устройства, режим,
-  проценты, кодек) рисует свой компонент `DotText` на Canvas по таблице
-  5×7 в `qml/DotGlyphs.js`: латиница, цифры, кириллица, знаки; диакритика
-  снимается нормализацией, для остального (кана) — fallback на жирный
-  Manrope. Появление — слева направо с разбросом по точкам, соседние табло
-  запускаются с небольшой задержкой (`delay`). Значения у ползунков —
-  `DotValue`: клик по числу открывает ввод с клавиатуры. Doto/«Doto RU
-  Draft» не понадобились. **Не использовать** FontStruct-шрифты вроде
-  «Nothing Font (5x7)» (EULA запрещает распространение) и выгрузки
-  фирменных шрифтов Nothing (Ndot-55/57, NType-82) — они проприетарные.
-- [x] **Логотип.** Точечная «S» (20 точек) — `BrandMark.qml`, `assets/mark.svg`,
-  `assets/app-icon.svg`; растровые иконки (png/ico) пересобраны из тех же
-  координат. macOS `.icns` пересобирать через `packaging/generate-icons.sh`.
-- [x] **Оболочка по референсам.** Тёмный сайдбар + светлая рабочая область,
-  общий заголовок устройства с тремя чипами (кодек, батарея, режим), плоские
-  карточки с hairline-рамкой, чёрные активные кнопки, монохромная палитра в
-  обеих темах. Home / Sound Modes / Equalizer / Features собраны по макетам;
-  Battery, Devices, Settings переведены на те же компоненты.
-  Без увеличенного межбуквенного интервала — нигде.
-- [x] `SONY_UI_SCREENSHOTS=<dir>` — приложение само проходит все страницы,
-  сохраняет `pageN.png` и выходит (для ревью без мыши). Включает basic
-  render loop, чтобы анимации шли и у перекрытого окна.
-- [x] Canvas графика батареи: шрифт берётся из `Qt.application.font`, а не
-  `sans-serif` — иначе первое открытие вкладки заполняло базу шрифтов
-  Windows и вешало UI на ~0,8 с.
+Technical work:
+- [x] **Extract Main.qml into components and pages.** Six pages, a Sidebar,
+  and eleven reusable controls; explicit window dependency, unchanged dark
+  styling. QML loading checks cover both simulated models, en/ru, and both
+  window sizes (upstream #21).
+- [x] **Theme singleton.** Dark/light palettes, runtime system theme
+  selection, persisted appearance settings, reduced motion, and optional
+  MSAA icon smoothing.
+- [x] **Fonts.** Manrope (OFL, `assets/fonts/Manrope/`, static weights
+  built from the Google Fonts variable font via fontTools) — the primary
+  font, includes Cyrillic, registered in `main.cpp` and set as the app
+  font; kana falls back to the system font by glyph coverage. Space Grotesk
+  was rejected — no Cyrillic support. Dot-matrix text (device name, mode,
+  percentages, codec) is drawn by a custom `DotText` component on Canvas
+  from a 5×7 table in `qml/DotGlyphs.js`: Latin, digits, Cyrillic,
+  punctuation; diacritics are stripped via normalization, everything else
+  (kana) falls back to bold Manrope. Glyphs appear left-to-right with a
+  scatter across the dots, and neighboring displays start with a small
+  delay. Slider values use `DotValue`: clicking the number opens keyboard
+  entry. Doto / "Doto RU Draft" weren't needed in the end. **Do not use**
+  FontStruct fonts like "Nothing Font (5x7)" (its EULA forbids
+  redistribution) or Nothing's proprietary brand fonts (Ndot-55/57,
+  NType-82).
+- [x] **Logo.** A dot-matrix "S" (20 dots) — `BrandMark.qml`,
+  `assets/mark.svg`, `assets/app-icon.svg`; raster icons (png/ico) rebuilt
+  from the same coordinates. Rebuild the macOS `.icns` via
+  `packaging/generate-icons.sh`.
+- [x] **Shell following the mockups.** Dark sidebar + light workspace, a
+  shared device header with three chips (codec, battery, mode), flat cards
+  with a hairline border, black active buttons, a monochrome palette in
+  both themes. Home / Sound Modes / Equalizer / Features rebuilt from the
+  mockups; Battery, Devices, Settings ported to the same components. No
+  extra letter-spacing anywhere.
+- [x] `SONY_UI_SCREENSHOTS=<dir>` — the app walks through every page on its
+  own, saves `pageN.png`, and exits (for review without a mouse). Enables a
+  basic render loop so animations run even for an occluded window.
+- [x] Battery chart on Canvas: the font now comes from
+  `Qt.application.font` instead of `sans-serif` — using `sans-serif`
+  triggered a full Windows font enumeration on first opening the tab and
+  froze the UI for ~0.8 s.
 - [x] **Theme selector in Settings**, including `Qt.styleHints.colorScheme`.
-- [x] Все новые строки — через `window.tr` и `scripts/i18n-add-keys.py`
-  (проверено grep-ом по QML: захардкожены только бренды и значения).
-- [x] Проверено на `--simulated-model WF-1000XM5`, ru, 980×660
-  (`SONY_UI_WINDOW=980x660` в прогоне скриншотов). Эквалайзер с рядом
-  пресетов стал прокручиваемым, полосы держат минимум 320 px. Остались
-  мелочи на минимальном размере, в бэклог: в «Обзоре» у вкладышей обрезаются
-  значения карточек «Батарея и связь» / «История батареи», подпись
-  «Близко к лицу» налезает на картинку; на «Батарее» подписи оси X
-  («Сейчас») наезжают на соседние.
-- [x] «Быстрые действия» на 980 px (`fix/pill-button-overflow`): «Открыть
-  эквалайзер» вылезал за кнопку. Карточка получила `Layout.minimumWidth` от
-  своих кнопок (соседние карточки уступают — они и так элидят), веса ряда
-  6/5/4 переведены в пиксели 300/250/200, потому что минимум рядом с
-  «весом 4» ломал пропорции; подпись `PillButton` теперь `fillWidth` +
-  elide — сжатая кнопка обрезает текст многоточием, а не вылезает.
-- [x] Страница «Устройства» (`fix/device-switcher-layout`): кнопки
-  «Активно»/«Подключить» ездили, потому что колонка имени была ограничена
-  своей implicit-шириной (Text без `fillWidth` → max = preferred), и остаток
-  строки оставался справа от кнопки. Теперь имя и адрес `fillWidth` + elide,
-  кнопка прижата к правому краю, ширина колонки кнопок — максимум из
-  implicitWidth обоих лейблов (скрытые PillButton-«пробы», минимум 120),
-  без magic-number. Заодно: карточка текущего устройства отдельно, список
-  остальных, пустое состояние, кнопка «Обновить» (`refreshDiscoveredDevices`
-  наконец используется), Flickable для длинных списков; симулятор
-  подкладывает два «спаренных» устройства, чтобы список было на чём смотреть.
+- [x] All new strings go through `window.tr` and
+  `scripts/i18n-add-keys.py` (verified by grepping QML: only brand names and
+  raw values are hardcoded).
+- [x] Checked on `--simulated-model WF-1000XM5`, ru, 980×660
+  (`SONY_UI_WINDOW=980x660` for the screenshot run). The equalizer's preset
+  row is now scrollable, and the bars keep a 320 px minimum. A few rough
+  edges remain at the minimum window size, tracked in the backlog: on
+  Overview, values in the "Battery & Connection" / "Battery History" chip
+  labels get clipped, and the "Close to face" label overlaps the artwork; on
+  the Battery page, the X-axis "Now" label overlaps its neighbor.
+- [x] "Quick Actions" at 980 px (`fix/pill-button-overflow`): "Open
+  Equalizer" overflowed its button. The card got a `Layout.minimumWidth`
+  derived from its own buttons (neighboring cards yield — they already
+  elide), and the row weights 6/5/4 were converted to fixed pixels
+  300/250/200, since a minimum next to a "weight 4" column broke the
+  proportions; `PillButton`'s label is now `fillWidth` + elide, so a
+  squeezed button truncates its text with an ellipsis instead of
+  overflowing.
+- [x] Devices page (`fix/device-switcher-layout`): the "Active"/"Connect"
+  buttons drifted because the name column was constrained to its implicit
+  width (a `Text` without `fillWidth` caps at its preferred width), leaving
+  the rest of the row to the right of the button. Now the name and address
+  are `fillWidth` + elide, the button is pinned to the right edge, and the
+  button column's width is the max implicit width of both labels (via
+  hidden `PillButton` "probes", 120 px minimum) — no magic number. Also
+  added: the current device gets its own card, the rest are listed
+  separately, an empty state, a "Refresh" button (finally using
+  `refreshDiscoveredDevices`), and a `Flickable` for long lists; the
+  simulator now seeds two "paired" devices so there's something to look at
+  in the list.
 
-Апстрим ориентирован на тёмную тему и Linux; редизайн — для форка, в
-апстрим отдаём только вынос компонентов и `Theme`, если он захочет.
+Upstream targets the dark theme and Linux; the redesign is fork-specific —
+only the component extraction and `Theme` singleton are offered upstream,
+if the maintainer wants them.
 
 ---
 
-## Фаза 3 — Функции протокола V2 ⚠
+## Phase 3 — Protocol V2 features ⚠
 
-Порядок по ценности для владельца XM5. Для каждой: `sonyctl`-команда →
-проверка на железе → фикстура → `IProtocol` + `DeviceState` +
-`DeviceEventDispatcher` (уведомления) → IPC JSON → UI.
+Ordered by value to an XM5 owner. For each item: `sonyctl` command →
+verify on hardware → fixture → `IProtocol` + `DeviceState` +
+`DeviceEventDispatcher` (notifications) → IPC JSON → UI.
 
-### 3.1 Multipoint / управление подключениями ⭐⭐⭐
-- [ ] Список спаренных устройств с именами и статусом «подключено».
-- [ ] Подключить / отключить конкретное устройство (переключить источник
-  с телефона на ПК и обратно).
-- [ ] Включить режим сопряжения.
-- Команды: `0x36` GET / `0x37` RET / `0x38` SET / `0x39` NTFY (PERI_*);
-  типы: pairing device management (`0x00`/`0x01`), source switch (`0x02`).
-- Уведомления `0x39` нужно парсить в `DeviceEventDispatcher`.
+### 3.1 Multipoint / connection management ⭐⭐⭐
+- [ ] List of paired devices with names and "connected" status.
+- [ ] Connect / disconnect a specific device (switch the source between
+  phone and PC).
+- [ ] Enable pairing mode.
+- Commands: `0x36` GET / `0x37` RET / `0x38` SET / `0x39` NTFY (PERI_*);
+  types: pairing device management (`0x00`/`0x01`), source switch (`0x02`).
+- `0x39` notifications need to be parsed in `DeviceEventDispatcher`.
 
-### 3.2 Playback, Now Playing, громкость ⭐⭐⭐
+### 3.2 Playback, Now Playing, volume ⭐⭐⭐
 - [ ] Play / Pause / Next / Prev.
-- [ ] Метаданные трека (название, исполнитель, альбом, статус).
-- [ ] Громкость наушников (чтение/запись).
-- Команды: `0xa2` GET / `0xa3` RET / `0xa4` SET / `0xa5` NTFY;
-  типы: `0x01` playback controller, `0x20` music volume.
+- [ ] Track metadata (title, artist, album, status).
+- [ ] Headphone volume (read/write).
+- Commands: `0xa2` GET / `0xa3` RET / `0xa4` SET / `0xa5` NTFY;
+  types: `0x01` playback controller, `0x20` music volume.
   Play=1, Pause=2, Next=3, Prev=4.
-- Уведомления `0xa5` → `DeviceEventDispatcher`, плюс отображение в трее.
+- `0xa5` notifications → `DeviceEventDispatcher`, plus tray display.
 
-### 3.3 Поведение кнопок ⭐⭐⭐
-- [ ] Какие режимы перебирает кнопка NC/AMB (NC↔Ambient, NC↔Ambient↔Off).
-- [ ] Назначение кнопки: Ambient control vs голосовой ассистент vs Quick
+### 3.3 Button behavior ⭐⭐⭐
+- [ ] Which modes the NC/AMB button cycles through (NC↔Ambient,
+  NC↔Ambient↔Off).
+- [ ] Button assignment: Ambient control vs. voice assistant vs. Quick
   Access (Spotify Tap).
-- Команды: `0xf6`/`0xf7`/`0xf8` (SYSTEM_*), тип ASSIGNABLE_SETTINGS
-  (предположительно `0x05`), QUICK_ACCESS (`0x0d`). Точные значения и формат
-  payload проверить на XM5.
+- Commands: `0xf6`/`0xf7`/`0xf8` (SYSTEM_*), type ASSIGNABLE_SETTINGS
+  (presumed `0x05`), QUICK_ACCESS (`0x0d`). Exact values and payload format
+  need verification on the XM5.
 
 ### 3.4 Wearing detection ⭐⭐
-- [ ] Пауза при снятии / возобновление при надевании.
-- Команды: `0xf6`/`0xf8`, тип CONTROL_BY_WEARING (`0x02`).
-- В `DeviceCapabilities` уже есть флаг `wearSensor`, не используется.
+- [ ] Pause on removal / resume on wearing.
+- Commands: `0xf6`/`0xf8`, type CONTROL_BY_WEARING (`0x02`).
+- `DeviceCapabilities` already has a `wearSensor` flag that's unused.
 
-### 3.5 Приоритет соединения ⭐⭐
-- [ ] «Приоритет качества звука» vs «стабильность соединения».
-- Команды: `0xe6`/`0xe7`/`0xe8` (AUDIO_*), тип CONNECTION_MODE (`0x00`) —
-  соседний с DSEE (`0x01`), который уже реализован.
+### 3.5 Connection priority ⭐⭐
+- [ ] "Sound quality priority" vs. "connection stability".
+- Commands: `0xe6`/`0xe7`/`0xe8` (AUDIO_*), type CONNECTION_MODE (`0x00`) —
+  adjacent to DSEE (`0x01`), which is already implemented.
 
-### 3.6 Голосовые подсказки ⭐⭐
-- [ ] Вкл/выкл, громкость подсказок.
-- Команды: `0x46` GET / `0x47` RET / `0x48` SET (VOICE_GUIDANCE_*).
+### 3.6 Voice guidance ⭐⭐
+- [ ] On/off, guidance volume.
+- Commands: `0x46` GET / `0x47` RET / `0x48` SET (VOICE_GUIDANCE_*).
 
-### 3.7 Background Music Effect / Listening mode ⭐
-- [ ] Режимы «Комната / Гостиная / Кафе» — если прошивка XM5 их отдаёт.
-- Команды: `0xe6`/`0xe8`, тип BGM_MODE (`0x02`).
+### 3.7 Background Music Effect / listening mode ⭐
+- [ ] "Room / Living room / Cafe" modes — if the XM5 firmware actually
+  exposes them.
+- Commands: `0xe6`/`0xe8`, type BGM_MODE (`0x02`).
 
-### 3.8 Battery Care / безопасная зарядка ⭐
-- [ ] Ограничение уровня заряда.
-- Команды: `0x22`/`0x24`, тип BATTERY_SAFE_MODE (`0x08`).
+### 3.8 Battery Care / safe charging ⭐
+- [ ] Charge level cap.
+- Commands: `0x22`/`0x24`, type BATTERY_SAFE_MODE (`0x08`).
 
-### 3.9 Прочее (низкий приоритет / неясная поддержка)
-- [ ] Safe Listening (мониторинг звукового давления).
-- [ ] Head gesture (кивок для ответа на звонок) — `0xf6`, тип `0x0b`.
-- [ ] Sidetone / «слышать свой голос во время звонка» — CALL_SETTINGS.
-- [ ] Перепроверить, что `0xf6 0x0a` действительно Adaptive Volume: в
-  известных таблицах `0x0a` в SYSTEM_* — CALL_SETTINGS. На XM5 функции
-  «Adaptive Volume» в фирменном приложении нет.
-
----
-
-## Фаза 4 — Пробелы протокола на других устройствах ⚠
-
-- [ ] **V1 (XM3/XM4): DSEE и Auto Power-Off.** Устройства отвечают на
-  `0xe6 0x02` и `0xf6 0x04`, но ответы не декодируются (`device-matrix.md`).
-- [ ] **XM6: 10-полосный EQ.** Уже сделано в upstream PR #44 (Cyrus7):
-  inquired type `0x04`, 10 полос без Clear Bass, проверено на живом XM6.
-  Не делать самим — дождаться мержа и подтянуть.
-- [ ] **Профили в `DeviceProfileRegistry`** для новых фич: не считать, что
-  все V2-устройства умеют multipoint / playback / BGM.
+### 3.9 Miscellaneous (low priority / unclear support)
+- [ ] Safe Listening (sound pressure monitoring).
+- [ ] Head gesture (nod to answer a call) — `0xf6`, type `0x0b`.
+- [ ] Sidetone / "hear your own voice during a call" — CALL_SETTINGS.
+- [ ] Double-check that `0xf6 0x0a` is really Adaptive Volume: in known
+  tables, `0x0a` under SYSTEM_* is CALL_SETTINGS. The XM5's companion app
+  doesn't expose an "Adaptive Volume" feature at all.
 
 ---
 
-## Фаза 5 — Архитектура для Windows
+## Phase 4 — Protocol gaps on other devices ⚠
 
-- [ ] **IPC на Windows.** `IpcServer.cpp` бросает «IPC not supported on
-  Windows; use direct mode», поэтому на Windows нет `sonyd`, а GUI и
-  `sonyctl` не могут работать одновременно (оба хотят RFCOMM). Реализовать
-  транспорт на named pipes (или localhost TCP с токеном) с тем же JSON
-  envelope. Даст: демон + CLI + GUI + трей одновременно, скрипты, хоткеи
-  без GUI.
-- [ ] **Сервис / автозапуск демона на Windows** (Task Scheduler или
-  запуск из трея).
-- [ ] **Per-device lock** на RFCOMM, чтобы два процесса не дрались за
-  соединение (upstream issue #29).
+- [ ] **V1 (XM3/XM4): DSEE and Auto Power-Off.** Devices respond to
+  `0xe6 0x02` and `0xf6 0x04`, but the responses aren't decoded yet
+  (`device-matrix.md`).
+- [ ] **XM6: 10-band EQ.** Already done in upstream PR #44 (Cyrus7):
+  inquired type `0x04`, 10 bands without Clear Bass, verified on real XM6
+  hardware. Don't reimplement — wait for the merge and pull it in.
+- [ ] **Profiles in `DeviceProfileRegistry`** for new features: don't
+  assume every V2 device supports multipoint / playback / BGM.
 
 ---
 
-## Апстрим (marconvcm/sony-device-center)
+## Phase 5 — Windows architecture
 
-Мейнтейнер активно принимает внешние PR (9 смёржено за 11–13 сентября,
-часто в день открытия). Формальных правил нет, только `PROMPT.md`.
-Отдаём по частям, от бесспорного к спорному; каждый PR — одна тема, ветка
-от апстримного `main`, коммиты cherry-pick'ом из форка:
+- [ ] **IPC on Windows.** `IpcServer.cpp` throws "IPC not supported on
+  Windows; use direct mode", so there's no `sonyd` on Windows, and the GUI
+  and `sonyctl` can't run at the same time (both want RFCOMM). Implement a
+  transport over named pipes (or localhost TCP with a token) using the same
+  JSON envelope. Would enable: daemon + CLI + GUI + tray simultaneously,
+  scripting, hotkeys without the GUI running.
+- [ ] **Service / autostart for the daemon on Windows** (Task Scheduler or
+  launch from the tray).
+- [ ] **Per-device lock** on RFCOMM so two processes don't fight over the
+  connection (upstream issue #29).
 
-Порядок диктуют тесты: почти всё проверяется через `SimulatedDevice`,
-поэтому симулятор уходит первым, остальное — после его мержа.
+---
 
-1. [x] Иконка exe — upstream PR #60 (ветка `upstream/win-exe-icon`).
-2. [x] `--simulated` для GUI + общий симулятор — upstream PR #61
-   (`upstream/gui-simulated-mode`). Остальное ждёт его мержа.
-   Плюс upstream PR #62 (`upstream/core-test-timeout`) — фикс таймаута
-   дрожащего macOS-теста, из-за него у #60/#61 красный macOS.
-3. [ ] Power Off (V2 проверен на XM5, V1 по Gadgetbridge).
-4. [ ] Коалесценция слайдеров.
-5. [ ] Батарея L/R/кейс.
-6. [ ] Полный i18n (все строки в ключи) + русский.
-7. [ ] Ужатие картинок — отдельно, с описанием проблемы C1060.
+## Upstream (marconvcm/sony-device-center)
 
-Механика: `git fetch upstream`, ветка `upstream/<тема>` от `upstream/main`,
-`git cherry-pick -n <sha>` из `main` форка, убрать наши доки/иконку, для
-локальной сборки временно подложить ужатые картинки (`git checkout main --
-Client/resources/devices`, не добавлять в коммит; на апстримных картинках
-MSVC падает по памяти), собрать копией `scripts/win-dev.ps1` из `%TEMP%`,
-вернуть картинки, коммит, `git push -u origin`, `gh pr create --repo
-marconvcm/sony-device-center --head chikirao:<ветка>`. CI апстрима ждёт
-одобрения мейнтейнера; для доказательства запускать наш CI на ветке.
+The maintainer actively merges external PRs (9 merged over Sept 11–13,
+often same-day). No formal rules exist beyond `PROMPT.md`. Contributions go
+back in pieces, from least to most opinionated; each PR is one topic,
+branched from upstream `main`, commits cherry-picked from the fork:
 
-Перед треем/темами/multipoint — спросить в issue, хочет ли он это в апстрим.
-Issue #21 (разбить `Main.qml`) — его собственное желание, наш пре-реквизит
-для тем; согласовать, чтобы не делать параллельно.
+The order is dictated by tests: nearly everything is verified through
+`SimulatedDevice`, so the simulator goes back first, and everything else
+follows once it's merged.
 
-**Формат PR** — как у смёрженных #36 / #37 / #54 (они все от Claude Code,
-мейнтейнеру такой стиль привычен):
-- Заголовок conventional-commit: `feat(ui): …`, `fix(protocol): …`.
-- Первый абзац — что было не так и что теперь, без вступлений.
-- `## What changed` — по пунктам, с байтами протокола / именами файлов.
-- `## Verified on hardware` — модель, прошивка, ОС, что именно проверено
-  (таблица команда → readback, если протокол).
-- `## Tests` — число тестов до/после, что добавлено.
-- `## Not covered` — честно, что не проверено (V1, macOS и т.д.).
-- `Fixes #N` если закрывает issue; footer Claude Code.
-- Один PR — одна тема; в описании упомянуть, независим ли он от других
-  открытых PR.
+1. [x] Exe icon — upstream PR #60 (branch `upstream/win-exe-icon`).
+2. [x] `--simulated` for the GUI + the shared simulator — upstream PR #61
+   (`upstream/gui-simulated-mode`). Everything else waits on this merging.
+   Plus upstream PR #62 (`upstream/core-test-timeout`) — a fix for a flaky
+   macOS test timeout that was turning #60/#61 red on macOS.
+3. [ ] Power Off (V2 verified on XM5, V1 per Gadgetbridge).
+4. [ ] Slider coalescing.
+5. [ ] L/R/case battery.
+6. [ ] Full i18n (all strings as keys) + Russian.
+7. [ ] Image shrinking — separately, with a writeup of the C1060 issue.
 
-## Фаза «будущее» — идеи, отложенные сознательно
+Mechanics: `git fetch upstream`, branch `upstream/<topic>` off
+`upstream/main`, `git cherry-pick -n <sha>` from the fork's `main`, strip
+out our docs/icon, temporarily drop in the shrunk images for a local build
+(`git checkout main -- Client/resources/devices`, don't add to the commit —
+MSVC runs out of memory on the upstream images), build with a copy of
+`scripts/win-dev.ps1` from `%TEMP%`, restore the images, commit,
+`git push -u origin`, `gh pr create --repo marconvcm/sony-device-center
+--head chikirao:<branch>`. Upstream CI waits for maintainer approval; run
+our own CI on the branch beforehand as proof it's green.
 
-- **Профили / сцены.** Именованный набор: NC-режим + уровень Ambient +
-  EQ + DSEE + Speak-to-Chat + APO; применение одним кликом из окна и трея;
-  хранить в JSON в `AppConfigLocation`. На макетах редизайна — ряд
-  «Suggested for you» (Focus / Commute / Work / Exercise).
-- **Расписание/автоматизация** (сцена по времени или по приложению в фокусе).
+Before offering up tray/themes/multipoint, ask in an issue whether the
+maintainer wants it upstream. Issue #21 (split up `Main.qml`) is the
+maintainer's own idea and our prerequisite for theming — coordinate so the
+work isn't duplicated in parallel.
 
-## Мелочи для апстрима (заметки по ходу)
+**PR format** — matching merged PRs #36 / #37 / #54 (all from Claude Code,
+so the maintainer is used to this style):
+- Conventional-commit title: `feat(ui): …`, `fix(protocol): …`.
+- First paragraph: what was wrong and what's true now, no preamble.
+- `## What changed` — bullet points, with protocol bytes / file names.
+- `## Verified on hardware` — model, firmware, OS, exactly what was
+  checked (a command → readback table, for protocol changes).
+- `## Tests` — test count before/after, what was added.
+- `## Not covered` — honestly, what wasn't verified (V1, macOS, etc.).
+- `Fixes #N` if it closes an issue; Claude Code footer.
+- One PR, one topic; note in the description whether it depends on other
+  open PRs.
 
-- Тест `Lifecycle prefers connected candidates and honors explicit selection`
-  идёт ~9 с при таймауте CTest 10 с — на macOS CI периодически падает по
-  таймауту. Поднять таймаут или ускорить (он ждёт реальные retry-задержки).
+## "Future" phase — ideas deliberately deferred
 
-## Порядок работы
+- **Profiles / scenes.** A named bundle: NC mode + Ambient level + EQ +
+  DSEE + Speak-to-Chat + APO; applied with one click from the window or the
+  tray; stored as JSON in `AppConfigLocation`. Shown on the redesign
+  mockups as a "Suggested for you" row (Focus / Commute / Work / Exercise).
+- **Scheduling/automation** (a scene triggered by time of day or the
+  focused app).
 
-1. ~~Фаза 0~~ — сделано, влито в `main` форка.
-2. ~~Фаза 1~~ — сделано: русский, трей, уведомления, история батареи,
-   хоткеи (#9), библиотека EQ (#10), `sonyctl --json` (#11),
-   автоподключение (#12).
-3. Фаза 2: редизайн в Codex (сначала вынос компонентов и `Theme`).
-4. Фаза 3: multipoint и playback — сначала `sonyctl`, проверка на XM5,
-   фикстуры, потом UI. Далее кнопки, wearing detection, connection mode.
-5. Фаза 5: named-pipe IPC — когда накопится достаточно функций, которым
-   нужен фоновый демон.
+## Small notes for upstream (collected along the way)
 
-Каждая фича — отдельная ветка и PR; протокольные — с фикстурой из реальных
-байт в `tests/`.
+- The test `Lifecycle prefers connected candidates and honors explicit
+  selection` takes ~9 s against CTest's 10 s timeout — it occasionally times
+  out on macOS CI. Either raise the timeout or speed it up (it waits on
+  real retry delays).
+
+## Working order
+
+1. ~~Phase 0~~ — done, merged into the fork's `main`.
+2. ~~Phase 1~~ — done: Russian, tray, notifications, battery history,
+   hotkeys (#9), EQ library (#10), `sonyctl --json` (#11), auto-connect
+   (#12).
+3. Phase 2: redesign in Codex (component extraction and `Theme` first).
+4. Phase 3: multipoint and playback — start with `sonyctl`, verify on the
+   XM5, add fixtures, then build the UI. Buttons, wearing detection, and
+   connection mode follow.
+5. Phase 5: named-pipe IPC — once enough features accumulate that need a
+   background daemon.
+
+Each feature gets its own branch and PR; protocol ones ship with a fixture
+built from real bytes in `tests/`.
