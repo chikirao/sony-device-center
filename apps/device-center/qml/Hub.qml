@@ -244,8 +244,11 @@ Window {
         Rectangle {
             objectName: "hubRowBg"
             anchors.fill: parent
-            topLeftRadius: row.index === 0 ? Theme.cardRadius - 1 : 0
-            topRightRadius: row.index === 0 ? Theme.cardRadius - 1 : 0
+            // Qt 6.4 (the Linux CI baseline) has only the all-corners
+            // Rectangle.radius property.  The lower rounded corners are
+            // covered by the next row, while the outer top corners stay
+            // aligned with the card.
+            radius: row.index === 0 ? Theme.cardRadius - 1 : 0
             color: rowHover.hovered && row.sony && !quickControls.hovered ? hub.hoverColor : "transparent"
         }
         HoverHandler { id: rowHover; cursorShape: row.sony ? Qt.PointingHandCursor : Qt.ArrowCursor }
