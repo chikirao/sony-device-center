@@ -58,6 +58,8 @@ add_executable(sony-device-center
     include/PeripheralModel.h
     src/HubWindow.cpp
     include/HubWindow.h
+    src/HubSettings.cpp
+    include/HubSettings.h
     qml.qrc
 )
 
@@ -191,7 +193,8 @@ if(BUILD_TESTING)
             src/PeripheralSource.cpp include/PeripheralSource.h
             src/WindowsPeripheralSource.cpp include/WindowsPeripheralSource.h
             src/PeripheralModel.cpp include/PeripheralModel.h
-            src/HubWindow.cpp include/HubWindow.h)
+            src/HubWindow.cpp include/HubWindow.h
+            src/HubSettings.cpp include/HubSettings.h)
         target_include_directories(sony-ui-tests PRIVATE include)
         if(WIN32)
             target_link_libraries(sony-ui-tests PRIVATE WindowsApp bthprops setupapi)

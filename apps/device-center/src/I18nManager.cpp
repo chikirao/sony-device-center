@@ -259,6 +259,23 @@ void I18nManager::_initTranslations() {
     en["hub_empty_desc"]                  = "Paired Bluetooth devices show up here.";
     en["battery_left_short"]              = "L";
     en["battery_right_short"]             = "R";
+    en["hub_card_title"]                  = "Device Hub";
+    en["hub_show_system"]                 = "Show all Bluetooth devices";
+    en["hub_show_system_desc"]            = "Off: only Sony devices are listed.";
+    en["hub_show_system_unavailable"]     = "Only Sony devices are available on this platform.";
+    en["hub_poll_interval"]               = "Refresh interval";
+    en["hub_poll_interval_desc"]          = "How often the device list is re-read from the system.";
+    en["seconds_short"]                   = "%1 s";
+    en["hub_tray_click"]                  = "Tray icon click";
+    en["hub_tray_click_desc"]             = "What a left click on the tray icon opens.";
+    en["main_window"]                     = "Main window";
+    en["hub_tray_mode"]                   = "Tray icons";
+    en["hub_tray_mode_desc"]              = "One icon follows the connected Sony set. Per device adds an icon for each device chosen below.";
+    en["hub_tray_mode_single"]            = "One icon";
+    en["hub_tray_mode_per_device"]        = "Per device";
+    en["hub_tray_show"]                   = "Show in tray";
+    en["hub_tray_overflow_note"]          = "Windows keeps new icons in the taskbar overflow (^) until you drag them onto the taskbar.";
+    en["hub_tray_no_devices"]             = "No devices to show yet.";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -476,6 +493,23 @@ void I18nManager::_initTranslations() {
     pt["hub_empty_desc"]                  = "Dispositivos Bluetooth emparelhados aparecem aqui.";
     pt["battery_left_short"]              = "E";
     pt["battery_right_short"]             = "D";
+    pt["hub_card_title"]                  = "Central de dispositivos";
+    pt["hub_show_system"]                 = "Mostrar todos os dispositivos Bluetooth";
+    pt["hub_show_system_desc"]            = "Desligado: apenas dispositivos Sony são listados.";
+    pt["hub_show_system_unavailable"]     = "Nesta plataforma só há dispositivos Sony.";
+    pt["hub_poll_interval"]               = "Intervalo de atualização";
+    pt["hub_poll_interval_desc"]          = "Com que frequência a lista é relida do sistema.";
+    pt["seconds_short"]                   = "%1 s";
+    pt["hub_tray_click"]                  = "Clique no ícone da bandeja";
+    pt["hub_tray_click_desc"]             = "O que um clique esquerdo no ícone abre.";
+    pt["main_window"]                     = "Janela principal";
+    pt["hub_tray_mode"]                   = "Ícones na bandeja";
+    pt["hub_tray_mode_desc"]              = "Um ícone segue o fone Sony conectado. Por dispositivo adiciona um ícone para cada dispositivo escolhido abaixo.";
+    pt["hub_tray_mode_single"]            = "Um ícone";
+    pt["hub_tray_mode_per_device"]        = "Por dispositivo";
+    pt["hub_tray_show"]                   = "Mostrar na bandeja";
+    pt["hub_tray_overflow_note"]          = "O Windows mantém novos ícones na área oculta (^) até você arrastá-los para a barra de tarefas.";
+    pt["hub_tray_no_devices"]             = "Ainda não há dispositivos.";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -693,6 +727,23 @@ void I18nManager::_initTranslations() {
     es["hub_empty_desc"]                  = "Los dispositivos Bluetooth emparejados aparecen aquí.";
     es["battery_left_short"]              = "I";
     es["battery_right_short"]             = "D";
+    es["hub_card_title"]                  = "Centro de dispositivos";
+    es["hub_show_system"]                 = "Mostrar todos los dispositivos Bluetooth";
+    es["hub_show_system_desc"]            = "Desactivado: solo se muestran dispositivos Sony.";
+    es["hub_show_system_unavailable"]     = "En esta plataforma solo hay dispositivos Sony.";
+    es["hub_poll_interval"]               = "Intervalo de actualización";
+    es["hub_poll_interval_desc"]          = "Con qué frecuencia se relee la lista del sistema.";
+    es["seconds_short"]                   = "%1 s";
+    es["hub_tray_click"]                  = "Clic en el icono de la bandeja";
+    es["hub_tray_click_desc"]             = "Qué abre un clic izquierdo en el icono.";
+    es["main_window"]                     = "Ventana principal";
+    es["hub_tray_mode"]                   = "Iconos en la bandeja";
+    es["hub_tray_mode_desc"]              = "Un icono sigue a los auriculares Sony conectados. Por dispositivo añade un icono por cada dispositivo elegido abajo.";
+    es["hub_tray_mode_single"]            = "Un icono";
+    es["hub_tray_mode_per_device"]        = "Por dispositivo";
+    es["hub_tray_show"]                   = "Mostrar en la bandeja";
+    es["hub_tray_overflow_note"]          = "Windows deja los iconos nuevos en el área oculta (^) hasta que los arrastres a la barra de tareas.";
+    es["hub_tray_no_devices"]             = "Todavía no hay dispositivos.";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -910,6 +961,23 @@ void I18nManager::_initTranslations() {
     de["hub_empty_desc"]                  = "Gekoppelte Bluetooth-Geräte erscheinen hier.";
     de["battery_left_short"]              = "L";
     de["battery_right_short"]             = "R";
+    de["hub_card_title"]                  = "Gerätezentrale";
+    de["hub_show_system"]                 = "Alle Bluetooth-Geräte anzeigen";
+    de["hub_show_system_desc"]            = "Aus: nur Sony-Geräte werden aufgeführt.";
+    de["hub_show_system_unavailable"]     = "Auf dieser Plattform sind nur Sony-Geräte verfügbar.";
+    de["hub_poll_interval"]               = "Aktualisierungsintervall";
+    de["hub_poll_interval_desc"]          = "Wie oft die Geräteliste vom System neu gelesen wird.";
+    de["seconds_short"]                   = "%1 s";
+    de["hub_tray_click"]                  = "Klick auf das Tray-Symbol";
+    de["hub_tray_click_desc"]             = "Was ein Linksklick auf das Symbol öffnet.";
+    de["main_window"]                     = "Hauptfenster";
+    de["hub_tray_mode"]                   = "Tray-Symbole";
+    de["hub_tray_mode_desc"]              = "Ein Symbol folgt dem verbundenen Sony-Gerät. Pro Gerät fügt für jedes unten gewählte Gerät ein Symbol hinzu.";
+    de["hub_tray_mode_single"]            = "Ein Symbol";
+    de["hub_tray_mode_per_device"]        = "Pro Gerät";
+    de["hub_tray_show"]                   = "Im Tray anzeigen";
+    de["hub_tray_overflow_note"]          = "Windows legt neue Symbole in den Überlaufbereich (^), bis man sie auf die Taskleiste zieht.";
+    de["hub_tray_no_devices"]             = "Noch keine Geräte.";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1127,6 +1195,23 @@ void I18nManager::_initTranslations() {
     fr["hub_empty_desc"]                  = "Les appareils Bluetooth appairés apparaissent ici.";
     fr["battery_left_short"]              = "G";
     fr["battery_right_short"]             = "D";
+    fr["hub_card_title"]                  = "Centre des appareils";
+    fr["hub_show_system"]                 = "Afficher tous les appareils Bluetooth";
+    fr["hub_show_system_desc"]            = "Désactivé : seuls les appareils Sony sont listés.";
+    fr["hub_show_system_unavailable"]     = "Seuls les appareils Sony sont disponibles sur cette plateforme.";
+    fr["hub_poll_interval"]               = "Intervalle d’actualisation";
+    fr["hub_poll_interval_desc"]          = "Fréquence de relecture de la liste depuis le système.";
+    fr["seconds_short"]                   = "%1 s";
+    fr["hub_tray_click"]                  = "Clic sur l’icône de la barre";
+    fr["hub_tray_click_desc"]             = "Ce qu’ouvre un clic gauche sur l’icône.";
+    fr["main_window"]                     = "Fenêtre principale";
+    fr["hub_tray_mode"]                   = "Icônes de la barre";
+    fr["hub_tray_mode_desc"]              = "Une icône suit le casque Sony connecté. Par appareil ajoute une icône pour chaque appareil choisi ci-dessous.";
+    fr["hub_tray_mode_single"]            = "Une icône";
+    fr["hub_tray_mode_per_device"]        = "Par appareil";
+    fr["hub_tray_show"]                   = "Afficher dans la barre";
+    fr["hub_tray_overflow_note"]          = "Windows range les nouvelles icônes dans la zone de débordement (^) jusqu’à ce que vous les glissiez sur la barre des tâches.";
+    fr["hub_tray_no_devices"]             = "Aucun appareil pour l’instant.";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1344,6 +1429,23 @@ void I18nManager::_initTranslations() {
     ja["hub_empty_desc"]                  = "ペアリング済みの Bluetooth デバイスがここに表示されます。";
     ja["battery_left_short"]              = "L";
     ja["battery_right_short"]             = "R";
+    ja["hub_card_title"]                  = "デバイスハブ";
+    ja["hub_show_system"]                 = "すべての Bluetooth デバイスを表示";
+    ja["hub_show_system_desc"]            = "オフの場合は Sony デバイスのみ表示します。";
+    ja["hub_show_system_unavailable"]     = "このプラットフォームでは Sony デバイスのみ利用できます。";
+    ja["hub_poll_interval"]               = "更新間隔";
+    ja["hub_poll_interval_desc"]          = "システムからデバイス一覧を再読み込みする間隔。";
+    ja["seconds_short"]                   = "%1 秒";
+    ja["hub_tray_click"]                  = "トレイアイコンのクリック";
+    ja["hub_tray_click_desc"]             = "アイコンを左クリックしたときに開くもの。";
+    ja["main_window"]                     = "メインウィンドウ";
+    ja["hub_tray_mode"]                   = "トレイアイコン";
+    ja["hub_tray_mode_desc"]              = "1 つのアイコンは接続中の Sony 製品を追います。デバイスごとにすると、下で選んだ各デバイスにアイコンが付きます。";
+    ja["hub_tray_mode_single"]            = "1 つ";
+    ja["hub_tray_mode_per_device"]        = "デバイスごと";
+    ja["hub_tray_show"]                   = "トレイに表示";
+    ja["hub_tray_overflow_note"]          = "Windows は新しいアイコンをタスクバーにドラッグするまで隠しトレイ (^) に置きます。";
+    ja["hub_tray_no_devices"]             = "まだデバイスがありません。";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1561,6 +1663,23 @@ void I18nManager::_initTranslations() {
     ru["hub_empty_desc"]                  = "Здесь появятся сопряжённые Bluetooth-устройства.";
     ru["battery_left_short"]              = "Л";
     ru["battery_right_short"]             = "П";
+    ru["hub_card_title"]                  = "Хаб устройств";
+    ru["hub_show_system"]                 = "Показывать все Bluetooth-устройства";
+    ru["hub_show_system_desc"]            = "Выкл: в списке только устройства Sony.";
+    ru["hub_show_system_unavailable"]     = "На этой платформе доступны только устройства Sony.";
+    ru["hub_poll_interval"]               = "Интервал обновления";
+    ru["hub_poll_interval_desc"]          = "Как часто список перечитывается из системы.";
+    ru["seconds_short"]                   = "%1 с";
+    ru["hub_tray_click"]                  = "Клик по иконке в трее";
+    ru["hub_tray_click_desc"]             = "Что открывает левый клик по иконке.";
+    ru["main_window"]                     = "Главное окно";
+    ru["hub_tray_mode"]                   = "Иконки в трее";
+    ru["hub_tray_mode_desc"]              = "Одна иконка следует за подключёнными наушниками Sony. «По устройствам» добавляет иконку каждому выбранному ниже устройству.";
+    ru["hub_tray_mode_single"]            = "Одна";
+    ru["hub_tray_mode_per_device"]        = "По устройствам";
+    ru["hub_tray_show"]                   = "Показывать в трее";
+    ru["hub_tray_overflow_note"]          = "Windows прячет новые иконки в переполнении панели задач (^), пока их не перетащат на панель.";
+    ru["hub_tray_no_devices"]             = "Пока нет устройств.";
 }
 
 } // namespace sony::devicecenter

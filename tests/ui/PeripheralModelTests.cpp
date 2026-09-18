@@ -231,6 +231,25 @@ private slots:
         QCOMPARE(resets.count(), 0);
     }
 
+    void sonyOnlyKeepsSonyLookingSystemRows() {
+        Rig rig;
+        rig.settle();
+        QAbstractItemModelTester tester(rig.model.get(), QAbstractItemModelTester::FailureReportingMode::QtTest);
+        auto system = FakePeripheralSource::simulatedSet();
+        // A Sony set the controller has never seen: Sony by address prefix
+        // (58:18:62 is a Sony OUI), plainly not by name.
+        system.append({.address = "58:18:62:00:00:01", .name = "Living room", .kind = PeripheralKind::Headphones,
+                       .connected = false, .battery = -1});
+        rig.source.setPeripherals(system);
+        QCOMPARE(rig.model->rowCount(), 7);
+        QVERIFY(rig.at(rig.rowOf("Living room"), PeripheralModel::SonyRole).toBool());
+        QSignalSpy resets(rig.model.get(), &QAbstractItemModel::modelReset);
+        rig.model->setIncludeSystem(false);
+        QCOMPARE(rig.names(), QStringList({"WH-1000XM5", "LinkBuds S", "Living room", "WH-1000XM4"}));
+        QCOMPARE(resets.count(), 0);
+        rig.model->setIncludeSystem(true);
+        QCOMPARE(rig.model->rowCount(), 7);
+    }
     void disconnectingKeepsTheSonyRowButDropsItsLiveState() {
         Rig rig;
         rig.settle();

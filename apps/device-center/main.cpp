@@ -23,6 +23,7 @@
 #include "HotkeyManager.h"
 #include "EqualizerLibrary.h"
 #include "BluetoothWatcher.h"
+#include "HubSettings.h"
 #include "HubWindow.h"
 #include "PeripheralModel.h"
 #include "PeripheralSource.h"
@@ -178,6 +179,17 @@ int main(int argc, char *argv[]) {
         peripheralSource = sony::devicecenter::createPlatformPeripheralSource(&app);
     }
     sony::devicecenter::PeripheralModel peripherals(controller, *peripheralSource);
+    // The hub's preferences: Sony-only or everything, poll period, what the
+    // tray click opens, one tray icon or one per device.
+    sony::devicecenter::HubSettings hubSettings;
+    auto applyHubSettings = [&] {
+        peripheralSource->setPollInterval(hubSettings.pollIntervalSeconds());
+        peripherals.setIncludeSystem(hubSettings.showSystemDevices());
+    };
+    applyHubSettings();
+    QObject::connect(&hubSettings, &sony::devicecenter::HubSettings::changed, &controller, applyHubSettings);
+    tray.setHubSettings(&hubSettings);
+    tray.setPeripherals(&peripherals);
     // SONY_PERIPHERALS_LOG=<file>: append every scan result, for checking
     // what the OS reports about a device without a debugger attached (the
     // GUI-subsystem binary has no console).
@@ -213,6 +225,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("eqLibrary", &eqLibrary);
     engine.rootContext()->setContextProperty("updates", &updates);
     engine.rootContext()->setContextProperty("peripherals", &peripherals);
+    engine.rootContext()->setContextProperty("hubSettings", &hubSettings);
     engine.rootContext()->setContextProperty("trayAvailable", tray.isAvailable());
     engine.rootContext()->setContextProperty("startHidden", startHidden);
 
@@ -274,9 +287,12 @@ int main(int argc, char *argv[]) {
                 scrollTo("aboutCard");
             } else if (page == 9) {
                 window->grabWindow().save(QString("%1/page6-about.png").arg(shotDir));
+                scrollTo("hubCard");
+            } else if (page == 10) {
+                window->grabWindow().save(QString("%1/page6-hub.png").arg(shotDir));
                 // The hub, as it would sit above a bottom taskbar.
                 hub.open(QRect(window->x() + window->width() - 40, window->y() + window->height() - 1, 24, 1));
-            } else if (page == 10) {
+            } else if (page == 11) {
                 if (hub.window()) hub.window()->grabWindow().save(QString("%1/hub.png").arg(shotDir));
                 ticker->stop(); app.quit(); return;
             }
