@@ -196,6 +196,27 @@ private slots:
         QVERIFY(QMetaObject::invokeMethod(hub.window(), "mainWindowRequested", Q_ARG(int, 6)));
         QCOMPARE(mainRequests.count(), 1);
         QCOMPARE(mainRequests.first().first().toInt(), 6);
+        // A tap on the quick controls stays in the hub: the mode changes and
+        // the main window is not asked for. A tap on the row itself is.
+        hub.open(QRect(window->x() + 300, window->y() + 500, 24, 24));
+        QTRY_VERIFY(hub.isVisible());
+        auto* offSegment = findItem(hub.window()->contentItem(), "hubMode-off");
+        QVERIFY(offSegment);
+        auto centre = [](QQuickItem* item) { return item->mapToScene(QPointF(item->width() / 2, item->height() / 2)).toPoint(); };
+        QTest::mouseClick(hub.window(), Qt::LeftButton, Qt::NoModifier, centre(offSegment));
+        QTRY_COMPARE_WITH_TIMEOUT(controller.noiseControlMode(), QString("off"), 5000);
+        QCOMPARE(mainRequests.count(), 1);
+        // Focus may have wandered back to the main window meanwhile (which
+        // closes the hub, as designed); the row tap needs it up.
+        if (!hub.isVisible()) hub.open(QRect(window->x() + 300, window->y() + 500, 24, 24));
+        QTRY_VERIFY(hub.isVisible());
+        auto* firstRowBackground = findItem(hub.window()->contentItem(), "hubRowBg");
+        QVERIFY(firstRowBackground);
+        QTest::mouseClick(hub.window(), Qt::LeftButton, Qt::NoModifier, firstRowBackground->mapToScene(QPointF(120, 28)).toPoint());
+        QTRY_COMPARE(mainRequests.count(), 2);
+        QCOMPARE(mainRequests.last().first().toInt(), 0);
+        hub.close();
+        QTRY_VERIFY(!hub.isVisible());
         controller.setAnimationsEnabled(previousAnimations);
         for (int page = 0; page < 7; ++page) {
             QVERIFY(window->setProperty("navIndex", page));

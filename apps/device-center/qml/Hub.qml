@@ -23,6 +23,9 @@ Window {
     // focus only counts as "clicked elsewhere" after that, otherwise a hub
     // opened while another window is busy would close itself at once.
     property bool wasActive: false
+    // Hover tint that reads on both papers: surfaceHi is white-on-white in
+    // the light theme, so that one sinks instead.
+    readonly property color hoverColor: Theme.light ? Theme.surfaceSunk : Theme.surfaceHi
 
     // A row or the footer asked for the main window; -1 keeps its page.
     signal mainWindowRequested(int page)
@@ -176,8 +179,7 @@ Window {
                 anchors.margins: 6
                 width: openRow.implicitWidth + 20
                 radius: Theme.controlRadius
-                color: openHover.hovered ? Theme.surfaceHi : "transparent"
-                Behavior on color { ColorAnimation { duration: Theme.tFast } }
+                color: openHover.hovered ? hub.hoverColor : "transparent"
                 HoverHandler { id: openHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { onTapped: hub.mainWindowRequested(-1) }
                 RowLayout {
@@ -202,8 +204,7 @@ Window {
                 anchors.margins: 6
                 width: height
                 radius: Theme.controlRadius
-                color: settingsHover.hovered ? Theme.surfaceHi : "transparent"
-                Behavior on color { ColorAnimation { duration: Theme.tFast } }
+                color: settingsHover.hovered ? hub.hoverColor : "transparent"
                 HoverHandler { id: settingsHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { onTapped: hub.mainWindowRequested(6) }
                 Glyph { appWindow: hub.appWindow; anchors.centerIn: parent; path: appWindow.icons.settings; size: 17; weight: 1.6
@@ -237,15 +238,25 @@ Window {
         width: ListView.view ? ListView.view.width : hub.width
         height: hub.rowHeight
 
+        // Hover is instant, no fade: a quick panel should feel like a menu.
+        // The top row's highlight follows the card's rounded corners; the
+        // card's own clip is rectangular and would let it poke out.
         Rectangle {
+            objectName: "hubRowBg"
             anchors.fill: parent
-            color: rowHover.hovered && row.sony ? Theme.surfaceHi : "transparent"
-            Behavior on color { ColorAnimation { duration: Theme.tFast } }
+            topLeftRadius: row.index === 0 ? Theme.cardRadius - 1 : 0
+            topRightRadius: row.index === 0 ? Theme.cardRadius - 1 : 0
+            color: rowHover.hovered && row.sony && !quickControls.hovered ? hub.hoverColor : "transparent"
         }
         HoverHandler { id: rowHover; cursorShape: row.sony ? Qt.PointingHandCursor : Qt.ArrowCursor }
         TapHandler {
             enabled: row.sony
-            onTapped: hub.mainWindowRequested(row.active ? 0 : 4)
+            // A tap on the quick controls is theirs alone; only the rest of
+            // the row opens the main window.
+            onTapped: function(point) {
+                if (quickControls.visible && quickControls.contains(quickControls.mapFromItem(row, point.position))) return
+                hub.mainWindowRequested(row.active ? 0 : 4)
+            }
         }
 
         // Class tile
@@ -361,9 +372,12 @@ Window {
 
             // NC / Ambient / Off and power, for the set we are talking to.
             RowLayout {
+                id: quickControls
+                readonly property bool hovered: controlsHover.hovered
                 visible: row.live
                 Layout.alignment: Qt.AlignRight
                 spacing: 4
+                HoverHandler { id: controlsHover }
                 Row {
                     id: segment
                     spacing: 2
@@ -376,15 +390,15 @@ Window {
                         delegate: Rectangle {
                             id: seg
                             required property var modelData
+                            objectName: "hubMode-" + modelData.mode
                             readonly property bool current: controller.noiseControlMode === modelData.mode
                             visible: modelData.shown
                             width: 26; height: 20
                             radius: 6
-                            color: current ? Theme.accent : segHover.hovered ? Theme.surfaceHi : Theme.surfaceSunk
+                            color: current ? Theme.accent : segHover.hovered ? hub.hoverColor : Theme.surfaceSunk
                             border.width: 1
-                            border.color: current ? Theme.accent : Theme.line
+                            border.color: current ? Theme.accent : segHover.hovered ? Theme.lineHi : Theme.line
                             opacity: controller.busy ? 0.6 : 1
-                            Behavior on color { ColorAnimation { duration: Theme.tFast } }
                             HoverHandler { id: segHover; cursorShape: Qt.PointingHandCursor }
                             TapHandler {
                                 enabled: !controller.busy
@@ -407,7 +421,6 @@ Window {
                     border.width: 1
                     border.color: powerHover.hovered ? Theme.danger : Theme.line
                     opacity: controller.busy ? 0.6 : 1
-                    Behavior on color { ColorAnimation { duration: Theme.tFast } }
                     HoverHandler { id: powerHover; cursorShape: Qt.PointingHandCursor }
                     TapHandler { enabled: !controller.busy; onTapped: controller.powerOff() }
                     Glyph { appWindow: hub.appWindow; anchors.centerIn: parent; path: appWindow.icons.power; size: 13; weight: 1.8
