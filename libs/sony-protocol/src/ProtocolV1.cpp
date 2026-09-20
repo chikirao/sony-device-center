@@ -3,11 +3,14 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iterator>
 
 // Byte layouts below match Client/CommandSerializer.cpp (the legacy client,
 // exercised on WH-1000XM3 hardware for years) and Gadgetbridge's
-// SonyProtocolImplV1. Every GET was additionally replayed against a
-// WH-1000XM4 on firmware 3.0.1 before being trusted here.
+// SonyProtocolImplV1. The established battery/noise/EQ/metadata GETs were
+// additionally replayed against a WH-1000XM4 on firmware 3.0.1. DSEE and
+// Auto Power-Off below are deliberately marked as expected from Gadgetbridge
+// until the contributor test build produces literal hardware captures.
 //
 // CRITICAL: opcode 0x22 is POWER OFF on this generation. The only place that
 // may emit it is powerOff() below; ProtocolV1Tests pins that for every query.
@@ -21,6 +24,25 @@ namespace {
 
 constexpr uint8_t kNcAsmInquired = 0x02;  // NOISE_CANCELLING_AND_AMBIENT_SOUND_MODE
 constexpr uint8_t kEqInquired = 0x01;     // PRESET_EQ
+constexpr uint8_t kDseeInquired = 0x02;
+constexpr uint8_t kAutoPowerOffInquired = 0x04;
+constexpr uint8_t kAutoPowerOffParameter = 0x01;
+
+// Expected V1 Auto Power-Off values from Gadgetbridge. The XM4 test build
+// exposes them for hardware capture; they remain unverified until we receive
+// the contributor's literal TX/RX dump.
+const std::pair<uint8_t, uint8_t> kAutoPowerOffCodes[] = {
+    {0x11, 0x00}, {0x00, 0x00}, {0x01, 0x01},
+    {0x02, 0x02}, {0x03, 0x03}, {0x10, 0x00}
+};
+
+int autoPowerOffIndex(uint8_t first, uint8_t second) {
+    for (int i = 0; i < static_cast<int>(std::size(kAutoPowerOffCodes)); ++i) {
+        if (kAutoPowerOffCodes[i].first == first && kAutoPowerOffCodes[i].second == second)
+            return i;
+    }
+    return 0;
+}
 
 constexpr uint8_t kEffectOff = 0x00;
 constexpr uint8_t kEffectAdjustmentCompletion = 0x11;
@@ -203,11 +225,21 @@ void ProtocolV1::setEqualizerCustom(int clearBass, const std::array<int, 5>& ban
 }
 
 bool ProtocolV1::getDsee() {
-    throw SonyException(SonyErrorCode::Unsupported, "DSEE is not supported on Protocol V1");
+    // Expected from Gadgetbridge: GET e6 02 -> RET e7 02 00 <onOff>.
+    auto resp = _session.sendAndAwaitResponse(
+        SonyFrame{ .type = DataType::DataMdr, .payload = {0xe6, kDseeInquired} },
+        0xe7, kDseeInquired, kTimeout);
+    if (resp.payload.size() < 4 || resp.payload[1] != kDseeInquired || resp.payload[2] != 0x00)
+        throw SonyException(SonyErrorCode::InvalidResponse, "Incomplete DSEE response");
+    return resp.payload[3] != 0;
 }
 
-void ProtocolV1::setDsee(bool /*enabled*/) {
-    throw SonyException(SonyErrorCode::Unsupported, "DSEE is not supported on Protocol V1");
+void ProtocolV1::setDsee(bool enabled) {
+    // Expected from Gadgetbridge: SET e8 02 00 <onOff>.
+    _session.send(SonyFrame{
+        .type = DataType::DataMdr,
+        .payload = {0xe8, kDseeInquired, 0x00, static_cast<uint8_t>(enabled ? 0x01 : 0x00)}
+    });
 }
 
 std::string ProtocolV1::getFirmwareVersion() {
@@ -233,11 +265,24 @@ std::string ProtocolV1::getCodec() {
 }
 
 int ProtocolV1::getAutoPowerOff() {
-    throw SonyException(SonyErrorCode::Unsupported, "Auto Power Off is not supported on Protocol V1");
+    // Expected from Gadgetbridge: GET f6 04 -> RET f7 04 01 <code0> <code1>.
+    auto resp = _session.sendAndAwaitResponse(
+        SonyFrame{ .type = DataType::DataMdr, .payload = {0xf6, kAutoPowerOffInquired} },
+        0xf7, kAutoPowerOffInquired, kTimeout);
+    if (resp.payload.size() < 5 || resp.payload[1] != kAutoPowerOffInquired ||
+        resp.payload[2] != kAutoPowerOffParameter)
+        throw SonyException(SonyErrorCode::InvalidResponse, "Incomplete Auto Power Off response");
+    return autoPowerOffIndex(resp.payload[3], resp.payload[4]);
 }
 
-void ProtocolV1::setAutoPowerOff(int /*index*/) {
-    throw SonyException(SonyErrorCode::Unsupported, "Auto Power Off is not supported on Protocol V1");
+void ProtocolV1::setAutoPowerOff(int index) {
+    if (index < 0 || index >= static_cast<int>(std::size(kAutoPowerOffCodes))) return;
+    const auto [first, second] = kAutoPowerOffCodes[index];
+    // Expected from Gadgetbridge: SET f8 04 01 <code0> <code1>.
+    _session.send(SonyFrame{
+        .type = DataType::DataMdr,
+        .payload = {0xf8, kAutoPowerOffInquired, kAutoPowerOffParameter, first, second}
+    });
 }
 
 bool ProtocolV1::getSpeakToChat() {

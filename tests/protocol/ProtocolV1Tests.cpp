@@ -240,6 +240,115 @@ TEST_CASE("ProtocolV1: sends VPT and sound position commands", "[protocol][v1]")
     REQUIRE(posFrame.payload == std::vector<uint8_t>{0x48, 0x02, 0x01});
 }
 
+TEST_CASE("ProtocolV1: reads and writes DSEE with V1 packet literals", "[protocol][v1]")
+{
+    SECTION("GET uses e6 02 and reads the trailing on/off byte")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        queueReply(fake, {0xe7, 0x02, 0x00, 0x01});
+        REQUIRE(v1.getDsee());
+        REQUIRE(firstRequestPayload(fake) == std::vector<uint8_t>{0xe6, 0x02});
+    }
+
+    SECTION("GET rejects a truncated response")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        queueReply(fake, {0xe7, 0x02, 0x00});
+        REQUIRE_THROWS_AS(v1.getDsee(), SonyException);
+    }
+
+    SECTION("SET uses e8 02 00 followed by a non-inverted on/off byte")
+    {
+        ReplyingFakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        fake.queueReply({ SonyFrame{ .type = DataType::Ack, .sequence = 0 } });
+        v1.setDsee(true);
+        REQUIRE(FrameCodec::decode(fake.sentFrames()[0]).payload
+                == std::vector<uint8_t>{0xe8, 0x02, 0x00, 0x01});
+
+        fake.queueReply({ SonyFrame{ .type = DataType::Ack, .sequence = 1 } });
+        v1.setDsee(false);
+        REQUIRE(FrameCodec::decode(fake.sentFrames()[1]).payload
+                == std::vector<uint8_t>{0xe8, 0x02, 0x00, 0x00});
+    }
+}
+
+TEST_CASE("ProtocolV1: reads and writes Auto Power-Off with V1 packet literals", "[protocol][v1]")
+{
+    const std::vector<std::pair<uint8_t, uint8_t>> codes = {
+        {0x11, 0x00}, {0x00, 0x00}, {0x01, 0x01},
+        {0x02, 0x02}, {0x03, 0x03}, {0x10, 0x00}
+    };
+
+    SECTION("GET f6 04 decodes every expected code")
+    {
+        for (size_t index = 0; index < codes.size(); ++index) {
+            FakeTransport fake;
+            SonyProtocolSession session(&fake);
+            session.connect("11:22:33:44:55:66");
+            ProtocolV1 v1(session);
+
+            const auto [first, second] = codes[index];
+            queueReply(fake, {0xf7, 0x04, 0x01, first, second});
+            REQUIRE(v1.getAutoPowerOff() == static_cast<int>(index));
+            REQUIRE(firstRequestPayload(fake) == std::vector<uint8_t>{0xf6, 0x04});
+        }
+    }
+
+    SECTION("GET rejects a truncated response")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        queueReply(fake, {0xf7, 0x04, 0x01, 0x11});
+        REQUIRE_THROWS_AS(v1.getAutoPowerOff(), SonyException);
+    }
+
+    SECTION("SET f8 04 01 emits every expected code")
+    {
+        ReplyingFakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        for (size_t index = 0; index < codes.size(); ++index) {
+            fake.queueReply({ SonyFrame{
+                .type = DataType::Ack,
+                .sequence = static_cast<uint8_t>(index)
+            } });
+            v1.setAutoPowerOff(static_cast<int>(index));
+            const auto [first, second] = codes[index];
+            REQUIRE(FrameCodec::decode(fake.sentFrames()[index]).payload
+                    == std::vector<uint8_t>{0xf8, 0x04, 0x01, first, second});
+        }
+    }
+
+    SECTION("out-of-range indexes do not transmit")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        v1.setAutoPowerOff(-1);
+        v1.setAutoPowerOff(6);
+        REQUIRE(fake.sentCount() == 0);
+    }
+}
+
 TEST_CASE("ProtocolV1: unsupported features throw Unsupported", "[protocol][v1]")
 {
     FakeTransport fake;
@@ -248,11 +357,8 @@ TEST_CASE("ProtocolV1: unsupported features throw Unsupported", "[protocol][v1]"
 
     ProtocolV1 v1(session);
 
-    REQUIRE_THROWS_AS(v1.getDsee(), SonyException);
-    REQUIRE_THROWS_AS(v1.setDsee(true), SonyException);
     REQUIRE_THROWS_AS(v1.getSpeakToChat(), SonyException);
     REQUIRE_THROWS_AS(v1.getAdaptiveVolume(), SonyException);
-    REQUIRE_THROWS_AS(v1.getAutoPowerOff(), SonyException);
     REQUIRE(fake.sentCount() == 0);
 }
 
