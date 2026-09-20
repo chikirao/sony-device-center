@@ -135,13 +135,21 @@ ViewPage {
                     Layout.fillWidth: true
                     spacing: 2
                     Text { textFormat: Text.PlainText; text: appWindow.tr("auto_power_off"); color: Theme.txt; font.pixelSize: 15; font.weight: Font.DemiBold }
-                    Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: appWindow.tr("auto_power_off_desc"); color: Theme.txtDim; font.pixelSize: 12; elide: Text.ElideRight }
+                    Text {
+                        textFormat: Text.PlainText
+                        Layout.fillWidth: true
+                        text: !controller.hasAutoPowerOff ? appWindow.tr("not_supported") : !root.known("autoPowerOff") ? appWindow.tr("state_unknown_waiting") : appWindow.tr("auto_power_off_desc")
+                        color: Theme.txtDim
+                        font.pixelSize: 12
+                        elide: Text.ElideRight
+                    }
                 }
                 ComboBox {
                     id: powerCombo
+                    objectName: "autoPowerOffCombo"
                     implicitWidth: 150
                     implicitHeight: 40
-                    enabled: controller.connected
+                    enabled: controller.hasAutoPowerOff && controller.connected
                     model: [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_15min"), appWindow.tr("apo_30min"), appWindow.tr("apo_1h"), appWindow.tr("apo_3h")]
                     currentIndex: root.known("autoPowerOff") ? controller.autoPowerOff : -1
                     Connections {

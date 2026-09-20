@@ -60,6 +60,7 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(bool hasDsee READ hasDsee NOTIFY capabilitiesChanged)
     Q_PROPERTY(bool hasSpeakToChat READ hasSpeakToChat NOTIFY capabilitiesChanged)
     Q_PROPERTY(bool hasAdaptiveVolume READ hasAdaptiveVolume NOTIFY capabilitiesChanged)
+    Q_PROPERTY(bool hasAutoPowerOff READ hasAutoPowerOff NOTIFY capabilitiesChanged)
 
     Q_PROPERTY(QVariantList pairedDevices READ pairedDevices NOTIFY pairedDevicesChanged)
 
@@ -131,6 +132,7 @@ public:
     [[nodiscard]] bool hasDsee() const;
     [[nodiscard]] bool hasSpeakToChat() const;
     [[nodiscard]] bool hasAdaptiveVolume() const;
+    [[nodiscard]] bool hasAutoPowerOff() const;
 
     [[nodiscard]] QVariantList pairedDevices() const;
 
