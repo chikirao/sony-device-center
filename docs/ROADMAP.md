@@ -398,9 +398,12 @@ verify on hardware → fixture → `IProtocol` + `DeviceState` +
 - [x] **V1 (XM4): Speak-to-Chat.** Smart Talking Mode (`0xf6 0x05`) is
   enabled for the WH-1000XM4 profile after verification on firmware 3.0.1;
   enabling it writes the Standard (~30 s) timeout configuration first.
-- [ ] **V1 (XM3/XM4): DSEE and Auto Power-Off.** Devices respond to
-  `0xe6 0x02` and `0xf6 0x04`, but the responses aren't decoded yet
-  (`device-matrix.md`).
+- [~] **V1 (XM4): DSEE and Auto Power-Off contributor test.** Implemented
+  from Gadgetbridge's `0xe6 0x02` and `0xf6 0x04` layouts with literal-byte
+  regression tests. Profile flags are enabled only for the XM4 test build;
+  final support still requires the firmware 3.0.1 TX/RX dump. The same build
+  aligns the six APO labels with the documented code table; a fresh XM5
+  readback is still required before that label change moves to the main PR.
 - [ ] **XM6: 10-band EQ.** Already done in upstream PR #44 (Cyrus7):
   inquired type `0x04`, 10 bands without Clear Bass, verified on real XM6
   hardware. Don't reimplement — wait for the merge and pull it in.

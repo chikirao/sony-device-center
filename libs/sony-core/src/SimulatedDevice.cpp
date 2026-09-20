@@ -150,10 +150,12 @@ void SimulatedDeviceTransport::handle(const std::vector<uint8_t>& p) {
 
     case 0xe6: // DSEE query
         if (type == 0x01) reply({0xe7, 0x01, static_cast<uint8_t>(_dsee ? 1 : 0)});
+        if (type == 0x02) reply({0xe7, 0x02, 0x00, static_cast<uint8_t>(_dsee ? 1 : 0)});
         break;
 
     case 0xe8: // DSEE set
         if (type == 0x01 && p.size() >= 3) _dsee = p[2] != 0;
+        if (type == 0x02 && p.size() >= 4) _dsee = p[3] != 0;
         break;
 
     case 0x24: // power set; type 03 = power off
@@ -173,15 +175,19 @@ void SimulatedDeviceTransport::handle(const std::vector<uint8_t>& p) {
         if (type == 0x05 && p.size() >= 4) _autoPowerOff = {p[2], p[3]};
         break;
 
-    case 0xf6: // system settings query; both flags are reported inverted on the wire
+    case 0xf6: // system settings query; V2 flags are inverted, V1 values are not
         if (type == 0x0c) reply({0xf7, 0x0c, static_cast<uint8_t>(_speakToChat ? 0 : 1)});
         if (type == 0x0a) reply({0xf7, 0x0a, static_cast<uint8_t>(_adaptiveVolume ? 0 : 1)});
+        if (type == 0x05) reply({0xf7, 0x05, 0x00, static_cast<uint8_t>(_speakToChat ? 1 : 0)});
+        if (type == 0x04) reply({0xf7, 0x04, 0x01, _autoPowerOff[0], _autoPowerOff[1]});
         break;
 
     case 0xf8: // system settings set
         if (p.size() >= 3) {
             if (type == 0x0c) _speakToChat = p[2] == 0;
             if (type == 0x0a) _adaptiveVolume = p[2] == 0;
+            if (type == 0x05 && p.size() >= 4) _speakToChat = p[3] != 0;
+            if (type == 0x04 && p.size() >= 5) _autoPowerOff = {p[3], p[4]};
         }
         break;
 

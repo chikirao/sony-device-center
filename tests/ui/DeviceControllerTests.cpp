@@ -62,7 +62,7 @@ private slots:
         QTest::addColumn<QString>("model");
         QTest::addColumn<QString>("language");
         QTest::addColumn<QSize>("size");
-        for (const auto& model : {"WH-1000XM4", "WH-1000XM5", "WF-1000XM5"})
+        for (const auto& model : {"WH-1000XM3", "WH-1000XM4", "WH-1000XM5", "WF-1000XM5"})
             for (const auto& language : {"en", "ru"})
                 for (const auto size : {QSize(980, 660), QSize(1600, 1000)}) {
                     const auto name = QString("%1-%2-%3").arg(model, language).arg(size.width());
@@ -114,12 +114,18 @@ private slots:
         QVERIFY2(!engine.rootObjects().isEmpty(), qPrintable(warnings.join("\n")));
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
         QVERIFY(window);
-        if (model == "WH-1000XM4") {
+        if (model == "WH-1000XM3") {
             QVERIFY(controller.isConnected());
             QVERIFY(!controller.hasAutoPowerOff());
             auto* autoPowerOff = window->findChild<QObject*>("autoPowerOffCombo");
             QVERIFY(autoPowerOff);
             QVERIFY(!autoPowerOff->property("enabled").toBool());
+        } else if (model == "WH-1000XM4") {
+            QVERIFY(controller.isConnected());
+            QVERIFY(controller.hasAutoPowerOff());
+            auto* autoPowerOff = window->findChild<QObject*>("autoPowerOffCombo");
+            QVERIFY(autoPowerOff);
+            QVERIFY(autoPowerOff->property("enabled").toBool());
         }
         controller.setLanguage(language);
         window->resize(size);
