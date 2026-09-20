@@ -395,6 +395,9 @@ verify on hardware → fixture → `IProtocol` + `DeviceState` +
 
 ## Phase 4 — Protocol gaps on other devices ⚠
 
+- [x] **V1 (XM4): Speak-to-Chat.** Smart Talking Mode (`0xf6 0x05`) is
+  enabled for the WH-1000XM4 profile after verification on firmware 3.0.1;
+  enabling it writes the Standard (~30 s) timeout configuration first.
 - [ ] **V1 (XM3/XM4): DSEE and Auto Power-Off.** Devices respond to
   `0xe6 0x02` and `0xf6 0x04`, but the responses aren't decoded yet
   (`device-matrix.md`).
