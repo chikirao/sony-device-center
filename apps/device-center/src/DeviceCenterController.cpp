@@ -252,6 +252,8 @@ bool DeviceCenterController::hasSpeakToChat() const { return _capabilities.value
 
 bool DeviceCenterController::hasAdaptiveVolume() const { return _capabilities.value("adaptiveVolume").toBool(); }
 
+bool DeviceCenterController::hasAutoPowerOff() const { return _capabilities.value("autoPowerOff").toBool(); }
+
 QVariantList DeviceCenterController::pairedDevices() const { return _pairedDevices; }
 
 void DeviceCenterController::setAnc(bool enabled) { _send("anc", {{"enabled",enabled}}); }
