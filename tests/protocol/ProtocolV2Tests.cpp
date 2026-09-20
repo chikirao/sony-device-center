@@ -165,6 +165,58 @@ TEST_CASE("ProtocolV2: handles peripheral feature inquiries", "[protocol][v2]")
     }
 }
 
+TEST_CASE("ProtocolV2: Auto Power-Off uses the six literal preset codes", "[protocol][v2]")
+{
+    const std::vector<std::pair<uint8_t, uint8_t>> codes = {
+        {0x11, 0x00}, // Off
+        {0x00, 0x00}, // 5 minutes
+        {0x01, 0x01}, // 30 minutes
+        {0x02, 0x02}, // 1 hour
+        {0x03, 0x03}, // 3 hours
+        {0x10, 0x00}  // When taken off
+    };
+
+    SECTION("GET 26 05 decodes every reply code")
+    {
+        for (size_t index = 0; index < codes.size(); ++index) {
+            FakeTransport fake;
+            SonyProtocolSession session(&fake);
+            session.connect("11:22:33:44:55:66");
+            ProtocolV2 v2(session);
+
+            const auto [first, second] = codes[index];
+            fake.queueIncoming(FrameCodec::encode(SonyFrame{ .type = DataType::Ack, .sequence = 0 }));
+            fake.queueIncoming(FrameCodec::encode(SonyFrame{
+                .type = DataType::DataMdr,
+                .sequence = 1,
+                .payload = {0x27, 0x05, first, second}
+            }));
+            REQUIRE(v2.getAutoPowerOff() == static_cast<int>(index));
+            REQUIRE(FrameCodec::decode(fake.sentFrames().front()).payload
+                    == std::vector<uint8_t>{0x26, 0x05});
+        }
+    }
+
+    SECTION("SET 28 05 emits every code")
+    {
+        ReplyingFakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV2 v2(session);
+
+        for (size_t index = 0; index < codes.size(); ++index) {
+            fake.queueReply({ SonyFrame{
+                .type = DataType::Ack,
+                .sequence = static_cast<uint8_t>(index)
+            } });
+            v2.setAutoPowerOff(static_cast<int>(index));
+            const auto [first, second] = codes[index];
+            REQUIRE(FrameCodec::decode(fake.sentFrames()[index]).payload
+                    == std::vector<uint8_t>{0x28, 0x05, first, second});
+        }
+    }
+}
+
 TEST_CASE("ProtocolV2: powerOff sends POWER_SET/POWER_OFF and tolerates the link dropping", "[protocol][v2]")
 {
     ReplyingFakeTransport fake;

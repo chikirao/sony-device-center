@@ -395,6 +395,10 @@ verify on hardware → fixture → `IProtocol` + `DeviceState` +
 
 ## Phase 4 — Protocol gaps on other devices ⚠
 
+- [~] **Auto Power-Off label mapping.** The test build aligns the six UI
+  labels with the documented V1/V2 code table: Off, 5 minutes, 30 minutes,
+  1 hour, 3 hours, and When Taken Off. A fresh XM5 readback is still required
+  before the label change is treated as newly verified.
 - [ ] **V1 (XM3/XM4): DSEE and Auto Power-Off.** Devices respond to
   `0xe6 0x02` and `0xf6 0x04`, but the responses aren't decoded yet
   (`device-matrix.md`).

@@ -49,6 +49,9 @@ This document tracks hardware-level verification and protocol capability support
 - DSEE Extreme toggle (`0xe6` / `0xe7` / `0xe8`).
 - Speak-to-Chat toggle (`0xf6` / `0xf7` / `0xf8`).
 - Auto Power-Off configuration (`0x26` / `0x27` / `0x28`).
+  The contributor test build labels its documented codes as Off, 5 minutes,
+  30 minutes, 1 hour, 3 hours, and When Taken Off. This mapping still awaits
+  a fresh XM5 readback before it is treated as newly verified.
 - Power off: `0x24 0x03 0x01` (verified on WH-1000XM5).
 
 ---

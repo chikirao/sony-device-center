@@ -150,7 +150,7 @@ ViewPage {
                     implicitWidth: 150
                     implicitHeight: 40
                     enabled: controller.hasAutoPowerOff && controller.connected
-                    model: [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_15min"), appWindow.tr("apo_30min"), appWindow.tr("apo_1h"), appWindow.tr("apo_3h")]
+                    model: [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_30min"), appWindow.tr("apo_1h"), appWindow.tr("apo_3h"), appWindow.tr("apo_when_taken_off")]
                     currentIndex: root.known("autoPowerOff") ? controller.autoPowerOff : -1
                     Connections {
                         target: controller
