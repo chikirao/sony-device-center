@@ -80,6 +80,7 @@ CliRequest cliRequestFor(const std::vector<std::string>& tokens) {
     if (verb == "adaptive" || verb == "adaptive-volume")
         return {envelope("adaptiveVolume", {{"enabled", onOff(tokens, 1, "adaptive volume")}}), ""};
     if (verb == "apo" || verb == "autopoweroff") {
+        if (arg(1) == "get") return {envelope("autoPowerOffGet"), "autoPowerOff"};
         if (tokens.size() < 2) throw std::invalid_argument("apo expects a preset index from 0 to 5");
         return {envelope("autoPowerOff", {{"index", integer(tokens[1], 0, 5, "apo index")}}), ""};
     }
