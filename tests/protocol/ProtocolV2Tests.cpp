@@ -9,6 +9,21 @@ using namespace sony::protocol;
 using namespace sony::transport;
 using sony::test::ReplyingFakeTransport;
 
+namespace {
+
+// The reader thread may ACK a prequeued response before the request thread is
+// scheduled, especially on macOS. Ignore transport-level ACKs when asserting
+// the command payload.
+std::vector<uint8_t> firstRequestPayload(const FakeTransport& fake) {
+    for (const auto& frameBytes : fake.sentFrames()) {
+        auto decoded = FrameCodec::decode(frameBytes);
+        if (decoded.type == DataType::DataMdr) return decoded.payload;
+    }
+    return {};
+}
+
+} // namespace
+
 TEST_CASE("ProtocolV2: uses opcode 0x22 for battery request", "[protocol][v2]")
 {
     FakeTransport fake;
@@ -192,8 +207,7 @@ TEST_CASE("ProtocolV2: Auto Power-Off uses the six literal preset codes", "[prot
                 .payload = {0x27, 0x05, first, second}
             }));
             REQUIRE(v2.getAutoPowerOff() == static_cast<int>(index));
-            REQUIRE(FrameCodec::decode(fake.sentFrames().front()).payload
-                    == std::vector<uint8_t>{0x26, 0x05});
+            REQUIRE(firstRequestPayload(fake) == std::vector<uint8_t>{0x26, 0x05});
         }
     }
 
