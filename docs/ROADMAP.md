@@ -395,10 +395,11 @@ verify on hardware → fixture → `IProtocol` + `DeviceState` +
 
 ## Phase 4 — Protocol gaps on other devices ⚠
 
-- [~] **V1 (XM4): DSEE and Auto Power-Off contributor test.** Implemented
-  from Gadgetbridge's `0xe6 0x02` and `0xf6 0x04` layouts with literal-byte
-  regression tests. Profile flags are enabled only for the XM4 test build;
-  final support still requires the firmware 3.0.1 TX/RX dump.
+- [~] **V1 (XM4): DSEE and Auto Power-Off contributor test.** DSEE on/off was
+  confirmed through the GUI on firmware 3.0.1, although the CLI failed to
+  connect and produced no literal TX/RX dump. Auto Power-Off did not work, so
+  its XM4 profile flag is disabled again while the Gadgetbridge-based code is
+  retained as an unverified implementation hint.
 - [ ] **XM6: 10-band EQ.** Already done in upstream PR #44 (Cyrus7):
   inquired type `0x04`, 10 bands without Clear Bass, verified on real XM6
   hardware. Don't reimplement — wait for the merge and pull it in.

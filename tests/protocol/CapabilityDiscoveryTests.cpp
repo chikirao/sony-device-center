@@ -89,7 +89,7 @@ TEST_CASE("CapabilityDiscovery: discoverAsync runs non-blocking", "[protocol][ca
     REQUIRE(caps.wearSensor == true);
     REQUIRE(caps.equalizer == true);
     REQUIRE(caps.dsee == true);
-    REQUIRE(caps.autoPowerOff == true);
+    REQUIRE(caps.autoPowerOff == false);
     REQUIRE(fake.sentCount() == 0);
 }
 

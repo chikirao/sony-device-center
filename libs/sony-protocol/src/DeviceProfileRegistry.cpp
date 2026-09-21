@@ -41,9 +41,10 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
         },
         // WH-1000XM4 (V1 protocol, ANC/Ambient, Single battery, wear sensor, multipoint)
         // Battery, EQ + Clear Bass, firmware and codec readback verified on
-        // hardware (firmware 3.0.1) over the legacy V1 opcodes. DSEE and
-        // Auto Power-Off are enabled for the contributor test build and await
-        // a literal XM4 dump before being marked verified.
+        // hardware (firmware 3.0.1) over the legacy V1 opcodes. DSEE was also
+        // confirmed through the GUI on this firmware. Auto Power-Off did not
+        // work in the contributor build, so its provisional profile flag stays
+        // disabled until a successful TX/RX capture establishes the V1 layout.
         DeviceProfile{
             .model = SonyModel::WH1000XM4,
             .protocol = SonyProtocolVersion::V1,
@@ -58,7 +59,7 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .dsee = true,
                 .speakToChat = false,
                 .adaptiveVolume = false,
-                .autoPowerOff = true,
+                .autoPowerOff = false,
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = true,

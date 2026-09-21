@@ -18,7 +18,7 @@ This document tracks hardware-level verification and protocol capability support
 | Device | Protocol | Connection | Battery | ANC | Ambient | EQ | DSEE | Firmware | Codec | Speak-to-Chat | Auto Power-Off | Tested Firmware | Tester |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **WH-1000XM3** | V1 | RFCOMM | Verified | Verified | Verified | N/A (V1) | N/A (V1) | Unknown | SBC, AAC, LDAC, aptX | N/A | N/A | 4.5.2 | Community |
-| **WH-1000XM4** | V1 | RFCOMM | Verified | Verified | Verified | Verified | Expected (awaiting dump) | Verified | AAC verified | N/A | Expected (awaiting dump) | 3.0.1 | Community (Windows) |
+| **WH-1000XM4** | V1 | RFCOMM | Verified | Verified | Verified | Verified | Verified (GUI on/off; dump unavailable) | Verified | AAC verified | N/A | Disabled (contributor test unsuccessful) | 3.0.1 | Community (Windows) |
 | **WH-1000XM5** | V2 | RFCOMM | Verified | Verified | Verified | Verified | Verified | Verified | SBC, AAC, LDAC | Verified | Verified | 2.3.1 | Core Dev |
 | **WH-1000XM6** | V2 | RFCOMM | Expected | Expected | Expected | Expected | Expected | Expected | Expected | Expected | Expected | — | Unreleased |
 | **WF-1000XM4** | V2 | RFCOMM | Expected (Dual+Case) | Expected | Expected | Expected | Expected | Expected | SBC, AAC, LDAC | Expected | Expected | — | Awaiting HW |
@@ -38,11 +38,13 @@ This document tracks hardware-level verification and protocol capability support
 - 5-band equalizer with Clear Bass via `0x56` / `0x57` / `0x58` with inquired type `0x01` (V2 uses `0x00`).
 - Firmware `0x04 0x02` (returns `0x05`), codec `0x18 0x00` (returns `0x19`).
 - **Opcode `0x22` is POWER OFF** — must NEVER be transmitted to a V1 device to query battery. The only legitimate use is `powerOff()`, which sends `0x22 0x00 0x01` (Gadgetbridge layout; not yet verified on V1 hardware).
-- DSEE (`0xe6 0x02` → `0xe7 0x02 0x00 <on>`) and auto power-off
-  (`0xf6 0x04` → `0xf7 0x04 0x01 <code0> <code1>`) are implemented from
-  Gadgetbridge's V1 layouts and enabled in the XM4 contributor test build.
-  Both remain **Expected, awaiting XM4 dump**; do not mark them Verified until
-  the literal TX/RX capture confirms the layouts on firmware 3.0.1.
+- DSEE (`0xe6 0x02` → `0xe7 0x02 0x00 <on>`) was confirmed working on and off
+  through the GUI on XM4 firmware 3.0.1. The contributor's `sonyctl -v` run
+  could not connect, so a literal TX/RX capture is still unavailable.
+- Auto power-off (`0xf6 0x04` → `0xf7 0x04 0x01 <code0> <code1>`) remains an
+  implementation hint from Gadgetbridge. It did not work in the contributor
+  build and is disabled in the XM4 profile until a successful capture shows
+  the real firmware 3.0.1 exchange.
 
 ### Protocol V2 (e.g. WH-1000XM5, WF-1000XM4/M5, LinkBuds, ULT WEAR)
 - Extended variable-length payload structures.
