@@ -405,6 +405,10 @@ verify on hardware → fixture → `IProtocol` + `DeviceState` +
   retained as an unverified implementation hint. The same build aligns the
   six APO labels with the documented code table; a fresh XM5 readback is still
   required before that label change moves to the main PR.
+- [ ] **V1 (XM4): investigate Noise Control Off.** The contributor reported
+  that ANC and Ambient work but Off does not in the combined build. This path
+  is unchanged from `main`; establish whether it reproduces in the installed
+  build and capture the `0x68 0x02` exchange before altering protocol bytes.
 - [ ] **XM6: 10-band EQ.** Already done in upstream PR #44 (Cyrus7):
   inquired type `0x04`, 10 bands without Clear Bass, verified on real XM6
   hardware. Don't reimplement — wait for the merge and pull it in.

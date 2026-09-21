@@ -45,6 +45,10 @@ This document tracks hardware-level verification and protocol capability support
   implementation hint from Gadgetbridge. It did not work in the contributor
   build and is disabled in the XM4 profile until a successful capture shows
   the real firmware 3.0.1 exchange.
+- The Noise Control **Off** transition was also reported unsuccessful in the
+  combined contributor build. That V1 command path is unchanged from `main`;
+  compare against the installed build and capture TX/RX before changing its
+  established `0x68 0x02` layout.
 - Speak-to-Chat is Smart Talking Mode: GET `0xf6 0x05` → RET `0xf7 0x05 <kind> <onOff>`, SET enable `0xf8 0x05 0x01 <0|1>`. Enable is **not** inverted. Config SET `0xfc 0x05 0x00 <sensitivity> <focus> <timeout>` is required on enable; without it an XM4 session never times out. `kind 0x02` is an active talking session, not off. Timeout bytes match Headphones Connect: `0x00` ~15s, `0x01` Standard ~30s (what we write today), `0x02` ~1 min, `0x03` do not close. Sensitivity/timeout UI is a nice-to-have.
 
 ### Protocol V2 (e.g. WH-1000XM5, WF-1000XM4/M5, LinkBuds, ULT WEAR)
