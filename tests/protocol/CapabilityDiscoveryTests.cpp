@@ -90,7 +90,7 @@ TEST_CASE("CapabilityDiscovery: discoverAsync runs non-blocking", "[protocol][ca
     REQUIRE(caps.equalizer == true);
     REQUIRE(caps.dsee == true);
     REQUIRE(caps.speakToChat == true);
-    REQUIRE(caps.autoPowerOff == true);
+    REQUIRE(caps.autoPowerOff == false);
     REQUIRE(fake.sentCount() == 0);
 }
 

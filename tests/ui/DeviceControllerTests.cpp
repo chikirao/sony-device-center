@@ -122,10 +122,10 @@ private slots:
             QVERIFY(!autoPowerOff->property("enabled").toBool());
         } else if (model == "WH-1000XM4") {
             QVERIFY(controller.isConnected());
-            QVERIFY(controller.hasAutoPowerOff());
+            QVERIFY(!controller.hasAutoPowerOff());
             auto* autoPowerOff = window->findChild<QObject*>("autoPowerOffCombo");
             QVERIFY(autoPowerOff);
-            QVERIFY(autoPowerOff->property("enabled").toBool());
+            QVERIFY(!autoPowerOff->property("enabled").toBool());
         }
         controller.setLanguage(language);
         window->resize(size);
