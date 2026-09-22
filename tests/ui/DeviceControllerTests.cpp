@@ -261,6 +261,47 @@ private slots:
                 QVERIFY(window->grabWindow().save(path));
             }
         }
+        // Each fact once: the title bar names the app, the sidebar foot
+        // carries the connection state, and power off is in the header
+        // and the sidebar while something is connected.
+        QCOMPARE(window->title(), QString("Sony Device Center"));
+        auto* sidebarState = window->findChild<QObject*>("sidebarConnectionState");
+        QVERIFY(sidebarState);
+        QVERIFY(sidebarState->property("text").toString() == controller.t("connected")
+                || sidebarState->property("text").toString() == controller.t("charging"));
+        auto* headerPower = window->findChild<QQuickItem*>("headerPowerOff");
+        auto* sidebarPower = window->findChild<QQuickItem*>("sidebarPowerOff");
+        QVERIFY(headerPower && sidebarPower);
+        QVERIFY(headerPower->isEnabled() && sidebarPower->isEnabled());
+        // The header row fits the window: the power button, its last item,
+        // ends inside the page margin even at the minimum size.
+        window->setProperty("navIndex", 0);
+        QTest::qWait(30);
+        QVERIFY2(headerPower->mapToScene(QPointF(headerPower->width(), 0)).x() <= window->width() - 30,
+                 qPrintable(QString("header overflows: power button ends at %1 of %2")
+                     .arg(headerPower->mapToScene(QPointF(headerPower->width(), 0)).x()).arg(window->width())));
+        window->setProperty("navIndex", 6); // the About card checks below need Settings shown
+        // The regular-font option swaps every dot display for the body
+        // face, persists, and switches back.
+        const bool previousPlainFont = controller.plainFont();
+        auto* nameDots = window->findChild<QQuickItem*>("deviceNameDots");
+        QVERIFY(nameDots);
+        controller.setPlainFont(true);
+        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("plainFont").toBool(), true);
+        QTRY_VERIFY(nameDots->property("plain").toBool());
+        QVERIFY(nameDots->implicitHeight() > 0);
+        QCOMPARE(window->findChild<QObject*>("plainFontSwitch")->property("checked").toBool(), true);
+        if (!output.isEmpty()) {
+            for (int page : {0, 2, 5}) {
+                window->setProperty("navIndex", page);
+                QTest::qWait(400);
+                QVERIFY(window->grabWindow().save(QString("%1/plain-%2-%3-%4-page%5.png")
+                    .arg(output, model, language).arg(size.width()).arg(page)));
+            }
+        }
+        controller.setPlainFont(false);
+        QTRY_VERIFY(!nameDots->property("plain").toBool());
+        controller.setPlainFont(previousPlainFont);
         // The About card follows the checker: idle, then the release with
         // both actions once the (canned) reply is in.
         auto* updateStatus = window->findChild<QObject*>("updateStatus");
@@ -294,6 +335,16 @@ private slots:
             QTRY_COMPARE_WITH_TIMEOUT(controller.clearBass(), -3, 3000);
             QTRY_COMPARE_WITH_TIMEOUT(bassValue->property("value").toInt(), -3, 3000);
         }
+        // Last, since the simulated set stays off: the header's power
+        // button switches it off, and both buttons grey out.
+        window->setProperty("navIndex", 0);
+        QTest::qWait(30);
+        QVERIFY(headerPower->isVisible());
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                          headerPower->mapToScene(QPointF(headerPower->width() / 2, headerPower->height() / 2)).toPoint());
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.isConnected(), 5000);
+        QTRY_VERIFY(!headerPower->isEnabled() && !sidebarPower->isEnabled());
+        QVERIFY(sidebarState->property("text").toString() != controller.t("connected"));
         controller.setThemeMode(previousTheme);
         controller.setLanguage(previousLanguage);
         QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join("\n")));
