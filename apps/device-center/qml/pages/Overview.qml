@@ -288,12 +288,13 @@ ViewPage {
                         glyphPath: appWindow.icons.sliders
                         onClicked: appWindow.navIndex = 2
                     }
+                    // Power off sits in the header and the sidebar now.
                     PillButton { appWindow: root.appWindow;
                         Layout.fillWidth: true
                         compact: true
-                        text: controller.connected ? appWindow.tr("power_off") : appWindow.tr("nav_device_switcher")
-                        glyphPath: controller.connected ? appWindow.icons.power : appWindow.icons.swap
-                        onClicked: { if (controller.connected) controller.powerOff(); else appWindow.navIndex = 4 }
+                        text: appWindow.tr("nav_device_switcher")
+                        glyphPath: appWindow.icons.swap
+                        onClicked: appWindow.navIndex = 4
                     }
                     Item { Layout.fillHeight: true }
                 }

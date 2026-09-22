@@ -74,4 +74,17 @@ RowLayout {
             }
         }
     }
+
+    // Top right, where the Sony app keeps it. Same action as the hub's
+    // power control: no confirmation, like there.
+    IconButton {
+        objectName: "headerPowerOff"
+        appWindow: header.appWindow
+        Layout.alignment: Qt.AlignVCenter
+        Layout.leftMargin: 4
+        glyphPath: appWindow.icons.power
+        toolTip: appWindow.tr("power_off")
+        enabled: controller.connected
+        onClicked: controller.powerOff()
+    }
 }

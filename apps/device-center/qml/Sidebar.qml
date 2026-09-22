@@ -136,6 +136,16 @@ Rectangle {
                     font.weight: Font.Medium
                 }
             }
+            IconButton {
+                objectName: "sidebarPowerOff"
+                appWindow: root.appWindow
+                onSidebar: true
+                size: 30
+                glyphPath: appWindow.icons.power
+                toolTip: appWindow.tr("power_off")
+                enabled: controller.connected
+                onClicked: controller.powerOff()
+            }
         }
     }
 }
