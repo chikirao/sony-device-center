@@ -56,6 +56,7 @@ ApplicationWindow {
     Binding { target: Theme; property: "iconAntialiasing"; value: controller.iconAntialiasing }
     Binding { target: Theme; property: "mode"; value: controller.themeMode }
     Binding { target: Theme; property: "animationsEnabled"; value: controller.animationsEnabled }
+    Binding { target: Theme; property: "plainFont"; value: controller.plainFont }
     Binding { target: Theme; property: "systemReducedMotion"; value: controller.systemReducedMotion }
 
     // Icon library. Named, not scattered as magic strings.

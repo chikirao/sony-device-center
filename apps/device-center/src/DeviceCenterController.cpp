@@ -43,6 +43,7 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
     if (_themeMode != "dark" && _themeMode != "light" && _themeMode != "system") _themeMode = "light";
     _iconAntialiasing = settings.value("iconAntialiasing", true).toBool();
     _animationsEnabled = settings.value("animationsEnabled", true).toBool();
+    _plainFont = settings.value("plainFont", false).toBool();
 #ifdef Q_OS_WIN
     // Qt 6.10 exposes color scheme, but not the Windows animation preference.
     const auto updateMotion = [this] {
@@ -346,6 +347,13 @@ void DeviceCenterController::setAnimationsEnabled(bool enabled) {
     if (_animationsEnabled == enabled) return;
     _animationsEnabled = enabled;
     QSettings("SonyBridge", "SonyDeviceCenter").setValue("animationsEnabled", enabled);
+    emit appearanceChanged();
+}
+
+void DeviceCenterController::setPlainFont(bool enabled) {
+    if (_plainFont == enabled) return;
+    _plainFont = enabled;
+    QSettings("SonyBridge", "SonyDeviceCenter").setValue("plainFont", enabled);
     emit appearanceChanged();
 }
 

@@ -276,6 +276,8 @@ void I18nManager::_initTranslations() {
     en["hub_tray_show"]                   = "Show in tray";
     en["hub_tray_overflow_note"]          = "Windows keeps new icons in the taskbar overflow (^) until you drag them onto the taskbar.";
     en["hub_tray_no_devices"]             = "No devices to show yet.";
+    en["plain_font"]                      = "Regular font";
+    en["plain_font_desc"]                 = "Titles and values in the regular typeface instead of the dot-matrix display";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -510,6 +512,8 @@ void I18nManager::_initTranslations() {
     pt["hub_tray_show"]                   = "Mostrar na bandeja";
     pt["hub_tray_overflow_note"]          = "O Windows mantém novos ícones na área oculta (^) até você arrastá-los para a barra de tarefas.";
     pt["hub_tray_no_devices"]             = "Ainda não há dispositivos.";
+    pt["plain_font"]                      = "Fonte normal";
+    pt["plain_font_desc"]                 = "Títulos e valores na fonte normal em vez da matriz de pontos";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -744,6 +748,8 @@ void I18nManager::_initTranslations() {
     es["hub_tray_show"]                   = "Mostrar en la bandeja";
     es["hub_tray_overflow_note"]          = "Windows deja los iconos nuevos en el área oculta (^) hasta que los arrastres a la barra de tareas.";
     es["hub_tray_no_devices"]             = "Todavía no hay dispositivos.";
+    es["plain_font"]                      = "Fuente normal";
+    es["plain_font_desc"]                 = "Títulos y valores con la fuente normal en lugar de la matriz de puntos";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -978,6 +984,8 @@ void I18nManager::_initTranslations() {
     de["hub_tray_show"]                   = "Im Tray anzeigen";
     de["hub_tray_overflow_note"]          = "Windows legt neue Symbole in den Überlaufbereich (^), bis man sie auf die Taskleiste zieht.";
     de["hub_tray_no_devices"]             = "Noch keine Geräte.";
+    de["plain_font"]                      = "Normale Schrift";
+    de["plain_font_desc"]                 = "Titel und Werte in normaler Schrift statt als Punktmatrix";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1212,6 +1220,8 @@ void I18nManager::_initTranslations() {
     fr["hub_tray_show"]                   = "Afficher dans la barre";
     fr["hub_tray_overflow_note"]          = "Windows range les nouvelles icônes dans la zone de débordement (^) jusqu’à ce que vous les glissiez sur la barre des tâches.";
     fr["hub_tray_no_devices"]             = "Aucun appareil pour l’instant.";
+    fr["plain_font"]                      = "Police normale";
+    fr["plain_font_desc"]                 = "Titres et valeurs dans la police normale au lieu de la matrice de points";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1446,6 +1456,8 @@ void I18nManager::_initTranslations() {
     ja["hub_tray_show"]                   = "トレイに表示";
     ja["hub_tray_overflow_note"]          = "Windows は新しいアイコンをタスクバーにドラッグするまで隠しトレイ (^) に置きます。";
     ja["hub_tray_no_devices"]             = "まだデバイスがありません。";
+    ja["plain_font"]                      = "標準フォント";
+    ja["plain_font_desc"]                 = "タイトルと数値をドットマトリクスではなく標準フォントで表示";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1680,6 +1692,8 @@ void I18nManager::_initTranslations() {
     ru["hub_tray_show"]                   = "Показывать в трее";
     ru["hub_tray_overflow_note"]          = "Windows прячет новые иконки в переполнении панели задач (^), пока их не перетащат на панель.";
     ru["hub_tray_no_devices"]             = "Пока нет устройств.";
+    ru["plain_font"]                      = "Обычный шрифт";
+    ru["plain_font_desc"]                 = "Заголовки и значения обычным шрифтом вместо точечного";
 }
 
 } // namespace sony::devicecenter

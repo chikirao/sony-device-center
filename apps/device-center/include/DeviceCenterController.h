@@ -66,6 +66,8 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(bool iconAntialiasing READ iconAntialiasing WRITE setIconAntialiasing NOTIFY appearanceChanged)
     Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY appearanceChanged)
     Q_PROPERTY(bool animationsEnabled READ animationsEnabled WRITE setAnimationsEnabled NOTIFY appearanceChanged)
+    // Dot-matrix displays (DotText / DotValue) drawn in the body font instead.
+    Q_PROPERTY(bool plainFont READ plainFont WRITE setPlainFont NOTIFY appearanceChanged)
     Q_PROPERTY(bool systemReducedMotion READ systemReducedMotion NOTIFY appearanceChanged)
     Q_PROPERTY(bool autostart READ autostart WRITE setAutostart NOTIFY autostartChanged)
     Q_PROPERTY(bool minimizeToTray READ minimizeToTray WRITE setMinimizeToTray NOTIFY minimizeToTrayChanged)
@@ -154,9 +156,11 @@ public:
     Q_INVOKABLE void setIconAntialiasing(bool enabled);
     QString themeMode() const { return _themeMode; }
     bool animationsEnabled() const { return _animationsEnabled; }
+    bool plainFont() const { return _plainFont; }
     bool systemReducedMotion() const { return _systemReducedMotion; }
     Q_INVOKABLE void setThemeMode(const QString& mode);
     Q_INVOKABLE void setAnimationsEnabled(bool enabled);
+    Q_INVOKABLE void setPlainFont(bool enabled);
     Q_INVOKABLE void setAutostart(bool enable);
     [[nodiscard]] bool minimizeToTray() const;
     Q_INVOKABLE void setMinimizeToTray(bool enable);
@@ -233,6 +237,7 @@ private:
     QVariantList _pairedDevices;
     QString _themeMode{"dark"};
     bool _animationsEnabled{true};
+    bool _plainFont{false};
     bool _iconAntialiasing{true};
     bool _systemReducedMotion{false};
     QString _currentLanguage{"en"};

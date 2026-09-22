@@ -20,6 +20,8 @@ QtObject {
     property bool iconAntialiasing: true
     property string mode: "dark"
     property bool animationsEnabled: true
+    // Dot-matrix displays in the body font (Settings > Regular font).
+    property bool plainFont: false
     property bool systemReducedMotion: false
     readonly property bool light: mode === "light" || (mode === "system" && Qt.styleHints.colorScheme === Qt.Light)
     readonly property bool motionEnabled: animationsEnabled && !systemReducedMotion

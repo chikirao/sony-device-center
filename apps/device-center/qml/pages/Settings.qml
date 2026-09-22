@@ -89,6 +89,20 @@ ViewPage {
                         onToggled: controller.setAnimationsEnabled(checked)
                     }
                 }
+                RowLayout {
+                    Layout.fillWidth: true
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Text { text: appWindow.tr("plain_font"); color: Theme.txt }
+                        Text { text: appWindow.tr("plain_font_desc"); color: Theme.txtDim; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                    }
+                    NeoSwitch {
+                        appWindow: root.appWindow
+                        objectName: "plainFontSwitch"
+                        confirmedChecked: controller.plainFont
+                        onToggled: controller.setPlainFont(checked)
+                    }
+                }
             }
         }
 
