@@ -9,6 +9,11 @@ ViewPage {
 
     function availability(key) { return controller.featureStatus[key] }
     function known(key) { var a = availability(key); return controller.connected && a && a.availability === "valid" }
+    // A connected device shows only what it can do; offline, every card
+    // stays so the page is not empty before the capabilities are known.
+    function shown(supported) { return !controller.connected || supported }
+    readonly property bool tilesShown: shown(controller.hasSpeakToChat) || shown(controller.hasAdaptiveVolume)
+    readonly property bool anyShown: shown(controller.hasDsee) || tilesShown || shown(controller.hasAutoPowerOff)
 
     ColumnLayout {
         anchors.fill: parent
@@ -25,6 +30,8 @@ ViewPage {
 
         // Headline feature: the upscaler gets the wide row.
         Card { appWindow: root.appWindow;
+            objectName: "dseeCard"
+            visible: root.shown(controller.hasDsee)
             Layout.fillWidth: true
             Layout.preferredHeight: 108
             RowLayout {
@@ -69,6 +76,7 @@ ViewPage {
 
         // Feature tiles
         RowLayout {
+            visible: root.tilesShown
             Layout.fillWidth: true
             Layout.fillHeight: false
             Layout.preferredHeight: 168
@@ -81,6 +89,8 @@ ViewPage {
                 delegate: Card { appWindow: root.appWindow;
                     id: tile
                     required property var modelData
+                    objectName: modelData.key + "Tile"
+                    visible: root.shown(modelData.supported)
                     readonly property bool ready: modelData.supported && root.known(modelData.key)
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -118,6 +128,8 @@ ViewPage {
 
         // Auto power off: the wide row with a picker on the right.
         Card { appWindow: root.appWindow;
+            objectName: "autoPowerOffCard"
+            visible: root.shown(controller.hasAutoPowerOff)
             Layout.fillWidth: true
             Layout.preferredHeight: 84
             RowLayout {
@@ -186,6 +198,24 @@ ViewPage {
                         Behavior on rotation { NumberAnimation { duration: Theme.tBase } }
                     }
                 }
+            }
+        }
+
+        // Connected to a model with none of the above (the V1 sets).
+        Card { appWindow: root.appWindow;
+            objectName: "featuresNone"
+            visible: !root.anyShown
+            Layout.fillWidth: true
+            Layout.preferredHeight: 84
+            Text {
+                anchors.fill: parent
+                anchors.margins: 18
+                textFormat: Text.PlainText
+                verticalAlignment: Text.AlignVCenter
+                text: appWindow.tr("features_none")
+                color: Theme.txtDim
+                font.pixelSize: 13
+                wrapMode: Text.Wrap
             }
         }
 

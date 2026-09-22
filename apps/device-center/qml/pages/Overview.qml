@@ -108,6 +108,8 @@ ViewPage {
                         var ctx = getContext("2d")
                         ctx.reset()
                         var r = Math.min(width, height) * 0.46
+                        // Laid out at zero size first; arc() rejects r < 0.
+                        if (r <= 0) return
                         ctx.strokeStyle = Theme.lineHi
                         ctx.lineWidth = 1.2
                         ctx.setLineDash([2, 5])
