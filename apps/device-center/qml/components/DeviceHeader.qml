@@ -6,7 +6,7 @@ import QtQuick.Layouts
 RowLayout {
     required property var appWindow
     id: header
-    spacing: 12
+    spacing: 8
 
     readonly property string modeLabel: !controller.connected || controller.noiseControlMode === "unknown" ? "—"
         : controller.noiseControlMode === "cancelling" ? appWindow.tr("mode_anc")
@@ -22,7 +22,10 @@ RowLayout {
         Layout.fillWidth: true
         // An explicit floor: otherwise the dot name's natural width becomes
         // the layout minimum and the chips push past the window edge.
-        Layout.minimumWidth: 220
+        Layout.minimumWidth: 200
+        // The name and the chips are different kinds of thing; keep them
+        // visibly apart rather than one chip-gap away.
+        Layout.rightMargin: 16
         DotText {
             objectName: "deviceNameDots"
             text: controller.deviceName
@@ -47,23 +50,26 @@ RowLayout {
             { k: appWindow.tr("battery"),    v: header.batteryLabel, g: controller.isCharging ? appWindow.icons.bolt : appWindow.icons.batteryUp },
             { k: appWindow.tr("sound_mode"), v: header.modeLabel, g: appWindow.icons.ambient }
         ]
+        // Compact: a glyph, a small label and a short dot value. The
+        // pages below carry the detail; these are a glance.
         delegate: Card {
             id: chip
             appWindow: header.appWindow
             required property var modelData
             required property int index
             implicitWidth: chipRow.implicitWidth + 32
-            implicitHeight: 66
-            Layout.alignment: Qt.AlignTop
+            implicitHeight: 58
+            radius: Theme.controlRadius
+            Layout.alignment: Qt.AlignVCenter
             RowLayout {
                 id: chipRow
                 anchors.centerIn: parent
-                spacing: 12
-                Glyph { appWindow: header.appWindow; path: chip.modelData.g; size: 20; color: Theme.txt; weight: 1.6 }
+                spacing: 10
+                Glyph { appWindow: header.appWindow; path: chip.modelData.g; size: 16; color: Theme.txtDim; weight: 1.6 }
                 ColumnLayout {
-                    spacing: 5
+                    spacing: 6
                     Eyebrow { appWindow: header.appWindow; text: chip.modelData.k }
-                    DotText { text: chip.modelData.v; dot: 3; maxWidth: 120; color: Theme.txt; delay: chip.index * 120 }
+                    DotText { text: chip.modelData.v; dot: 2.4; maxWidth: 84; color: Theme.txt; delay: chip.index * 120 }
                 }
             }
         }
