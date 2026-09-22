@@ -15,6 +15,7 @@
 #include <QImage>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QJSValue>
 #include <QQuickWindow>
 #include <QQuickItem>
 #include <functional>
@@ -121,6 +122,12 @@ private slots:
         controller.setThemeMode("light");
         QTest::qWait(20);
         QCOMPARE(window->color(), QColor("#EDEDED"));
+        // Built-in equalizer presets in Headphones Connect order.
+        auto* equalizerPage = window->findChild<QObject*>("equalizerPage");
+        QVERIFY(equalizerPage);
+        QList<int> presetOrder;
+        for (const auto& id : equalizerPage->property("presets").value<QJSValue>().toVariant().toList()) presetOrder << id.toInt();
+        QCOMPARE(presetOrder, QList<int>({0x00, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0xa0}));
         const auto output = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
         if (!output.isEmpty()) {
             QDir().mkpath(output);
