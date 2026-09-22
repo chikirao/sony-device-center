@@ -327,6 +327,59 @@ Sony set's quick controls inline. Three PRs, stacked.
 
 ---
 
+## Polish & performance — after the WH-1000XM4 fixes
+
+Feedback from an XM4 owner (September 2026), triaged by the fork owner. The
+UI was built fast; this pass removes clutter, adds a few conveniences and
+measures resource use. One branch per item, in this order; every UI PR has
+before/after screenshots (en + ru, both themes).
+
+- [ ] **Own repository and donation links** (`fix/settings-links`). The
+  Settings "GitHub & Sponsorship" card still points at the upstream repo
+  and `github.com/sponsors/marconvcm`. Point it at this fork and its own
+  donation link; keep a credit line for the original project.
+- [ ] **Equalizer presets in Headphones Connect order** (`fix/eq-preset-order`,
+  first priority). Off, Bright, Excited, Mellow, Relaxed, Vocal, Treble
+  Boost, Bass Boost, Speech, Manual — the order people know from the phone.
+- [ ] **Less duplicated information** (`feat/ui-declutter`). The device name
+  shows in the header, the sidebar and the title bar; battery in the header
+  chip and again on the Battery page; connection state in the sidebar and a
+  page footer. Keep one of each. Smaller CODEC / BATTERY / SOUND MODE chips.
+  A power-off button in the header (top right, as in the Sony app) and next
+  to the device name at the bottom of the sidebar.
+- [ ] **Regular font option** (`feat/plain-font-option`). The dot-matrix
+  font stays the default; a Settings switch renders every `DotText` /
+  `DotValue` in the body font instead.
+- [ ] **Rated battery estimate** (`feat/battery-rated-estimate`). Until
+  `BatteryHistory` has measured a discharge rate, show "time left" from
+  the model's rated playback hours, labelled as rated. Matters most on the
+  XM4, which reports battery in 10 % steps, so a measured rate takes hours.
+  The contributor tried this in vkhawse2/sony-device-center — review and
+  reuse with credit if sound.
+- [ ] **Noise-control animation** (`feat/noise-control-animation`). A live
+  illustration that changes with ANC / Ambient / Off. Only cheap property
+  animations, stopped when the page or window is hidden and when motion is
+  off; idle CPU is measured before and after, and it is dropped if it costs.
+- [ ] **Connect button and local alias** (`feat/connect-and-alias`). With no
+  device, a "Connect a device" button opens the OS Bluetooth settings. A
+  per-address alias ("Joe's WH-1000XM4") kept in QSettings and shown in the
+  app, hub and tray; never written to the headset, model name stays as
+  secondary text. A "My Devices" screen of past devices is deferred.
+- [ ] **Lower memory and CPU** (`perf/lazy-pages`). Measure first (working
+  set, private bytes, idle CPU in the tray; simulated and on the XM5). The
+  main `StackLayout` keeps all pages alive — load the active page with a
+  `Loader`; size hero images with `sourceSize` instead of 800×800 +
+  mipmaps; repaint canvases on data change only; release or pause the main
+  scene while only the tray is up. Idle CPU should be zero between polls.
+  Qt Quick will not go far below ~60–70 MB, so the goal is a measured drop,
+  not a number.
+
+Not taken: dropping the device name when there is a picture (models look
+alike, and two Sony sets need telling apart); LDAC® / DSEE™ logo artwork
+(trademarks — plain bordered text badges instead).
+
+---
+
 ## Phase 3 — Protocol V2 features ⚠
 
 Ordered by value to an XM5 owner. For each item: `sonyctl` command →
@@ -494,10 +547,11 @@ so the maintainer is used to this style):
    hotkeys (#9), EQ library (#10), `sonyctl --json` (#11), auto-connect
    (#12).
 3. Phase 2: redesign in Codex (component extraction and `Theme` first).
-4. Phase 3: multipoint and playback — start with `sonyctl`, verify on the
+4. Polish & performance — after the XM4 release, in the listed order.
+5. Phase 3: multipoint and playback — start with `sonyctl`, verify on the
    XM5, add fixtures, then build the UI. Buttons, wearing detection, and
    connection mode follow.
-5. Phase 5: named-pipe IPC — once enough features accumulate that need a
+6. Phase 5: named-pipe IPC — once enough features accumulate that need a
    background daemon.
 
 Each feature gets its own branch and PR; protocol ones ship with a fixture
