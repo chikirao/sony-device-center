@@ -127,6 +127,29 @@ private slots:
             QVERIFY(autoPowerOff);
             QVERIFY(!autoPowerOff->property("enabled").toBool());
         }
+        {
+            // Audio Features lists only what the connected model can do.
+            window->setProperty("navIndex", 3);
+            QTest::qWait(50);
+            // Repeater tiles are visual children only, so walk childItems().
+            std::function<QQuickItem*(QQuickItem*, const QString&)> find = [&](QQuickItem* item, const QString& name) -> QQuickItem* {
+                if (item->objectName() == name) return item;
+                for (auto* child : item->childItems())
+                    if (auto* found = find(child, name)) return found;
+                return nullptr;
+            };
+            const auto shown = [&](const char* name) {
+                auto* item = find(window->contentItem(), name);
+                return item && item->isVisible();
+            };
+            QCOMPARE(shown("dseeCard"), controller.hasDsee());
+            QCOMPARE(shown("speakToChatTile"), controller.hasSpeakToChat());
+            QCOMPARE(shown("adaptiveVolumeTile"), controller.hasAdaptiveVolume());
+            QCOMPARE(shown("autoPowerOffCard"), controller.hasAutoPowerOff());
+            QCOMPARE(shown("featuresNone"), !controller.hasDsee() && !controller.hasSpeakToChat()
+                                                && !controller.hasAdaptiveVolume() && !controller.hasAutoPowerOff());
+            window->setProperty("navIndex", 0);
+        }
         controller.setLanguage(language);
         window->resize(size);
         const auto previousTheme = controller.themeMode();

@@ -277,6 +277,7 @@ void I18nManager::_initTranslations() {
     en["hub_tray_overflow_note"]          = "Windows keeps new icons in the taskbar overflow (^) until you drag them onto the taskbar.";
     en["hub_tray_no_devices"]             = "No devices to show yet.";
     en["apo_when_taken_off"]              = "When Taken Off";
+    en["features_none"]                   = "This device has none of these features.";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -512,6 +513,7 @@ void I18nManager::_initTranslations() {
     pt["hub_tray_overflow_note"]          = "O Windows mantém novos ícones na área oculta (^) até você arrastá-los para a barra de tarefas.";
     pt["hub_tray_no_devices"]             = "Ainda não há dispositivos.";
     pt["apo_when_taken_off"]              = "Ao Retirar";
+    pt["features_none"]                   = "Este dispositivo não tem nenhum destes recursos.";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -747,6 +749,7 @@ void I18nManager::_initTranslations() {
     es["hub_tray_overflow_note"]          = "Windows deja los iconos nuevos en el área oculta (^) hasta que los arrastres a la barra de tareas.";
     es["hub_tray_no_devices"]             = "Todavía no hay dispositivos.";
     es["apo_when_taken_off"]              = "Al Quitárselos";
+    es["features_none"]                   = "Este dispositivo no tiene ninguna de estas funciones.";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -982,6 +985,7 @@ void I18nManager::_initTranslations() {
     de["hub_tray_overflow_note"]          = "Windows legt neue Symbole in den Überlaufbereich (^), bis man sie auf die Taskleiste zieht.";
     de["hub_tray_no_devices"]             = "Noch keine Geräte.";
     de["apo_when_taken_off"]              = "Beim Abnehmen";
+    de["features_none"]                   = "Dieses Gerät hat keine dieser Funktionen.";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1217,6 +1221,7 @@ void I18nManager::_initTranslations() {
     fr["hub_tray_overflow_note"]          = "Windows range les nouvelles icônes dans la zone de débordement (^) jusqu’à ce que vous les glissiez sur la barre des tâches.";
     fr["hub_tray_no_devices"]             = "Aucun appareil pour l’instant.";
     fr["apo_when_taken_off"]              = "Lors du retrait";
+    fr["features_none"]                   = "Cet appareil ne dispose d'aucune de ces fonctions.";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1452,6 +1457,7 @@ void I18nManager::_initTranslations() {
     ja["hub_tray_overflow_note"]          = "Windows は新しいアイコンをタスクバーにドラッグするまで隠しトレイ (^) に置きます。";
     ja["hub_tray_no_devices"]             = "まだデバイスがありません。";
     ja["apo_when_taken_off"]              = "取り外したとき";
+    ja["features_none"]                   = "このデバイスにはこれらの機能がありません。";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1687,6 +1693,7 @@ void I18nManager::_initTranslations() {
     ru["hub_tray_overflow_note"]          = "Windows прячет новые иконки в переполнении панели задач (^), пока их не перетащат на панель.";
     ru["hub_tray_no_devices"]             = "Пока нет устройств.";
     ru["apo_when_taken_off"]              = "При снятии";
+    ru["features_none"]                   = "У этого устройства нет этих функций.";
 }
 
 } // namespace sony::devicecenter
