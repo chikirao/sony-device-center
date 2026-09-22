@@ -338,18 +338,22 @@ before/after screenshots (en + ru, both themes).
   Settings "GitHub & Sponsorship" card still points at the upstream repo
   and `github.com/sponsors/marconvcm`. Point it at this fork and its own
   donation link; keep a credit line for the original project.
-- [ ] **Equalizer presets in Headphones Connect order** (`fix/eq-preset-order`,
+- [x] **Equalizer presets in Headphones Connect order** (`fix/quick-ui-fixes`,
   first priority). Off, Bright, Excited, Mellow, Relaxed, Vocal, Treble
   Boost, Bass Boost, Speech, Manual — the order people know from the phone.
-- [ ] **Less duplicated information** (`feat/ui-declutter`). The device name
+  Done: display order only; preset ids and saved user presets untouched.
+- [x] **Less duplicated information** (`feat/ui-declutter`). The device name
   shows in the header, the sidebar and the title bar; battery in the header
   chip and again on the Battery page; connection state in the sidebar and a
   page footer. Keep one of each. Smaller CODEC / BATTERY / SOUND MODE chips.
   A power-off button in the header (top right, as in the Sony app) and next
   to the device name at the bottom of the sidebar.
-- [ ] **Regular font option** (`feat/plain-font-option`). The dot-matrix
+  Done: name in the header only, battery level in the header chip only,
+  connection state at the sidebar foot only (next to its power button).
+- [x] **Regular font option** (shipped in `feat/ui-declutter`). The dot-matrix
   font stays the default; a Settings switch renders every `DotText` /
   `DotValue` in the body font instead.
+  Done: "Regular font" switch, QSettings `plainFont`, sized to the dot grid.
 - [ ] **Rated battery estimate** (`feat/battery-rated-estimate`). Until
   `BatteryHistory` has measured a discharge rate, show "time left" from
   the model's rated playback hours, labelled as rated. Matters most on the
