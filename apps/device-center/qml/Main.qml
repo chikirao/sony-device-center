@@ -12,7 +12,8 @@ ApplicationWindow {
     minimumWidth: 980
     minimumHeight: 660
     visible: !startHidden
-    title: "Sony Device Center — " + controller.deviceName
+    // The device name lives in the header; the title bar names the app.
+    title: "Sony Device Center"
 
     // Closing hides the window when a tray icon exists to bring it back;
     // quitting for real is the tray menu's job.
@@ -138,7 +139,8 @@ ApplicationWindow {
                 Settings { appWindow: window }
             }
 
-            // Status strip. Errors are the only thing allowed to shout here.
+            // Status strip: errors and work in progress only. The connection
+            // state lives at the foot of the sidebar.
             RowLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: false
@@ -155,8 +157,7 @@ ApplicationWindow {
                     color: controller.lastError.length ? Theme.danger : Theme.txtFaint
                     font.pixelSize: 9
                     font.capitalization: Font.AllUppercase
-                    text: controller.lastError.length ? controller.lastError :
-                        controller.busy ? window.tr("working") : window.tr("connection_prefix") + window.trState(controller.connectionState)
+                    text: controller.lastError.length ? controller.lastError : controller.busy ? window.tr("working") : ""
                 }
                 Text {
                     textFormat: Text.PlainText

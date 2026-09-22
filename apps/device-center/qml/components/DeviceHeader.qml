@@ -23,7 +23,6 @@ RowLayout {
         // An explicit floor: otherwise the dot name's natural width becomes
         // the layout minimum and the chips push past the window edge.
         Layout.minimumWidth: 220
-        Eyebrow { appWindow: header.appWindow; text: controller.connected ? appWindow.tr("connected_device") : appWindow.tr("offline") }
         DotText {
             objectName: "deviceNameDots"
             text: controller.deviceName

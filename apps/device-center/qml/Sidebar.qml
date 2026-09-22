@@ -99,44 +99,41 @@ Rectangle {
 
         Rectangle { Layout.fillWidth: true; height: 1; color: Theme.sidebarLine }
 
-        // Device at the foot: name and a live status dot.
+        // Connection state at the foot: a live dot and a word. The device
+        // name is the header's; the sidebar only says whether it is there.
         RowLayout {
             Layout.topMargin: 18
-            Layout.leftMargin: 6
-            Layout.rightMargin: 6
+            // The dot lines up with the navigation glyphs above.
+            Layout.leftMargin: 20
+            Layout.rightMargin: 4
             Layout.bottomMargin: 8
-            spacing: 14
-            Glyph { appWindow: root.appWindow; path: appWindow.icons.headphones; size: 24; weight: 1.6; color: Theme.sidebarTxt }
-            ColumnLayout {
+            spacing: 10
+            RowLayout {
                 Layout.fillWidth: true
-                spacing: 4
+                spacing: 10
+                Rectangle {
+                    width: 6; height: 6; radius: 3
+                    color: controller.connected ? Theme.sidebarSuccess : Theme.sidebarTxtFaint
+                    SequentialAnimation on opacity {
+                        running: Theme.motionEnabled && controller.connected
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 0.35; duration: Theme.duration(1200); easing.type: Easing.InOutQuad }
+                        NumberAnimation { to: 1.0; duration: Theme.duration(1200); easing.type: Easing.InOutQuad }
+                    }
+                }
                 Text {
+                    objectName: "sidebarConnectionState"
                     textFormat: Text.PlainText
                     Layout.fillWidth: true
-                    text: controller.deviceName
+                    // Not connected: say why ("Connecting", "Disconnected by
+                    // you"), which the footer used to spell out.
+                    readonly property string stateText: appWindow.trState(controller.connectionState)
+                    text: controller.connected ? (controller.isCharging ? appWindow.tr("charging") : appWindow.tr("connected"))
+                                               : stateText.charAt(0).toUpperCase() + stateText.slice(1)
                     elide: Text.ElideRight
-                    color: Theme.sidebarTxt
+                    color: controller.connected ? Theme.sidebarTxt : Theme.sidebarTxtDim
                     font.pixelSize: 13
                     font.weight: Font.Medium
-                }
-                RowLayout {
-                    spacing: 6
-                    Rectangle {
-                        width: 6; height: 6; radius: 3
-                        color: controller.connected ? Theme.sidebarSuccess : Theme.sidebarTxtFaint
-                        SequentialAnimation on opacity {
-                            running: Theme.motionEnabled && controller.connected
-                            loops: Animation.Infinite
-                            NumberAnimation { to: 0.35; duration: Theme.duration(1200); easing.type: Easing.InOutQuad }
-                            NumberAnimation { to: 1.0; duration: Theme.duration(1200); easing.type: Easing.InOutQuad }
-                        }
-                    }
-                    Text {
-                        textFormat: Text.PlainText
-                        text: controller.connected ? (controller.isCharging ? appWindow.tr("charging") : appWindow.tr("connected")) : appWindow.tr("disconnected")
-                        color: Theme.sidebarTxtDim
-                        font.pixelSize: 11
-                    }
                 }
             }
         }

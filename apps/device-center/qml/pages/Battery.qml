@@ -50,7 +50,8 @@ ViewPage {
 
         // Live numbers. The estimate is honest: "—" until the
         // session has enough data, and the charging label while
-        // the level is going up.
+        // the level is going up. The level itself is the header's
+        // battery chip, a few pixels above.
         RowLayout {
             Layout.fillWidth: true
             spacing: 12
@@ -58,7 +59,6 @@ ViewPage {
             Repeater {
                 model: {
                     var dash = "—"
-                    var level = controller.connected && controller.batteryLevel >= 0 ? controller.batteryLevel + "%" : dash
                     var left = !controller.connected ? dash
                              : controller.isCharging ? appWindow.tr("charging")
                              : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : appWindow.tr("battery_estimate_pending")
@@ -67,10 +67,9 @@ ViewPage {
                     var session = controller.batterySessionStart > 0
                              ? appWindow.tr("battery_session_since").arg(batteryPage.formatSessionStart(controller.batterySessionStart)) : dash
                     return [
-                        { k: appWindow.tr("battery"), v: level, accent: controller.isCharging },
-                        { k: appWindow.tr("time_left"), v: left, accent: false },
-                        { k: appWindow.tr("battery_rate"), v: rate, accent: false },
-                        { k: appWindow.tr("battery_session"), v: session, accent: false }
+                        { k: appWindow.tr("time_left"), v: left },
+                        { k: appWindow.tr("battery_rate"), v: rate },
+                        { k: appWindow.tr("battery_session"), v: session }
                     ]
                 }
 
