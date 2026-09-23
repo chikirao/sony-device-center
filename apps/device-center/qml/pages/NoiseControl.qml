@@ -41,7 +41,10 @@ ViewPage {
             Layout.preferredHeight: appWindow.compact ? segments.implicitHeight + 8 : 68
             GridLayout {
                 id: segments
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                height: appWindow.compact ? implicitHeight : parent.height - 8
                 anchors.margins: 4
                 columns: appWindow.compact ? 1 : 3
                 columnSpacing: 4
@@ -104,7 +107,9 @@ ViewPage {
                 visible: controller.hasAmbient
                 ColumnLayout {
                     id: ambientColumn
-                    anchors.fill: parent
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
                     anchors.margins: 22
                     spacing: 14
                     RowLayout {

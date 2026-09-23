@@ -43,7 +43,9 @@ ViewPage {
             implicitHeight: appearanceColumn.implicitHeight + 40
             ColumnLayout {
                 id: appearanceColumn
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 20
                 spacing: 14
                 Eyebrow { appWindow: root.appWindow; text: appWindow.tr("appearance") }
@@ -116,7 +118,9 @@ ViewPage {
 
             ColumnLayout {
                 id: systemColumn
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 22
                 spacing: 16
 
@@ -393,7 +397,9 @@ ViewPage {
 
             ColumnLayout {
                 id: notifyColumn
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 22
                 spacing: 16
 
@@ -511,7 +517,9 @@ ViewPage {
 
             ColumnLayout {
                 id: hotkeyColumn
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 22
                 spacing: 16
 
@@ -666,9 +674,14 @@ ViewPage {
             Layout.fillWidth: true
             Layout.preferredHeight: hubColumn.implicitHeight + 44
 
+            // Pinned to the top rather than filling the card: the card's
+            // height is read from this column, and with wrapped rows the
+            // round trip took a third layout pass (Qt aborts at two).
             ColumnLayout {
                 id: hubColumn
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 22
                 spacing: 16
 
@@ -829,7 +842,9 @@ ViewPage {
 
                 ColumnLayout {
                     id: aboutColumn
-                    anchors.fill: parent
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
                     anchors.margins: 22
                     spacing: 14
 

@@ -39,11 +39,11 @@ ViewPage {
             // Headline feature: the upscaler gets the wide row.
             Card { appWindow: root.appWindow;
                 Layout.fillWidth: true
-                // Grows with a wrapped description instead of pushing the
-                // switch out.
-                Layout.preferredHeight: Math.max(appWindow.compact ? 0 : 108, dseeRow.implicitHeight + 36)
+                // A fixed height, not one read back from the row: that loop
+                // needed a third layout pass with Linux fonts. The narrow
+                // window adds room for a wrapped description.
+                Layout.preferredHeight: appWindow.compact ? 118 : 108
                 RowLayout {
-                    id: dseeRow
                     anchors.fill: parent
                     anchors.margins: 18
                     spacing: appWindow.compact ? 14 : 20
@@ -102,9 +102,8 @@ ViewPage {
                         readonly property bool ready: modelData.supported && root.known(modelData.key)
                         Layout.fillWidth: true
                         Layout.preferredWidth: 1
-                        Layout.preferredHeight: Math.max(appWindow.stacked ? 0 : 168, tileColumn.implicitHeight + 36)
+                        Layout.preferredHeight: 168
                         ColumnLayout {
-                            id: tileColumn
                             anchors.fill: parent
                             anchors.margins: 18
                             spacing: 8
