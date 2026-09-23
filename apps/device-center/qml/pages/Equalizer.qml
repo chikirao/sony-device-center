@@ -6,8 +6,10 @@ import "../components"
 
 ViewPage {
     id: root
+    objectName: "equalizerPage"
 
-    readonly property var presets: [0x00, 0x16, 0x15, 0x14, 0x10, 0x11, 0x12, 0x13, 0x17, 0xa0]
+    // Headphones Connect order, so the pills sit where phone users expect them.
+    readonly property var presets: [0x00, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0xa0]
     readonly property bool available: controller.connected && controller.hasEqualizer
 
     function band(i) {
