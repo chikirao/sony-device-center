@@ -67,6 +67,7 @@ ViewPage {
                             color: Theme.txtDim
                             font.pixelSize: 12
                             wrapMode: Text.Wrap
+                            Layout.preferredWidth: 1
                             maximumLineCount: 2
                             elide: Text.ElideRight
                         }
@@ -116,6 +117,7 @@ ViewPage {
                                 color: Theme.txtDim
                                 font.pixelSize: 12
                                 wrapMode: Text.Wrap
+                                Layout.preferredWidth: 1
                                 maximumLineCount: 2
                                 elide: Text.ElideRight
                             }

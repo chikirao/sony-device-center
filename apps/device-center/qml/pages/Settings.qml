@@ -1175,6 +1175,7 @@ ViewPage {
                 font.pixelSize: 14
                 font.weight: Font.DemiBold
                 wrapMode: Text.Wrap
+                Layout.preferredWidth: 1
             }
             Text {
                 textFormat: Text.PlainText
@@ -1184,6 +1185,7 @@ ViewPage {
                 color: Theme.txtDim
                 font.pixelSize: 12
                 wrapMode: Text.Wrap
+                Layout.preferredWidth: 1
             }
         }
         Item {
