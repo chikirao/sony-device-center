@@ -87,6 +87,17 @@
     new IntersectionObserver(function (entries) { nav.classList.toggle("is-scrolled", !entries[0].isIntersecting); }).observe(sentinel);
   }
 
+  /* ---------- Back to top ---------- */
+  // The wordmark always goes to the top. A plain "#top" does nothing once
+  // the address already ends in it, so scroll by hand and drop the hash.
+  var brand = document.querySelector(".brand");
+  if (brand) brand.addEventListener("click", function (e) {
+    e.preventDefault();
+    var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  });
+
   /* ---------- Halftone headphones ---------- */
   // The product as a grid of ink dots. The sound mode changes how the grid
   // behaves: cancelling holds it dense and still, ambient lets a slow wave
