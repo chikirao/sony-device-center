@@ -11,6 +11,7 @@
 #include <QVariantMap>
 
 #include <algorithm>
+#include <cmath>
 
 namespace sony::devicecenter {
 
@@ -191,6 +192,34 @@ BatteryHistory::Estimate BatteryHistory::estimate(qint64 nowMs) const {
     const double sinceEnd = static_cast<double>(std::max<qint64>(0, nowMs - reachedMs));
     result.remainingMs = static_cast<qint64>(std::max(0.0, end.level / perMs - sinceEnd));
     return result;
+}
+
+BatteryHistory::Rating BatteryHistory::ratedPlayback(const QString& deviceName) {
+    // From Sony's spec sheets (music playback, NC on / NC off). Earbuds are
+    // rated per charge of the buds, without the case. Earbuds first: their
+    // names end in the same "XM4"/"XM5" as the headphones'.
+    struct Entry {
+        const char* model;
+        Rating rating;
+    };
+    static constexpr Entry kTable[] = {
+        {"WF-1000XM6", {8, 12}},  {"WF-1000XM5", {8, 12}},  {"WF-1000XM4", {8, 12}},
+        {"WF-1000XM3", {6, 8}},   {"WH-1000XM6", {30, 40}}, {"WH-1000XM5", {30, 40}},
+        {"WH-1000XM4", {30, 38}}, {"WH-1000XM3", {30, 38}}, {"WH-CH720N", {35, 50}},
+        {"WH-ULT900N", {30, 50}}, {"ULT WEAR", {30, 50}},   {"WF-LS900N", {6, 9}},
+        {"LINKBUDS S", {6, 9}},
+    };
+    // "WH1000XM5" and "wh-1000xm5" name the same headset.
+    const auto squash = [](QString s) { return s.toUpper().remove('-').remove(' '); };
+    const QString name = squash(deviceName);
+    for (const auto& entry : kTable)
+        if (name.contains(squash(QString::fromLatin1(entry.model)))) return entry.rating;
+    return {};
+}
+
+int BatteryHistory::ratedMinutesLeft(int level, double ratedHours) {
+    if (level < 0 || ratedHours <= 0) return -1;
+    return static_cast<int>(std::lround(std::min(level, 100) * ratedHours * 60.0 / 100.0));
 }
 
 void BatteryHistory::seedDemoData(qint64 nowMs) {
