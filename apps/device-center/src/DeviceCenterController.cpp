@@ -177,7 +177,24 @@ bool DeviceCenterController::hasDualBattery() const { return _batteryLeft >= 0 |
 int DeviceCenterController::batteryMinutesLeft() const {
     if (!_connected || _isCharging) return -1;
     const auto e = _history->estimate(QDateTime::currentMSecsSinceEpoch());
-    return e.valid ? static_cast<int>(e.remainingMs / 60000) : -1;
+    // A measured rate needs two level changes, which after a charge is half
+    // an hour or more (hours on a headset that reports in ten-percent
+    // steps); until then the rating stands in for it.
+    return e.valid ? static_cast<int>(e.remainingMs / 60000) : _ratedMinutesLeft();
+}
+int DeviceCenterController::_ratedMinutesLeft() const {
+    const auto rating = BatteryHistory::ratedPlayback(_deviceName);
+    // Earbuds last as long as the emptier bud.
+    const int level = !hasDualBattery() ? _batteryLevel
+        : _batteryLeft < 0 ? _batteryRight : _batteryRight < 0 ? _batteryLeft : std::min(_batteryLeft, _batteryRight);
+    // Ambient sound runs the same microphones as noise cancelling, and an
+    // unknown mode is rated the shorter way.
+    const double hours = _noiseControlMode == "off" ? rating.processingOff : rating.processingOn;
+    return BatteryHistory::ratedMinutesLeft(level, hours);
+}
+bool DeviceCenterController::batteryEstimateRated() const {
+    if (!_connected || _isCharging) return false;
+    return !_history->estimate(QDateTime::currentMSecsSinceEpoch()).valid && _ratedMinutesLeft() >= 0;
 }
 QString DeviceCenterController::batteryTimeLeft() const {
     const int minutes = batteryMinutesLeft();

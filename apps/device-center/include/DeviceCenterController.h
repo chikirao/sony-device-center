@@ -40,6 +40,9 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(QString batteryTimeLeft READ batteryTimeLeft NOTIFY stateChanged)
     Q_PROPERTY(double batteryDischargeRate READ batteryDischargeRate NOTIFY stateChanged)
     Q_PROPERTY(double batterySessionStart READ batterySessionStart NOTIFY stateChanged)
+    // True while batteryMinutesLeft comes from the model's rated playback
+    // rather than from this charge's measured discharge.
+    Q_PROPERTY(bool batteryEstimateRated READ batteryEstimateRated NOTIFY stateChanged)
     Q_PROPERTY(QString noiseControlMode READ noiseControlMode NOTIFY stateChanged)
     Q_PROPERTY(int ambientLevel READ ambientLevel NOTIFY stateChanged)
     Q_PROPERTY(bool focusOnVoice READ focusOnVoice NOTIFY stateChanged)
@@ -106,6 +109,7 @@ public:
     [[nodiscard]] QString batteryTimeLeft() const;
     [[nodiscard]] double batteryDischargeRate() const;
     [[nodiscard]] double batterySessionStart() const;
+    [[nodiscard]] bool batteryEstimateRated() const;
     // Logged samples at or after sinceMs (Unix ms), oldest first.
     Q_INVOKABLE QVariantList batterySamples(double sinceMs) const;
     // "5 h 20 min" in the current language; minutes only under an hour.
@@ -201,6 +205,8 @@ signals:
 
 private:
     void _applySnapshot(const QByteArray& data);
+    // The spec-sheet estimate for the current level and noise mode, or -1.
+    [[nodiscard]] int _ratedMinutesLeft() const;
     void _send(const QString& method, const QJsonObject& params = {});
     QList<QPair<QString, QJsonObject>> _pending;
     std::unique_ptr<BatteryHistory> _history;

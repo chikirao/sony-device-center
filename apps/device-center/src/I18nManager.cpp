@@ -276,6 +276,8 @@ void I18nManager::_initTranslations() {
     en["hub_tray_show"]                   = "Show in tray";
     en["hub_tray_overflow_note"]          = "Windows keeps new icons in the taskbar overflow (^) until you drag them onto the taskbar.";
     en["hub_tray_no_devices"]             = "No devices to show yet.";
+    en["battery_estimate_rated"]          = "Rated";
+    en["battery_estimate_rated_hint"]     = "Until this charge has been measured, the estimate uses the model's rated playback time for the current noise mode.";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -510,6 +512,8 @@ void I18nManager::_initTranslations() {
     pt["hub_tray_show"]                   = "Mostrar na bandeja";
     pt["hub_tray_overflow_note"]          = "O Windows mantém novos ícones na área oculta (^) até você arrastá-los para a barra de tarefas.";
     pt["hub_tray_no_devices"]             = "Ainda não há dispositivos.";
+    pt["battery_estimate_rated"]          = "Nominal";
+    pt["battery_estimate_rated_hint"]     = "Até a descarga desta carga ser medida, a estimativa usa a autonomia nominal do modelo no modo de ruído atual.";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -744,6 +748,8 @@ void I18nManager::_initTranslations() {
     es["hub_tray_show"]                   = "Mostrar en la bandeja";
     es["hub_tray_overflow_note"]          = "Windows deja los iconos nuevos en el área oculta (^) hasta que los arrastres a la barra de tareas.";
     es["hub_tray_no_devices"]             = "Todavía no hay dispositivos.";
+    es["battery_estimate_rated"]          = "Nominal";
+    es["battery_estimate_rated_hint"]     = "Hasta medir la descarga de esta carga, la estimación usa la autonomía nominal del modelo en el modo de ruido actual.";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -978,6 +984,8 @@ void I18nManager::_initTranslations() {
     de["hub_tray_show"]                   = "Im Tray anzeigen";
     de["hub_tray_overflow_note"]          = "Windows legt neue Symbole in den Überlaufbereich (^), bis man sie auf die Taskleiste zieht.";
     de["hub_tray_no_devices"]             = "Noch keine Geräte.";
+    de["battery_estimate_rated"]          = "Laut Datenblatt";
+    de["battery_estimate_rated_hint"]     = "Bis die Entladung dieser Ladung gemessen ist, nutzt die Schätzung die Nennlaufzeit des Modells im aktuellen Geräuschmodus.";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1212,6 +1220,8 @@ void I18nManager::_initTranslations() {
     fr["hub_tray_show"]                   = "Afficher dans la barre";
     fr["hub_tray_overflow_note"]          = "Windows range les nouvelles icônes dans la zone de débordement (^) jusqu’à ce que vous les glissiez sur la barre des tâches.";
     fr["hub_tray_no_devices"]             = "Aucun appareil pour l’instant.";
+    fr["battery_estimate_rated"]          = "Valeur nominale";
+    fr["battery_estimate_rated_hint"]     = "Tant que la décharge de cette charge n'est pas mesurée, l'estimation utilise l'autonomie nominale du modèle dans le mode de bruit actuel.";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1446,6 +1456,8 @@ void I18nManager::_initTranslations() {
     ja["hub_tray_show"]                   = "トレイに表示";
     ja["hub_tray_overflow_note"]          = "Windows は新しいアイコンをタスクバーにドラッグするまで隠しトレイ (^) に置きます。";
     ja["hub_tray_no_devices"]             = "まだデバイスがありません。";
+    ja["battery_estimate_rated"]          = "公称値";
+    ja["battery_estimate_rated_hint"]     = "この充電の放電を測定するまでは、現在のノイズモードでのモデルの公称再生時間から推定します。";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1680,6 +1692,8 @@ void I18nManager::_initTranslations() {
     ru["hub_tray_show"]                   = "Показывать в трее";
     ru["hub_tray_overflow_note"]          = "Windows прячет новые иконки в переполнении панели задач (^), пока их не перетащат на панель.";
     ru["hub_tray_no_devices"]             = "Пока нет устройств.";
+    ru["battery_estimate_rated"]          = "По паспорту";
+    ru["battery_estimate_rated_hint"]     = "Пока разряд этой зарядки не измерен, оценка берётся из паспортного времени работы модели в текущем режиме шумоподавления.";
 }
 
 } // namespace sony::devicecenter
