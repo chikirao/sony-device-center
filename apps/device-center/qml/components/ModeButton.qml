@@ -19,14 +19,17 @@ Rectangle {
     default property alias extra: extraColumn.data
     signal clicked()
     readonly property real rowHeight: 84
-    property real open: expanded && !tile ? 1 : 0
-    Behavior on open { NumberAnimation { duration: Theme.duration(320); easing.type: Easing.OutCubic } }
+    // The height steps and the area fades in. An animated height resized
+    // the rounded rectangle every frame, and Qt 6.4's software renderer
+    // (CI, offscreen) crashed redrawing its cached corners.
+    readonly property bool opened: expanded && !tile
+    property real open: opened ? 1 : 0
+    Behavior on open { NumberAnimation { duration: Theme.duration(260); easing.type: Easing.OutCubic } }
 
     readonly property color fg: current ? Theme.accentText : Theme.txt
     readonly property color fgDim: current ? Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.62) : Theme.txtDim
 
-    implicitHeight: tile ? 96 : rowHeight + open * (extraColumn.implicitHeight + 18)
-    clip: open > 0 && open < 1
+    implicitHeight: tile ? 96 : opened ? rowHeight + Math.ceil(extraColumn.implicitHeight) + 18 : rowHeight
     radius: Theme.cardRadius + 2
     color: current ? Theme.accent : hover.hovered && enabled ? Theme.surfaceHi : Theme.surface
     border.width: 1
@@ -103,7 +106,7 @@ Rectangle {
 
     ColumnLayout {
         id: extraColumn
-        visible: button.open > 0
+        visible: button.opened
         opacity: button.open
         anchors.left: parent.left
         anchors.right: parent.right
