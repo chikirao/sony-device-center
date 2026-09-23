@@ -88,7 +88,7 @@ ViewPage {
                 }
             }
 
-            // Product, framed by a dotted orbit and a pinch of type.
+            // Product, framed by a dotted orbit.
             Item {
                 id: stage
                 anchors.right: parent.right
@@ -144,21 +144,6 @@ ViewPage {
                         model: 20
                         Rectangle { width: 3; height: 3; radius: 1.5; color: Theme.lineHi }
                     }
-                }
-
-                Text {
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    anchors.margins: 26
-                    width: 92
-                    textFormat: Text.PlainText
-                    text: appWindow.tr("hero_tagline")
-                    color: Theme.txtDim
-                    font.pixelSize: 9
-                    font.capitalization: Font.AllUppercase
-                    lineHeight: 1.5
-                    wrapMode: Text.Wrap
-                    horizontalAlignment: Text.AlignLeft
                 }
             }
         }

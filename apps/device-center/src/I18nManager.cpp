@@ -190,7 +190,6 @@ void I18nManager::_initTranslations() {
     en["animations_desc"]                 = "Page transitions and display effects. System reduced motion takes priority.";
     en["icon_antialiasing"]               = "Smooth icons";
     en["sound_mode"]                      = "Sound mode";
-    en["hero_tagline"]                    = "Music fits a quieter world";
     en["battery_connection"]              = "Battery & Connection";
     en["stable_connection"]               = "Stable connection";
     en["high_quality_audio"]              = "High-quality audio";
@@ -426,7 +425,6 @@ void I18nManager::_initTranslations() {
     pt["animations_desc"]                 = "Transições e efeitos visuais. A redução de movimento do sistema tem prioridade.";
     pt["icon_antialiasing"]               = "Suavizar ícones";
     pt["sound_mode"]                      = "Modo de som";
-    pt["hero_tagline"]                    = "A música combina com um mundo mais silencioso";
     pt["battery_connection"]              = "Bateria e conexão";
     pt["stable_connection"]               = "Conexão estável";
     pt["high_quality_audio"]              = "Áudio de alta qualidade";
@@ -662,7 +660,6 @@ void I18nManager::_initTranslations() {
     es["animations_desc"]                 = "Transiciones y efectos visuales. Reducir movimiento del sistema tiene prioridad.";
     es["icon_antialiasing"]               = "Suavizar iconos";
     es["sound_mode"]                      = "Modo de sonido";
-    es["hero_tagline"]                    = "La música encaja en un mundo más silencioso";
     es["battery_connection"]              = "Batería y conexión";
     es["stable_connection"]               = "Conexión estable";
     es["high_quality_audio"]              = "Audio de alta calidad";
@@ -898,7 +895,6 @@ void I18nManager::_initTranslations() {
     de["animations_desc"]                 = "Seitenübergänge und Anzeigeeffekte. Reduzierte Bewegung im System hat Vorrang.";
     de["icon_antialiasing"]               = "Kantenglättung für Symbole";
     de["sound_mode"]                      = "Klangmodus";
-    de["hero_tagline"]                    = "Musik passt in eine leisere Welt";
     de["battery_connection"]              = "Akku & Verbindung";
     de["stable_connection"]               = "Stabile Verbindung";
     de["high_quality_audio"]              = "Audio in hoher Qualität";
@@ -1134,7 +1130,6 @@ void I18nManager::_initTranslations() {
     fr["animations_desc"]                 = "Transitions et effets visuels. La réduction des animations du système est prioritaire.";
     fr["icon_antialiasing"]               = "Lisser les icônes";
     fr["sound_mode"]                      = "Mode sonore";
-    fr["hero_tagline"]                    = "La musique s'accorde à un monde plus calme";
     fr["battery_connection"]              = "Batterie et connexion";
     fr["stable_connection"]               = "Connexion stable";
     fr["high_quality_audio"]              = "Audio haute qualité";
@@ -1370,7 +1365,6 @@ void I18nManager::_initTranslations() {
     ja["animations_desc"]                 = "ページ遷移と表示効果。システムの視差効果を減らす設定が優先されます。";
     ja["icon_antialiasing"]               = "アイコンのアンチエイリアス";
     ja["sound_mode"]                      = "サウンドモード";
-    ja["hero_tagline"]                    = "静かな世界に音楽を";
     ja["battery_connection"]              = "バッテリーと接続";
     ja["stable_connection"]               = "安定した接続";
     ja["high_quality_audio"]              = "高音質オーディオ";
@@ -1606,7 +1600,6 @@ void I18nManager::_initTranslations() {
     ru["animations_desc"]                 = "Переходы страниц и эффекты табло. Системное уменьшение анимаций имеет приоритет.";
     ru["icon_antialiasing"]               = "Сглаживание иконок";
     ru["sound_mode"]                      = "Режим звука";
-    ru["hero_tagline"]                    = "Музыке к лицу тишина";
     ru["battery_connection"]              = "Батарея и связь";
     ru["stable_connection"]               = "Стабильное соединение";
     ru["high_quality_audio"]              = "Звук высокого качества";
