@@ -13,18 +13,20 @@ ColumnLayout {
     Eyebrow { appWindow: root.appWindow; visible: root.eyebrow !== ""; text: root.eyebrow; Layout.bottomMargin: 4 }
     Text {
         textFormat: Text.PlainText
+        Layout.fillWidth: true
         text: root.title
         color: Theme.txt
-        font.pixelSize: 34
+        font.pixelSize: root.appWindow.compact ? 26 : 34
         font.weight: Font.Bold
-        font.letterSpacing: -1
+        font.letterSpacing: root.appWindow.compact ? -0.6 : -1
+        wrapMode: Text.Wrap
     }
     Text {
         textFormat: Text.PlainText
         visible: root.subtitle !== ""
         text: root.subtitle
         color: Theme.txtDim
-        font.pixelSize: 15
+        font.pixelSize: root.appWindow.compact ? 13 : 15
         wrapMode: Text.Wrap
         Layout.fillWidth: true
     }

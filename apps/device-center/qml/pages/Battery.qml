@@ -19,13 +19,16 @@ ViewPage {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 32
+        anchors.margins: appWindow.pageMargin
         anchors.topMargin: 22
         spacing: 16
 
-        RowLayout {
+        // Narrow: the range buttons go under the title.
+        GridLayout {
             Layout.fillWidth: true
-            spacing: 10
+            columns: appWindow.compact ? 1 : 2
+            columnSpacing: 10
+            rowSpacing: 12
 
             SectionTitle { appWindow: batteryPage.appWindow;
                 Layout.fillWidth: true
@@ -34,27 +37,33 @@ ViewPage {
                 subtitle: appWindow.tr("battery_subtitle")
             }
 
-            PillButton { appWindow: batteryPage.appWindow;
-                compact: true
-                text: appWindow.tr("battery_range_24h")
-                active: batteryPage.rangeHours === 24
-                onClicked: batteryPage.rangeHours = 24
-            }
-            PillButton { appWindow: batteryPage.appWindow;
-                compact: true
-                text: appWindow.tr("battery_range_7d")
-                active: batteryPage.rangeHours === 24 * 7
-                onClicked: batteryPage.rangeHours = 24 * 7
+            RowLayout {
+                Layout.alignment: Qt.AlignTop
+                spacing: 10
+                PillButton { appWindow: batteryPage.appWindow;
+                    compact: true
+                    text: appWindow.tr("battery_range_24h")
+                    active: batteryPage.rangeHours === 24
+                    onClicked: batteryPage.rangeHours = 24
+                }
+                PillButton { appWindow: batteryPage.appWindow;
+                    compact: true
+                    text: appWindow.tr("battery_range_7d")
+                    active: batteryPage.rangeHours === 24 * 7
+                    onClicked: batteryPage.rangeHours = 24 * 7
+                }
             }
         }
 
         // Live numbers. The estimate is honest: "—" until the
         // session has enough data, and the charging label while
-        // the level is going up. The level itself is the header's
-        // battery chip, a few pixels above.
-        RowLayout {
+        // the level is going up. The level itself is in the header,
+        // a few pixels above.
+        GridLayout {
             Layout.fillWidth: true
-            spacing: 12
+            columns: appWindow.compact ? 2 : 3
+            columnSpacing: 12
+            rowSpacing: 12
 
             Repeater {
                 model: {
@@ -78,6 +87,7 @@ ViewPage {
                     id: batteryStat
                     required property var modelData
                     Layout.fillWidth: true
+                    Layout.preferredWidth: 1
                     implicitHeight: statColumn.implicitHeight + 30
                     radius: Theme.cardRadius
                     color: Theme.surface

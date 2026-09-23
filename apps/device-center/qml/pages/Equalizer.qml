@@ -90,8 +90,8 @@ ViewPage {
 
     ColumnLayout {
         id: eqColumn
-        x: 32; y: 22
-        width: parent.width - 64
+        x: appWindow.pageMargin; y: 22
+        width: parent.width - 2 * appWindow.pageMargin
         spacing: 16
 
         // Title and presets share one sheet.
@@ -220,16 +220,20 @@ ViewPage {
             }
         }
 
-        RowLayout {
+        // Side by side, or stacked in a narrow window (which scrolls).
+        GridLayout {
             Layout.fillWidth: true
-            Layout.minimumHeight: 320
-            Layout.preferredHeight: Math.max(320, eqFlick.height - presetsCard.implicitHeight - 54)
-            spacing: 16
+            Layout.minimumHeight: appWindow.compact ? 0 : 320
+            Layout.preferredHeight: appWindow.compact ? -1 : Math.max(320, eqFlick.height - presetsCard.implicitHeight - 54)
+            columns: appWindow.compact ? 1 : 2
+            columnSpacing: 16
+            rowSpacing: 16
 
             // The five bands — the reason anyone opens this screen.
             Card { appWindow: root.appWindow;
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.fillHeight: !appWindow.compact
+                Layout.preferredHeight: appWindow.compact ? 340 : -1
                 Layout.preferredWidth: 3
                 ColumnLayout {
                     anchors.fill: parent
@@ -288,7 +292,7 @@ ViewPage {
             }
 
             ColumnLayout {
-                Layout.fillHeight: true
+                Layout.fillHeight: !appWindow.compact
                 Layout.fillWidth: true
                 Layout.preferredWidth: 2
                 spacing: 16
@@ -344,8 +348,10 @@ ViewPage {
                     }
                 }
 
-                // Active preset
+                // Active preset. Narrow windows leave it out: the lit pill
+                // above names it.
                 Card { appWindow: root.appWindow;
+                    visible: !appWindow.compact
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     ColumnLayout {
