@@ -101,12 +101,16 @@
   if (canvas && H && canvas.getContext) {
     art = (function () {
       var ctx = canvas.getContext("2d");
+      // Per-dot randomness for the scatter. A proper hash: the linear one
+      // the intro uses changes smoothly down a column, which made whole
+      // vertical runs of dots fly off together.
+      function hash(a, b) { var n = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return n - Math.floor(n); }
       var cells = [];
       for (var y = 0; y < H.rows; ++y)
         for (var x = 0; x < H.columns; ++x) {
           var v = H.cells.charCodeAt(y * H.columns + x) - 48;
           if (v > 0) cells.push({ x: x, y: y, v: Math.sqrt(v / 9), j: ((x * 37 + y * 91) % 100) / 100,
-                                  dx: 0, dy: 0, vx: 0, vy: 0, g: 0 });
+                                  dx: 0, dy: 0, vx: 0, vy: 0, g: 0, h: hash(x, y), k: hash(y + 101, x + 37) });
         }
       var size = { w: 0, h: 0, cell: 0, ox: 0, oy: 0, dpr: 1 };
       var weights = { cancelling: 1, ambient: 0, off: 0 };
@@ -152,7 +156,7 @@
         var cell = size.cell, half = cell / 2;
         var cx = size.ox + cell * H.columns / 2, cy = size.oy + cell * H.rows * 0.42;
         var reach = cell * 20;
-        var push = cell * (0.16 + Math.min(0.5, speed * 0.02));
+        var push = cell * (0.08 + Math.min(0.14, speed * 0.008));
         ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
         ctx.clearRect(0, 0, size.w, size.h);
         ctx.fillStyle = color;
@@ -180,9 +184,10 @@
             var d = Math.hypot(ax, ay);
             if (d < reach) {
               var f = Math.pow(1 - d / reach, 2);
-              var angle = Math.atan2(ay, ax) + (c.j - 0.5) * 1.4;
-              c.vx += Math.cos(angle) * push * f * (0.6 + c.j * 0.8) * dt;
-              c.vy += Math.sin(angle) * push * f * (0.6 + c.j * 0.8) * dt;
+              var angle = Math.atan2(ay, ax) + (c.h - 0.5) * 0.8;
+              var strength = push * f * (0.7 + c.k * 0.6) * dt;
+              c.vx += Math.cos(angle) * strength;
+              c.vy += Math.sin(angle) * strength;
               grow = f;
             }
           }
@@ -196,7 +201,7 @@
             else { c.dx = c.dy = c.vx = c.vy = 0; c.g = 0; }
           } else { c.dx = c.dy = c.vx = c.vy = 0; c.g = 0; }
           var px = hx + c.dx, py = hy + c.dy;
-          r *= 1 + 0.9 * c.g;
+          r *= 1 + 0.6 * c.g;
           if (r < 0.25) continue;
           ctx.moveTo(px + r, py);
           ctx.arc(px, py, r, 0, Math.PI * 2);
