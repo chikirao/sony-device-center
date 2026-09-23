@@ -38,6 +38,9 @@ ApplicationWindow {
     property int navIndex: 0
     property bool advancedOpen: false
     readonly property bool compact: width < 760
+    // Below this the page is too narrow for two cards side by side (the
+    // sidebar still takes its full width down to 760).
+    readonly property bool stacked: width < 1000
     readonly property real pageMargin: compact ? 20 : 32
 
     // Reactive i18n helper
@@ -110,6 +113,9 @@ ApplicationWindow {
     RowLayout {
         anchors.fill: parent
         spacing: 0
+        // Nothing under the advanced panel reacts while it is open: pointer
+        // handlers below its rows would otherwise take the same tap.
+        enabled: !window.advancedOpen
 
         Sidebar { appWindow: window }
 

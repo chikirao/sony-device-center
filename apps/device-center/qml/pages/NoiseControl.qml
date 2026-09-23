@@ -35,13 +35,17 @@ ViewPage {
         }
 
         // Three-way switch. One ink segment, the rest paper.
+        // A narrow window stacks the three: it has height to spare, not width.
         Card { appWindow: root.appWindow;
             Layout.fillWidth: true
-            Layout.preferredHeight: 68
-            RowLayout {
+            Layout.preferredHeight: appWindow.compact ? segments.implicitHeight + 8 : 68
+            GridLayout {
+                id: segments
                 anchors.fill: parent
                 anchors.margins: 4
-                spacing: 4
+                columns: appWindow.compact ? 1 : 3
+                columnSpacing: 4
+                rowSpacing: 4
                 Repeater {
                     model: root.modes
                     delegate: Rectangle {
@@ -53,26 +57,28 @@ ViewPage {
                         enabled: controller.connected
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        Layout.preferredWidth: 1
+                        Layout.preferredHeight: appWindow.compact ? 50 : -1
                         radius: Theme.controlRadius
                         color: current ? Theme.accent : segHover.hovered ? Theme.surfaceHi : "transparent"
                         opacity: enabled ? 1 : 0.5
                         Behavior on color { ColorAnimation { duration: Theme.tBase } }
                         HoverHandler { id: segHover; cursorShape: Qt.PointingHandCursor }
                         TapHandler { onTapped: root.apply(segment.modelData.mode) }
-                        // Narrow: the label alone, the glyphs are the Overview's.
+                        // Stacked, each row starts at the left like a list.
                         RowLayout {
-                            anchors.centerIn: parent
+                            x: appWindow.compact ? 16 : (parent.width - width) / 2
+                            anchors.verticalCenter: parent.verticalCenter
                             width: Math.min(implicitWidth, parent.width - 12)
                             spacing: 10
-                            Glyph { appWindow: root.appWindow; visible: !appWindow.compact; path: segment.modelData.glyph; size: 20; weight: 1.7; color: segment.current ? Theme.accentText : Theme.txt }
+                            Glyph { appWindow: root.appWindow; visible: appWindow.compact || !appWindow.stacked; path: segment.modelData.glyph; size: 20; weight: 1.7; color: segment.current ? Theme.accentText : Theme.txt }
                             Text {
                                 textFormat: Text.PlainText
                                 Layout.fillWidth: true
-                                horizontalAlignment: Text.AlignHCenter
                                 elide: Text.ElideRight
                                 text: segment.modelData.label
                                 color: segment.current ? Theme.accentText : Theme.txt
-                                font.pixelSize: appWindow.compact ? 12 : 14
+                                font.pixelSize: 14
                                 font.weight: Font.Medium
                                 Behavior on color { ColorAnimation { duration: Theme.tFast } }
                             }
@@ -84,18 +90,20 @@ ViewPage {
 
         GridLayout {
             Layout.fillWidth: true
-            Layout.fillHeight: true
-            columns: appWindow.compact ? 1 : 2
+            Layout.fillHeight: !appWindow.compact
+            columns: appWindow.stacked ? 1 : 2
             columnSpacing: 16
             rowSpacing: 16
 
             // Ambient level
             Card { appWindow: root.appWindow;
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.fillHeight: !appWindow.compact
                 Layout.preferredWidth: 1
+                Layout.preferredHeight: appWindow.compact ? ambientColumn.implicitHeight + 44 : -1
                 visible: controller.hasAmbient
                 ColumnLayout {
+                    id: ambientColumn
                     anchors.fill: parent
                     anchors.margins: 22
                     spacing: 14
@@ -155,7 +163,7 @@ ViewPage {
             // What the current mode does. Narrow windows drop it: the
             // switch above already says which mode is on.
             Card { appWindow: root.appWindow;
-                visible: !appWindow.compact
+                visible: !appWindow.stacked
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.preferredWidth: 1
@@ -195,5 +203,8 @@ ViewPage {
                 }
             }
         }
+
+        // Narrow: the cards keep their height and the rest stays empty.
+        Item { Layout.fillHeight: appWindow.compact }
     }
 }

@@ -25,12 +25,16 @@ ViewPage {
 
     // A long list of paired sets runs past the minimum window height, so
     // the page scrolls like Settings does.
+    WheelScroll { flickable: devicesFlick }
     Flickable {
+        id: devicesFlick
         anchors.fill: parent
         contentWidth: width
         contentHeight: devicesColumn.implicitHeight + 54
         clip: true
         boundsBehavior: Flickable.StopAtBounds
+        // Wheel only: a drag is the slider's under the pointer.
+        interactive: false
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
     ColumnLayout {

@@ -9,13 +9,17 @@ ViewPage {
     id: root
     // More cards than fit the minimum window height, so this
     // page scrolls; the others still fit and don't.
+    WheelScroll { flickable: settingsFlickItem }
     Flickable {
+        id: settingsFlickItem
         objectName: "settingsFlick"
         anchors.fill: parent
         contentWidth: width
         contentHeight: settingsColumn.implicitHeight + 72
         clip: true
         boundsBehavior: Flickable.StopAtBounds
+        // Wheel only: a drag is the slider's under the pointer.
+        interactive: false
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
     ColumnLayout {
@@ -812,7 +816,7 @@ ViewPage {
         // the window is narrow.
         GridLayout {
             Layout.fillWidth: true
-            columns: appWindow.compact ? 1 : 2
+            columns: appWindow.stacked ? 1 : 2
             columnSpacing: 18
             rowSpacing: 16
 

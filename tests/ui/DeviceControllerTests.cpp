@@ -317,6 +317,19 @@ private slots:
             QTest::qWait(500);
             QVERIFY(window->grabWindow().save(QString("%1/advanced-%2-%3-%4.png").arg(output, model, language).arg(size.width())));
         }
+        // A row opens its page and closes the panel, and the tap goes no
+        // further: at 980 px the Battery row lies over the Off tile, which
+        // used to switch noise control off too.
+        auto* batteryRow = window->findChild<QQuickItem*>("advancedBatteryRow");
+        QVERIFY(batteryRow);
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                          batteryRow->mapToScene(QPointF(batteryRow->width() / 2, batteryRow->height() / 2)).toPoint());
+        QTRY_COMPARE(window->property("navIndex").toInt(), 5);
+        QVERIFY(!window->property("advancedOpen").toBool());
+        QTest::qWait(300);
+        QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
+        window->setProperty("navIndex", 0);
+        window->setProperty("advancedOpen", true);
         window->requestActivate();
         QTRY_VERIFY(window->isActive());
         QTest::keyClick(window, Qt::Key_Escape);

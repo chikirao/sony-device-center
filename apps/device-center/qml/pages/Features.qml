@@ -11,14 +11,16 @@ ViewPage {
     function known(key) { var a = availability(key); return controller.connected && a && a.availability === "valid" }
 
     // Scrolls once a narrow window stacks the tiles.
+    WheelScroll { flickable: flick }
     Flickable {
         id: flick
         anchors.fill: parent
         contentHeight: column.implicitHeight + 22 + appWindow.pageMargin
-        interactive: contentHeight > height
         boundsBehavior: Flickable.StopAtBounds
+        // Wheel only: a drag is the slider's under the pointer.
+        interactive: false
         clip: true
-        ScrollBar.vertical: ScrollBar { policy: flick.interactive ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff }
+        ScrollBar.vertical: ScrollBar { policy: flick.contentHeight > flick.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff }
 
         ColumnLayout {
             id: column
@@ -37,13 +39,16 @@ ViewPage {
             // Headline feature: the upscaler gets the wide row.
             Card { appWindow: root.appWindow;
                 Layout.fillWidth: true
-                Layout.preferredHeight: 108
+                // Grows with a wrapped description instead of pushing the
+                // switch out.
+                Layout.preferredHeight: Math.max(appWindow.compact ? 0 : 108, dseeRow.implicitHeight + 36)
                 RowLayout {
+                    id: dseeRow
                     anchors.fill: parent
                     anchors.margins: 18
                     spacing: appWindow.compact ? 14 : 20
                     Rectangle {
-                        visible: !appWindow.compact
+                        visible: !appWindow.stacked
                         width: 72; height: 72; radius: 14
                         color: Theme.surfaceHi
                         border.width: 1
@@ -66,10 +71,10 @@ ViewPage {
                             elide: Text.ElideRight
                         }
                     }
-                    Rectangle { visible: !appWindow.compact; width: 1; Layout.fillHeight: true; color: Theme.line }
+                    Rectangle { visible: !appWindow.stacked; width: 1; Layout.fillHeight: true; color: Theme.line }
                     RowLayout {
                         spacing: 14
-                        Text { textFormat: Text.PlainText; visible: !appWindow.compact; text: controller.dsee ? appWindow.tr("active") : appWindow.tr("noise_control_off"); color: Theme.txt; font.pixelSize: 13; font.weight: Font.Medium }
+                        Text { textFormat: Text.PlainText; visible: !appWindow.stacked; text: controller.dsee ? appWindow.tr("active") : appWindow.tr("noise_control_off"); color: Theme.txt; font.pixelSize: 13; font.weight: Font.Medium }
                         NeoSwitch { appWindow: root.appWindow;
                             enabled: controller.hasDsee && controller.connected
                             confirmedChecked: controller.dsee
@@ -83,7 +88,7 @@ ViewPage {
             GridLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: false
-                columns: appWindow.compact ? 1 : 2
+                columns: appWindow.stacked ? 1 : 2
                 columnSpacing: 16
                 rowSpacing: 16
                 Repeater {
@@ -97,8 +102,9 @@ ViewPage {
                         readonly property bool ready: modelData.supported && root.known(modelData.key)
                         Layout.fillWidth: true
                         Layout.preferredWidth: 1
-                        Layout.preferredHeight: 168
+                        Layout.preferredHeight: Math.max(appWindow.stacked ? 0 : 168, tileColumn.implicitHeight + 36)
                         ColumnLayout {
+                            id: tileColumn
                             anchors.fill: parent
                             anchors.margins: 18
                             spacing: 8

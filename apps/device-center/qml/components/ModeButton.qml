@@ -23,7 +23,8 @@ Rectangle {
     color: current ? Theme.accent : hover.hovered && enabled ? Theme.surfaceHi : Theme.surface
     border.width: 1
     border.color: current ? Theme.accent : hover.hovered && enabled ? Theme.lineHi : Theme.line
-    opacity: enabled ? 1 : 0.5
+    // Faded for a missing device, not for a panel laid over it.
+    opacity: controller.connected ? 1 : 0.5
     Behavior on color { ColorAnimation { duration: Theme.tBase } }
     Behavior on border.color { ColorAnimation { duration: Theme.tBase } }
 

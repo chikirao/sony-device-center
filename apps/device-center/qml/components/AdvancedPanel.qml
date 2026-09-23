@@ -13,18 +13,30 @@ Item {
     readonly property bool open: appWindow.advancedOpen
     readonly property real panelWidth: Math.min(360, width - 40)
 
-    visible: open || sheet.x < width
+    // 0 closed, 1 open. The sheet's position is derived from it, so a
+    // window resized while the panel is closed never animates the sheet in.
+    property real shown: open ? 1 : 0
+    Behavior on shown { NumberAnimation { duration: Theme.duration(380); easing.type: Easing.OutCubic } }
+
+    visible: shown > 0
     function known(key) { var a = controller.featureStatus[key]; return controller.connected && a && a.availability === "valid" }
+    function supported(key) { var a = controller.featureStatus[key]; return !a || a.availability !== "unsupported" }
     function close() { appWindow.advancedOpen = false }
     function go(index) { appWindow.navIndex = index; close() }
 
-    // Scrim: dims the window, and a tap on it closes the panel.
+    // Scrim: dims the window and takes every press, hover and wheel meant
+    // for the page under it; a click on it closes the panel.
     Rectangle {
         anchors.fill: parent
         color: "#000000"
-        opacity: panel.open ? (Theme.light ? 0.28 : 0.5) : 0
-        Behavior on opacity { NumberAnimation { duration: Theme.tSlow; easing.type: Easing.OutCubic } }
-        TapHandler { onTapped: panel.close() }
+        opacity: panel.shown * (Theme.light ? 0.28 : 0.5)
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.AllButtons
+            onClicked: panel.close()
+            onWheel: function(wheel) { wheel.accepted = true }
+        }
     }
 
     Shortcut {
@@ -38,19 +50,21 @@ Item {
         objectName: "advancedPanel"
         width: panel.panelWidth
         height: parent.height
-        x: panel.open ? panel.width - width : panel.width
+        x: panel.width - width * panel.shown
         color: Theme.sidebarBg
-        Behavior on x { NumberAnimation { duration: Theme.duration(380); easing.type: Easing.OutCubic } }
-        // Taps on the sheet stay on the sheet.
-        TapHandler {}
+        // Presses between the rows stay on the sheet.
+        MouseArea { anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.AllButtons }
 
         Rectangle { width: 1; height: parent.height; color: Theme.sidebarLine }
 
+        WheelScroll { flickable: flick }
         Flickable {
             id: flick
             anchors.fill: parent
             contentHeight: column.implicitHeight + 48
             boundsBehavior: Flickable.StopAtBounds
+            // Wheel only: a drag is the slider's under the pointer.
+            interactive: false
             clip: true
             ScrollBar.vertical: ScrollBar { policy: flick.contentHeight > flick.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff }
 
@@ -159,6 +173,7 @@ Item {
                 // Device
                 Row_ {
                     appWindow: panel.appWindow
+                    visible: panel.supported("autoPowerOff")
                     glyph: appWindow.icons.clock
                     title: appWindow.tr("auto_power_off")
                     value: !panel.known("autoPowerOff") ? "—"
@@ -167,6 +182,7 @@ Item {
                     onClicked: panel.go(3)
                 }
                 Row_ {
+                    objectName: "advancedBatteryRow"
                     appWindow: panel.appWindow
                     glyph: appWindow.icons.batteryUp
                     title: appWindow.tr("nav_battery")
@@ -196,7 +212,7 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.topMargin: 16
-                    implicitHeight: 80
+                    implicitHeight: 72
                     radius: Theme.cardRadius
                     color: Theme.sidebarSurfaceSunk
                     border.width: 1
@@ -214,8 +230,9 @@ Item {
                         Rectangle { width: 1; Layout.fillHeight: true; color: Theme.sidebarLine }
                         Readout {
                             appWindow: panel.appWindow
-                            label: appWindow.tr("battery_rate")
-                            value: controller.batteryDischargeRate > 0 ? controller.batteryDischargeRate.toFixed(1) + "%" : "—"
+                            label: appWindow.tr("time_left")
+                            value: !controller.connected || controller.isCharging || controller.batteryMinutesLeft < 0 ? "—"
+                                 : Math.floor(controller.batteryMinutesLeft / 60) + ":" + ("0" + controller.batteryMinutesLeft % 60).slice(-2)
                         }
                     }
                 }
@@ -351,6 +368,6 @@ Item {
             font.pixelSize: 11
             elide: Text.ElideRight
         }
-        DotText { text: readout.value; dot: 3.4; maxWidth: readout.width; color: Theme.sidebarTxt }
+        DotText { text: readout.value; dot: 2.4; maxWidth: readout.width; color: Theme.sidebarTxt }
     }
 }
