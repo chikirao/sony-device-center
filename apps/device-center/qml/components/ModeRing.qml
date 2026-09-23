@@ -22,13 +22,23 @@ Canvas {
         if (mode === shown) return
         leaving = shown
         shown = mode
-        draw.restart()
+        // With motion off there is no transition to drive the repaint (a
+        // zero-length animation leaves progress at 1, so nothing changes).
+        if (Theme.motionEnabled) {
+            progress = 0
+            draw.restart()
+        } else {
+            draw.stop()
+            leaving = ""
+            progress = 1
+            requestPaint()
+        }
     }
     NumberAnimation {
         id: draw
         target: ring
         property: "progress"
-        from: 0; to: 1
+        to: 1
         duration: Theme.duration(760)
         easing.type: Easing.OutCubic
         onFinished: ring.leaving = ""
@@ -64,7 +74,7 @@ Canvas {
             ctx.stroke()
         } else if (m === "ambient") {
             ctx.globalAlpha = alpha
-            dots(ctx, 72, Math.max(1.4, radius * 0.0125), sweep)
+            dots(ctx, 72, Math.max(1.3, radius * 0.0095), sweep)
         } else {
             // Off, and the waiting state: more dots, smaller, see-through.
             ctx.globalAlpha = alpha * (m === "off" ? 0.4 : 0.22)
