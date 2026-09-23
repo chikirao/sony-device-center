@@ -24,6 +24,11 @@
         <file alias="fonts/Manrope-SemiBold.ttf">../../assets/fonts/Manrope/Manrope-SemiBold.ttf</file>
         <file alias="fonts/Manrope-Bold.ttf">../../assets/fonts/Manrope/Manrope-Bold.ttf</file>
         <file>qml/components/DotValue.qml</file>
+        <file>qml/components/IconButton.qml</file>
+        <file>qml/components/ModeRing.qml</file>
+        <file>qml/components/ModeButton.qml</file>
+        <file>qml/components/AdvancedPanel.qml</file>
+        <file>qml/components/WheelScroll.qml</file>
         <file>qml/pages/Overview.qml</file>
         <file>qml/pages/NoiseControl.qml</file>
         <file>qml/pages/Equalizer.qml</file>

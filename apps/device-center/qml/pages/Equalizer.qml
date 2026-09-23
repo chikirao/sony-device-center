@@ -81,6 +81,7 @@ ViewPage {
     // The preset library made the page taller than the minimum window, so
     // it scrolls; the band row keeps whatever height is left, never less
     // than what the sliders need.
+    WheelScroll { flickable: eqFlick }
     Flickable {
         id: eqFlick
         anchors.fill: parent
@@ -88,12 +89,14 @@ ViewPage {
         contentHeight: eqColumn.implicitHeight + 54
         clip: true
         boundsBehavior: Flickable.StopAtBounds
+        // Wheel only: a drag is the slider's under the pointer.
+        interactive: false
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
     ColumnLayout {
         id: eqColumn
-        x: 32; y: 22
-        width: parent.width - 64
+        x: appWindow.pageMargin; y: 22
+        width: parent.width - 2 * appWindow.pageMargin
         spacing: 16
 
         // Title and presets share one sheet.
@@ -222,16 +225,20 @@ ViewPage {
             }
         }
 
-        RowLayout {
+        // Side by side, or stacked in a narrow window (which scrolls).
+        GridLayout {
             Layout.fillWidth: true
-            Layout.minimumHeight: 320
-            Layout.preferredHeight: Math.max(320, eqFlick.height - presetsCard.implicitHeight - 54)
-            spacing: 16
+            Layout.minimumHeight: appWindow.stacked ? 0 : 320
+            Layout.preferredHeight: appWindow.stacked ? -1 : Math.max(320, eqFlick.height - presetsCard.implicitHeight - 54)
+            columns: appWindow.stacked ? 1 : 2
+            columnSpacing: 16
+            rowSpacing: 16
 
             // The five bands — the reason anyone opens this screen.
             Card { appWindow: root.appWindow;
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.fillHeight: !appWindow.stacked
+                Layout.preferredHeight: appWindow.stacked ? 340 : -1
                 Layout.preferredWidth: 3
                 ColumnLayout {
                     anchors.fill: parent
@@ -290,7 +297,7 @@ ViewPage {
             }
 
             ColumnLayout {
-                Layout.fillHeight: true
+                Layout.fillHeight: !appWindow.stacked
                 Layout.fillWidth: true
                 Layout.preferredWidth: 2
                 spacing: 16
@@ -346,8 +353,10 @@ ViewPage {
                     }
                 }
 
-                // Active preset
+                // Active preset. Narrow windows leave it out: the lit pill
+                // above names it.
                 Card { appWindow: root.appWindow;
+                    visible: !appWindow.stacked
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     ColumnLayout {

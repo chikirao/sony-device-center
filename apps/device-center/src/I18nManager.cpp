@@ -190,7 +190,6 @@ void I18nManager::_initTranslations() {
     en["animations_desc"]                 = "Page transitions and display effects. System reduced motion takes priority.";
     en["icon_antialiasing"]               = "Smooth icons";
     en["sound_mode"]                      = "Sound mode";
-    en["hero_tagline"]                    = "Music fits a quieter world";
     en["battery_connection"]              = "Battery & Connection";
     en["stable_connection"]               = "Stable connection";
     en["high_quality_audio"]              = "High-quality audio";
@@ -276,8 +275,15 @@ void I18nManager::_initTranslations() {
     en["hub_tray_show"]                   = "Show in tray";
     en["hub_tray_overflow_note"]          = "Windows keeps new icons in the taskbar overflow (^) until you drag them onto the taskbar.";
     en["hub_tray_no_devices"]             = "No devices to show yet.";
+    en["plain_font"]                      = "Regular font";
+    en["plain_font_desc"]                 = "Titles and values in the regular typeface instead of the dot-matrix display";
     en["battery_estimate_rated"]          = "Rated";
     en["battery_estimate_rated_hint"]     = "Until this charge has been measured, the estimate uses the model's rated playback time for the current noise mode.";
+    en["mode_short_cancelling"]           = "Block distractions";
+    en["mode_short_ambient"]              = "Stay aware";
+    en["advanced"]                        = "Advanced";
+    en["advanced_desc"]                   = "Sound and device, one line each";
+    en["close"]                           = "Close";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -426,7 +432,6 @@ void I18nManager::_initTranslations() {
     pt["animations_desc"]                 = "Transições e efeitos visuais. A redução de movimento do sistema tem prioridade.";
     pt["icon_antialiasing"]               = "Suavizar ícones";
     pt["sound_mode"]                      = "Modo de som";
-    pt["hero_tagline"]                    = "A música combina com um mundo mais silencioso";
     pt["battery_connection"]              = "Bateria e conexão";
     pt["stable_connection"]               = "Conexão estável";
     pt["high_quality_audio"]              = "Áudio de alta qualidade";
@@ -512,8 +517,15 @@ void I18nManager::_initTranslations() {
     pt["hub_tray_show"]                   = "Mostrar na bandeja";
     pt["hub_tray_overflow_note"]          = "O Windows mantém novos ícones na área oculta (^) até você arrastá-los para a barra de tarefas.";
     pt["hub_tray_no_devices"]             = "Ainda não há dispositivos.";
+    pt["plain_font"]                      = "Fonte normal";
+    pt["plain_font_desc"]                 = "Títulos e valores na fonte normal em vez da matriz de pontos";
     pt["battery_estimate_rated"]          = "Nominal";
     pt["battery_estimate_rated_hint"]     = "Até a descarga desta carga ser medida, a estimativa usa a autonomia nominal do modelo no modo de ruído atual.";
+    pt["mode_short_cancelling"]           = "Bloqueia distrações";
+    pt["mode_short_ambient"]              = "Fique atento";
+    pt["advanced"]                        = "Avançado";
+    pt["advanced_desc"]                   = "Som e dispositivo, uma linha cada";
+    pt["close"]                           = "Fechar";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -662,7 +674,6 @@ void I18nManager::_initTranslations() {
     es["animations_desc"]                 = "Transiciones y efectos visuales. Reducir movimiento del sistema tiene prioridad.";
     es["icon_antialiasing"]               = "Suavizar iconos";
     es["sound_mode"]                      = "Modo de sonido";
-    es["hero_tagline"]                    = "La música encaja en un mundo más silencioso";
     es["battery_connection"]              = "Batería y conexión";
     es["stable_connection"]               = "Conexión estable";
     es["high_quality_audio"]              = "Audio de alta calidad";
@@ -748,8 +759,15 @@ void I18nManager::_initTranslations() {
     es["hub_tray_show"]                   = "Mostrar en la bandeja";
     es["hub_tray_overflow_note"]          = "Windows deja los iconos nuevos en el área oculta (^) hasta que los arrastres a la barra de tareas.";
     es["hub_tray_no_devices"]             = "Todavía no hay dispositivos.";
+    es["plain_font"]                      = "Fuente normal";
+    es["plain_font_desc"]                 = "Títulos y valores con la fuente normal en lugar de la matriz de puntos";
     es["battery_estimate_rated"]          = "Nominal";
     es["battery_estimate_rated_hint"]     = "Hasta medir la descarga de esta carga, la estimación usa la autonomía nominal del modelo en el modo de ruido actual.";
+    es["mode_short_cancelling"]           = "Bloquea distracciones";
+    es["mode_short_ambient"]              = "Mantente alerta";
+    es["advanced"]                        = "Avanzado";
+    es["advanced_desc"]                   = "Sonido y dispositivo, una línea cada uno";
+    es["close"]                           = "Cerrar";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -898,7 +916,6 @@ void I18nManager::_initTranslations() {
     de["animations_desc"]                 = "Seitenübergänge und Anzeigeeffekte. Reduzierte Bewegung im System hat Vorrang.";
     de["icon_antialiasing"]               = "Kantenglättung für Symbole";
     de["sound_mode"]                      = "Klangmodus";
-    de["hero_tagline"]                    = "Musik passt in eine leisere Welt";
     de["battery_connection"]              = "Akku & Verbindung";
     de["stable_connection"]               = "Stabile Verbindung";
     de["high_quality_audio"]              = "Audio in hoher Qualität";
@@ -984,8 +1001,15 @@ void I18nManager::_initTranslations() {
     de["hub_tray_show"]                   = "Im Tray anzeigen";
     de["hub_tray_overflow_note"]          = "Windows legt neue Symbole in den Überlaufbereich (^), bis man sie auf die Taskleiste zieht.";
     de["hub_tray_no_devices"]             = "Noch keine Geräte.";
+    de["plain_font"]                      = "Normale Schrift";
+    de["plain_font_desc"]                 = "Titel und Werte in normaler Schrift statt als Punktmatrix";
     de["battery_estimate_rated"]          = "Laut Datenblatt";
     de["battery_estimate_rated_hint"]     = "Bis die Entladung dieser Ladung gemessen ist, nutzt die Schätzung die Nennlaufzeit des Modells im aktuellen Geräuschmodus.";
+    de["mode_short_cancelling"]           = "Blendet Störungen aus";
+    de["mode_short_ambient"]              = "Umgebung hören";
+    de["advanced"]                        = "Erweitert";
+    de["advanced_desc"]                   = "Klang und Gerät, je eine Zeile";
+    de["close"]                           = "Schließen";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1134,7 +1158,6 @@ void I18nManager::_initTranslations() {
     fr["animations_desc"]                 = "Transitions et effets visuels. La réduction des animations du système est prioritaire.";
     fr["icon_antialiasing"]               = "Lisser les icônes";
     fr["sound_mode"]                      = "Mode sonore";
-    fr["hero_tagline"]                    = "La musique s'accorde à un monde plus calme";
     fr["battery_connection"]              = "Batterie et connexion";
     fr["stable_connection"]               = "Connexion stable";
     fr["high_quality_audio"]              = "Audio haute qualité";
@@ -1220,8 +1243,15 @@ void I18nManager::_initTranslations() {
     fr["hub_tray_show"]                   = "Afficher dans la barre";
     fr["hub_tray_overflow_note"]          = "Windows range les nouvelles icônes dans la zone de débordement (^) jusqu’à ce que vous les glissiez sur la barre des tâches.";
     fr["hub_tray_no_devices"]             = "Aucun appareil pour l’instant.";
+    fr["plain_font"]                      = "Police normale";
+    fr["plain_font_desc"]                 = "Titres et valeurs dans la police normale au lieu de la matrice de points";
     fr["battery_estimate_rated"]          = "Valeur nominale";
     fr["battery_estimate_rated_hint"]     = "Tant que la décharge de cette charge n'est pas mesurée, l'estimation utilise l'autonomie nominale du modèle dans le mode de bruit actuel.";
+    fr["mode_short_cancelling"]           = "Bloque les distractions";
+    fr["mode_short_ambient"]              = "Restez attentif";
+    fr["advanced"]                        = "Avancé";
+    fr["advanced_desc"]                   = "Son et appareil, une ligne chacun";
+    fr["close"]                           = "Fermer";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1370,7 +1400,6 @@ void I18nManager::_initTranslations() {
     ja["animations_desc"]                 = "ページ遷移と表示効果。システムの視差効果を減らす設定が優先されます。";
     ja["icon_antialiasing"]               = "アイコンのアンチエイリアス";
     ja["sound_mode"]                      = "サウンドモード";
-    ja["hero_tagline"]                    = "静かな世界に音楽を";
     ja["battery_connection"]              = "バッテリーと接続";
     ja["stable_connection"]               = "安定した接続";
     ja["high_quality_audio"]              = "高音質オーディオ";
@@ -1456,8 +1485,15 @@ void I18nManager::_initTranslations() {
     ja["hub_tray_show"]                   = "トレイに表示";
     ja["hub_tray_overflow_note"]          = "Windows は新しいアイコンをタスクバーにドラッグするまで隠しトレイ (^) に置きます。";
     ja["hub_tray_no_devices"]             = "まだデバイスがありません。";
+    ja["plain_font"]                      = "標準フォント";
+    ja["plain_font_desc"]                 = "タイトルと数値をドットマトリクスではなく標準フォントで表示";
     ja["battery_estimate_rated"]          = "公称値";
     ja["battery_estimate_rated_hint"]     = "この充電の放電を測定するまでは、現在のノイズモードでのモデルの公称再生時間から推定します。";
+    ja["mode_short_cancelling"]           = "雑音を遮断";
+    ja["mode_short_ambient"]              = "周囲を聞く";
+    ja["advanced"]                        = "詳細設定";
+    ja["advanced_desc"]                   = "サウンドとデバイスを一行ずつ";
+    ja["close"]                           = "閉じる";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1606,7 +1642,6 @@ void I18nManager::_initTranslations() {
     ru["animations_desc"]                 = "Переходы страниц и эффекты табло. Системное уменьшение анимаций имеет приоритет.";
     ru["icon_antialiasing"]               = "Сглаживание иконок";
     ru["sound_mode"]                      = "Режим звука";
-    ru["hero_tagline"]                    = "Музыке к лицу тишина";
     ru["battery_connection"]              = "Батарея и связь";
     ru["stable_connection"]               = "Стабильное соединение";
     ru["high_quality_audio"]              = "Звук высокого качества";
@@ -1692,8 +1727,15 @@ void I18nManager::_initTranslations() {
     ru["hub_tray_show"]                   = "Показывать в трее";
     ru["hub_tray_overflow_note"]          = "Windows прячет новые иконки в переполнении панели задач (^), пока их не перетащат на панель.";
     ru["hub_tray_no_devices"]             = "Пока нет устройств.";
+    ru["plain_font"]                      = "Обычный шрифт";
+    ru["plain_font_desc"]                 = "Заголовки и значения обычным шрифтом вместо точечного";
     ru["battery_estimate_rated"]          = "По паспорту";
     ru["battery_estimate_rated_hint"]     = "Пока разряд этой зарядки не измерен, оценка берётся из паспортного времени работы модели в текущем режиме шумоподавления.";
+    ru["mode_short_cancelling"]           = "Без отвлечений";
+    ru["mode_short_ambient"]              = "Слышать вокруг";
+    ru["advanced"]                        = "Дополнительно";
+    ru["advanced_desc"]                   = "Звук и устройство, по строке на всё";
+    ru["close"]                           = "Закрыть";
 }
 
 } // namespace sony::devicecenter

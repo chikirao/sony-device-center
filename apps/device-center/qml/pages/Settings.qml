@@ -9,19 +9,23 @@ ViewPage {
     id: root
     // More cards than fit the minimum window height, so this
     // page scrolls; the others still fit and don't.
+    WheelScroll { flickable: settingsFlickItem }
     Flickable {
+        id: settingsFlickItem
         objectName: "settingsFlick"
         anchors.fill: parent
         contentWidth: width
         contentHeight: settingsColumn.implicitHeight + 72
         clip: true
         boundsBehavior: Flickable.StopAtBounds
+        // Wheel only: a drag is the slider's under the pointer.
+        interactive: false
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
     ColumnLayout {
         id: settingsColumn
-        x: 32; y: 22
-        width: parent.width - 64
+        x: appWindow.pageMargin; y: 22
+        width: parent.width - 2 * appWindow.pageMargin
         spacing: 16
 
         SectionTitle { appWindow: root.appWindow;
@@ -39,7 +43,9 @@ ViewPage {
             implicitHeight: appearanceColumn.implicitHeight + 40
             ColumnLayout {
                 id: appearanceColumn
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 20
                 spacing: 14
                 Eyebrow { appWindow: root.appWindow; text: appWindow.tr("appearance") }
@@ -89,6 +95,20 @@ ViewPage {
                         onToggled: controller.setAnimationsEnabled(checked)
                     }
                 }
+                RowLayout {
+                    Layout.fillWidth: true
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Text { text: appWindow.tr("plain_font"); color: Theme.txt }
+                        Text { text: appWindow.tr("plain_font_desc"); color: Theme.txtDim; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                    }
+                    NeoSwitch {
+                        appWindow: root.appWindow
+                        objectName: "plainFontSwitch"
+                        confirmedChecked: controller.plainFont
+                        onToggled: controller.setPlainFont(checked)
+                    }
+                }
             }
         }
 
@@ -98,7 +118,9 @@ ViewPage {
 
             ColumnLayout {
                 id: systemColumn
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 22
                 spacing: 16
 
@@ -108,6 +130,7 @@ ViewPage {
                     spacing: 16
 
                     Rectangle {
+                        visible: !root.appWindow.compact
                         Layout.preferredWidth: 38
                         Layout.preferredHeight: 38
                         radius: Theme.controlRadius
@@ -139,6 +162,7 @@ ViewPage {
                             Layout.fillWidth: true
                             text: appWindow.tr("init_with_os_desc")
                             color: Theme.txtDim
+                            wrapMode: Text.Wrap
                             font.pixelSize: 12
                         }
                     }
@@ -163,6 +187,7 @@ ViewPage {
                     visible: trayAvailable
 
                     Rectangle {
+                        visible: !root.appWindow.compact
                         Layout.preferredWidth: 38
                         Layout.preferredHeight: 38
                         radius: Theme.controlRadius
@@ -194,6 +219,7 @@ ViewPage {
                             Layout.fillWidth: true
                             text: appWindow.tr("minimize_to_tray_desc")
                             color: Theme.txtDim
+                            wrapMode: Text.Wrap
                             font.pixelSize: 12
                         }
                     }
@@ -216,6 +242,7 @@ ViewPage {
                     spacing: 16
 
                     Rectangle {
+                        visible: !root.appWindow.compact
                         Layout.preferredWidth: 38
                         Layout.preferredHeight: 38
                         radius: Theme.controlRadius
@@ -247,6 +274,7 @@ ViewPage {
                             Layout.fillWidth: true
                             text: appWindow.tr("language_desc")
                             color: Theme.txtDim
+                            wrapMode: Text.Wrap
                             font.pixelSize: 12
                         }
                     }
@@ -369,7 +397,9 @@ ViewPage {
 
             ColumnLayout {
                 id: notifyColumn
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 22
                 spacing: 16
 
@@ -390,6 +420,7 @@ ViewPage {
                         spacing: 16
 
                         Rectangle {
+                            visible: !root.appWindow.compact
                             Layout.preferredWidth: 38
                             Layout.preferredHeight: 38
                             radius: Theme.controlRadius
@@ -415,6 +446,7 @@ ViewPage {
                                 Layout.fillWidth: true
                                 text: notifyRow.modelData.desc
                                 color: Theme.txtDim
+                                wrapMode: Text.Wrap
                                 font.pixelSize: 12
                             }
                         }
@@ -485,7 +517,9 @@ ViewPage {
 
             ColumnLayout {
                 id: hotkeyColumn
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 22
                 spacing: 16
 
@@ -510,15 +544,20 @@ ViewPage {
                         { action: "toggleSpeakToChat", title: appWindow.tr("hotkey_speak_to_chat"), glyph: appWindow.icons.chat },
                         { action: "showWindow", title: appWindow.tr("hotkey_show_window"), glyph: appWindow.icons.home }
                     ]
-                    delegate: RowLayout {
+                    // Narrow: the action on its own line, the field and the
+                    // switch under it.
+                    delegate: GridLayout {
                         id: hotkeyRow
                         required property var modelData
                         readonly property var binding: hotkeys.bindings.find(b => b.action === hotkeyRow.modelData.action)
                         readonly property bool conflict: binding.status === "conflict"
                         Layout.fillWidth: true
-                        spacing: 16
+                        columns: root.appWindow.compact ? 2 : 4
+                        columnSpacing: 16
+                        rowSpacing: 8
 
                         Rectangle {
+                            visible: !root.appWindow.compact
                             Layout.preferredWidth: 38
                             Layout.preferredHeight: 38
                             radius: Theme.controlRadius
@@ -530,6 +569,7 @@ ViewPage {
 
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.columnSpan: root.appWindow.compact ? 2 : 1
                             spacing: 3
                             Text {
                                 textFormat: Text.PlainText
@@ -538,6 +578,7 @@ ViewPage {
                                 color: Theme.txt
                                 font.pixelSize: 14
                                 font.weight: Font.DemiBold
+                                wrapMode: Text.Wrap
                             }
                             Text {
                                 textFormat: Text.PlainText
@@ -555,6 +596,7 @@ ViewPage {
                             id: captureField
                             objectName: "hotkeyCapture-" + hotkeyRow.modelData.action
                             Layout.preferredWidth: 168
+                            Layout.fillWidth: root.appWindow.compact
                             Layout.preferredHeight: 38
                             radius: Theme.controlRadius
                             color: captureArea.containsMouse && !activeFocus ? Theme.surfaceHi : Theme.surfaceSunk
@@ -632,9 +674,14 @@ ViewPage {
             Layout.fillWidth: true
             Layout.preferredHeight: hubColumn.implicitHeight + 44
 
+            // Pinned to the top rather than filling the card: the card's
+            // height is read from this column, and with wrapped rows the
+            // round trip took a third layout pass (Qt aborts at two).
             ColumnLayout {
                 id: hubColumn
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 22
                 spacing: 16
 
@@ -778,10 +825,13 @@ ViewPage {
             }
         }
 
-        // Split Cards: About Application & Community/Donate
-        RowLayout {
+        // Split Cards: About Application & Community/Donate, stacked when
+        // the window is narrow.
+        GridLayout {
             Layout.fillWidth: true
-            spacing: 18
+            columns: appWindow.stacked ? 1 : 2
+            columnSpacing: 18
+            rowSpacing: 16
 
             // Left Card: About App & Version, and the update check.
             Card { appWindow: root.appWindow;
@@ -792,7 +842,9 @@ ViewPage {
 
                 ColumnLayout {
                     id: aboutColumn
-                    anchors.fill: parent
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
                     anchors.margins: 22
                     spacing: 14
 
@@ -817,6 +869,7 @@ ViewPage {
                                 textFormat: Text.PlainText
                                 text: "Sony Device Center"
                                 color: Theme.txtDim
+                                wrapMode: Text.Wrap
                                 font.pixelSize: 12
                             }
                         }
@@ -1025,6 +1078,7 @@ ViewPage {
                                 textFormat: Text.PlainText
                                 text: appWindow.tr("github_sponsorship")
                                 color: Theme.txtDim
+                                wrapMode: Text.Wrap
                                 font.pixelSize: 12
                             }
                         }
@@ -1086,16 +1140,21 @@ ViewPage {
     }
     }
 
-    // One hub setting: glyph tile, title and description, control on the right.
-    component HubSettingRow: RowLayout {
+    // One hub setting: glyph tile, title and description, control on the
+    // right; in a narrow window a wide control goes under the text.
+    component HubSettingRow: GridLayout {
         id: settingRow
         property string title: ""
         property string desc: ""
         property string glyph: ""
         default property alias control: controlSlot.data
+        readonly property bool stacked: root.appWindow.compact && controlSlot.implicitWidth > 140
         Layout.fillWidth: true
-        spacing: 16
+        columns: stacked ? 1 : 3
+        columnSpacing: 16
+        rowSpacing: 10
         Rectangle {
+            visible: !root.appWindow.compact
             Layout.preferredWidth: 38
             Layout.preferredHeight: 38
             Layout.alignment: Qt.AlignTop
@@ -1115,6 +1174,8 @@ ViewPage {
                 color: Theme.txt
                 font.pixelSize: 14
                 font.weight: Font.DemiBold
+                wrapMode: Text.Wrap
+                Layout.preferredWidth: 1
             }
             Text {
                 textFormat: Text.PlainText
@@ -1124,11 +1185,12 @@ ViewPage {
                 color: Theme.txtDim
                 font.pixelSize: 12
                 wrapMode: Text.Wrap
+                Layout.preferredWidth: 1
             }
         }
         Item {
             id: controlSlot
-            Layout.alignment: Qt.AlignVCenter
+            Layout.alignment: settingRow.stacked ? Qt.AlignLeft : Qt.AlignVCenter
             implicitWidth: childrenRect.width
             implicitHeight: childrenRect.height
         }

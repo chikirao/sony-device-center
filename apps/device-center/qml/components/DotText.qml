@@ -5,6 +5,8 @@ import "../DotGlyphs.js" as Glyphs
 // Dot-matrix display text. Every glyph sits on a 5x7 grid of round dots and
 // new text sweeps in column by column. Anything the grid can't show (kana,
 // symbols) falls back to the bold body face so nothing ever renders blank.
+// With Theme.plainFont every display uses the body face instead, sized to
+// the height the dots would take so layouts don't shift.
 Item {
     id: root
     property string text: ""
@@ -15,6 +17,7 @@ Item {
     // still land on one line.
     property real maxWidth: 0
     property bool fallback: false
+    readonly property bool plain: fallback || Theme.plainFont
     readonly property int rows: 7
     readonly property real naturalWidth: Math.max(0, columns * pitch - (pitch - dot))
     readonly property real fit: maxWidth > 0 && naturalWidth > maxWidth ? maxWidth / naturalWidth : 1
@@ -28,8 +31,8 @@ Item {
     // update together don't flip in unison.
     property int delay: 0
 
-    implicitWidth: fallback ? fallbackText.implicitWidth : naturalWidth * fit
-    implicitHeight: fallback ? fallbackText.implicitHeight : (rows * pitch - (pitch - dot)) * fit
+    implicitWidth: plain ? fallbackText.width : naturalWidth * fit
+    implicitHeight: plain ? fallbackText.implicitHeight : (rows * pitch - (pitch - dot)) * fit
     Accessible.role: Accessible.StaticText
     Accessible.name: text
 
@@ -50,7 +53,7 @@ Item {
         dots = points
         columns = Math.max(0, x - 1)
         fallback = missing
-        if (Theme.motionEnabled && visible) { progress = 0; sweep.restart() }
+        if (Theme.motionEnabled && visible && !plain) { progress = 0; sweep.restart() }
         else { sweep.stop(); progress = 1 }
         canvas.requestPaint()
     }
@@ -60,6 +63,10 @@ Item {
     onPChanged: canvas.requestPaint()
     onDChanged: canvas.requestPaint()
     onProgressChanged: canvas.requestPaint()
+    onPlainChanged: if (!plain) canvas.requestPaint()
+    // A paint requested while hidden (a closed panel, a page not shown)
+    // can be dropped; paint again on the way in.
+    onVisibleChanged: if (visible) canvas.requestPaint()
     Component.onCompleted: rebuild()
 
     SequentialAnimation {
@@ -80,10 +87,13 @@ Item {
     Canvas {
         id: canvas
         anchors.fill: parent
-        visible: !root.fallback
+        visible: !root.plain
+        onWidthChanged: requestPaint()
+        onHeightChanged: requestPaint()
         onPaint: {
             var ctx = getContext("2d")
             ctx.reset()
+            if (root.plain) return
             var wave = 3, jitter = 6
             var reach = root.progress * (root.columns + wave + jitter)
             var r = root.d / 2
@@ -101,14 +111,21 @@ Item {
 
     Text {
         id: fallbackText
-        visible: root.fallback
+        visible: root.plain
         text: root.text
         color: root.color
         textFormat: Text.PlainText
-        font.pixelSize: root.pitch * root.rows * 0.92
-        width: root.maxWidth > 0 ? root.maxWidth : implicitWidth
+        // Kana under the dot font keep their old, grid-high bold face. The
+        // regular-font option matches the line height to the grid instead,
+        // and shrinks what would overflow rather than eliding it at once.
+        readonly property real size: Theme.plainFont ? Math.max(9, Math.round((root.rows * root.pitch - (root.pitch - root.dot)) / 1.3))
+                                                     : root.pitch * root.rows * 0.92
+        font.pixelSize: size
+        font.weight: Theme.plainFont ? Font.DemiBold : Font.Bold
+        font.letterSpacing: size >= 24 ? -0.5 : 0
+        width: root.maxWidth > 0 ? Math.min(implicitWidth, root.maxWidth) : implicitWidth
+        fontSizeMode: Theme.plainFont && root.maxWidth > 0 ? Text.HorizontalFit : Text.FixedSize
+        minimumPixelSize: 9
         elide: Text.ElideRight
-        font.weight: Font.Bold
-        font.letterSpacing: -0.5
     }
 }

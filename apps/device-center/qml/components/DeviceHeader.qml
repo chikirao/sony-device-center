@@ -2,32 +2,32 @@ import QtQuick
 import ".."
 import QtQuick.Layouts
 
-// The strip every page shares: which device, and its three vital signs.
+// The strip every page shares: which device, how full it is, and the way
+// into the advanced panel.
 RowLayout {
     required property var appWindow
     id: header
-    spacing: 12
+    spacing: 8
 
-    readonly property string modeLabel: !controller.connected || controller.noiseControlMode === "unknown" ? "—"
-        : controller.noiseControlMode === "cancelling" ? appWindow.tr("mode_anc")
-        : controller.noiseControlMode === "ambient" ? appWindow.tr("mode_ambient") : appWindow.tr("mode_off")
-    readonly property string batteryLabel: !controller.connected ? "—"
+    readonly property int batteryPercent: !controller.connected ? -1
         : controller.hasDualBattery ? Math.min(controller.batteryLeft < 0 ? 100 : controller.batteryLeft,
-                                               controller.batteryRight < 0 ? 100 : controller.batteryRight) + "%"
-        : controller.batteryLevel >= 0 ? controller.batteryLevel + "%" : "—"
+                                               controller.batteryRight < 0 ? 100 : controller.batteryRight)
+        : controller.batteryLevel
+    readonly property string batteryLabel: batteryPercent >= 0 ? batteryPercent + "%" : "—"
+    readonly property bool batteryLow: !controller.isCharging && batteryPercent >= 0 && batteryPercent <= 20
 
     ColumnLayout {
         id: nameColumn
         spacing: 6
         Layout.fillWidth: true
         // An explicit floor: otherwise the dot name's natural width becomes
-        // the layout minimum and the chips push past the window edge.
-        Layout.minimumWidth: 220
-        Eyebrow { appWindow: header.appWindow; text: controller.connected ? appWindow.tr("connected_device") : appWindow.tr("offline") }
+        // the layout minimum and pushes the battery past the window edge.
+        Layout.minimumWidth: 120
+        Layout.rightMargin: 16
         DotText {
             objectName: "deviceNameDots"
             text: controller.deviceName
-            dot: 6
+            dot: appWindow.compact ? 2.6 : 3.6
             maxWidth: nameColumn.width
             color: controller.connected ? Theme.txt : Theme.txtFaint
             Behavior on color { ColorAnimation { duration: Theme.tBase } }
@@ -37,36 +37,44 @@ RowLayout {
             Layout.fillWidth: true
             text: controller.hasDualBattery ? appWindow.tr("wireless_earbuds") : appWindow.tr("wireless_headphones")
             color: Theme.txtDim
-            font.pixelSize: 13
+            font.pixelSize: 12
             elide: Text.ElideRight
         }
     }
 
-    Repeater {
-        model: [
-            { k: appWindow.tr("codec"),      v: controller.connected && controller.codec.length ? controller.codec : "—", g: appWindow.icons.waveform },
-            { k: appWindow.tr("battery"),    v: header.batteryLabel, g: controller.isCharging ? appWindow.icons.bolt : appWindow.icons.batteryUp },
-            { k: appWindow.tr("sound_mode"), v: header.modeLabel, g: appWindow.icons.ambient }
-        ]
-        delegate: Card {
-            id: chip
+    // Battery: a glyph and the level on the dot grid, nothing around it.
+    // Earbuds show the emptier bud; the Battery page has each one.
+    RowLayout {
+        objectName: "headerBattery"
+        Layout.alignment: Qt.AlignVCenter
+        Layout.rightMargin: 12
+        spacing: 7
+        Glyph {
             appWindow: header.appWindow
-            required property var modelData
-            required property int index
-            implicitWidth: chipRow.implicitWidth + 32
-            implicitHeight: 66
-            Layout.alignment: Qt.AlignTop
-            RowLayout {
-                id: chipRow
-                anchors.centerIn: parent
-                spacing: 12
-                Glyph { appWindow: header.appWindow; path: chip.modelData.g; size: 20; color: Theme.txt; weight: 1.6 }
-                ColumnLayout {
-                    spacing: 5
-                    Eyebrow { appWindow: header.appWindow; text: chip.modelData.k }
-                    DotText { text: chip.modelData.v; dot: 3; maxWidth: 120; color: Theme.txt; delay: chip.index * 120 }
-                }
-            }
+            path: controller.isCharging ? appWindow.icons.bolt : appWindow.icons.batteryUp
+            size: 16
+            weight: 1.6
+            color: header.batteryLow ? Theme.danger : Theme.txt
         }
+        DotText {
+            objectName: "headerBatteryDots"
+            text: header.batteryLabel
+            dot: 2.6
+            maxWidth: 110
+            color: header.batteryLow ? Theme.danger : Theme.txt
+        }
+        HoverHandler { id: batteryHover; cursorShape: Qt.PointingHandCursor }
+        TapHandler { onTapped: appWindow.navIndex = 5 }
+    }
+
+    // Everything the Overview leaves out lives behind this.
+    IconButton {
+        objectName: "advancedButton"
+        appWindow: header.appWindow
+        Layout.alignment: Qt.AlignVCenter
+        size: 40
+        glyphPath: appWindow.icons.settings
+        toolTip: appWindow.tr("advanced")
+        onClicked: appWindow.advancedOpen = true
     }
 }

@@ -65,7 +65,8 @@ private slots:
         QTest::addColumn<QSize>("size");
         for (const auto& model : {"WH-1000XM5", "WF-1000XM5"})
             for (const auto& language : {"en", "ru"})
-                for (const auto size : {QSize(980, 660), QSize(1600, 1000)}) {
+                // The narrow strip (sidebar folded), the old minimum, a big screen.
+                for (const auto size : {QSize(460, 760), QSize(980, 660), QSize(1600, 1000)}) {
                     const auto name = QString("%1-%2-%3").arg(model, language).arg(size.width());
                     QTest::newRow(qPrintable(name)) << QString(model) << QString(language) << size;
                 }
@@ -268,6 +269,100 @@ private slots:
                 QVERIFY(window->grabWindow().save(path));
             }
         }
+        // Each fact once: the title bar names the app, the sidebar foot
+        // carries the connection state (in words unless the sidebar is
+        // folded), and power off is at the sidebar foot and in the panel.
+        QCOMPARE(window->title(), QString("Sony Device Center"));
+        const bool folded = window->property("compact").toBool();
+        QCOMPARE(folded, size.width() < 760);
+        auto* sidebarState = window->findChild<QQuickItem*>("sidebarConnectionState");
+        QVERIFY(sidebarState);
+        QCOMPARE(sidebarState->isVisible(), !folded);
+        QVERIFY(sidebarState->property("text").toString() == controller.t("connected")
+                || sidebarState->property("text").toString() == controller.t("charging"));
+        auto* sidebarPower = window->findChild<QQuickItem*>("sidebarPowerOff");
+        auto* advancedButton = window->findChild<QQuickItem*>("advancedButton");
+        auto* panelPower = window->findChild<QQuickItem*>("advancedPowerOff");
+        QVERIFY(sidebarPower && advancedButton && panelPower);
+        QVERIFY(sidebarPower->isEnabled() && panelPower->isEnabled());
+        // The header row fits the window: the gear, its last item, ends
+        // inside the page margin even at the minimum size.
+        window->setProperty("navIndex", 0);
+        QTest::qWait(30);
+        QVERIFY2(advancedButton->mapToScene(QPointF(advancedButton->width(), 0)).x() <= window->width() - 20,
+                 qPrintable(QString("header overflows: the gear ends at %1 of %2")
+                     .arg(advancedButton->mapToScene(QPointF(advancedButton->width(), 0)).x()).arg(window->width())));
+        auto* headerBattery = window->findChild<QQuickItem*>("headerBatteryDots");
+        QVERIFY(headerBattery);
+        QVERIFY(headerBattery->property("text").toString().endsWith("%"));
+        // The Overview: the ring follows the mode, and a tap on a mode sets
+        // it. Before any discharge is measured, the time left is the rated one.
+        auto* ring = window->findChild<QQuickItem*>("modeRing");
+        QVERIFY(ring);
+        QTRY_COMPARE(ring->property("shown").toString(), controller.noiseControlMode());
+        // (The hub test above left it off.)
+        auto* ancButton = findItem(window->contentItem(), "modeButton_cancelling");
+        QVERIFY(ancButton && ancButton->isVisible());
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                          ancButton->mapToScene(QPointF(ancButton->width() / 2, ancButton->height() / 2)).toPoint());
+        QTRY_COMPARE_WITH_TIMEOUT(controller.noiseControlMode(), QString("cancelling"), 5000);
+        QTRY_COMPARE(ring->property("shown").toString(), QString("cancelling"));
+        QVERIFY(ancButton->property("current").toBool());
+        auto* timeLeft = window->findChild<QObject*>("timeLeftDots");
+        QVERIFY(timeLeft);
+        if (controller.batteryMinutesLeft() >= 0) QVERIFY(timeLeft->property("text").toString().contains(":"));
+        // The gear slides the panel in over the page; Esc takes it away.
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                          advancedButton->mapToScene(QPointF(advancedButton->width() / 2, advancedButton->height() / 2)).toPoint());
+        QTRY_VERIFY(window->property("advancedOpen").toBool());
+        auto* panel = window->findChild<QQuickItem*>("advancedPanel");
+        QVERIFY(panel);
+        QTRY_VERIFY(panel->mapToScene(QPointF(panel->width(), 0)).x() <= window->width() + 0.5);
+        QCOMPARE(window->findChild<QObject*>("advancedCodec")->property("value").toString(),
+                 controller.codec() == "Unknown" ? QString::fromUtf8("—") : controller.codec());
+        if (!output.isEmpty()) {
+            QTest::qWait(500);
+            QVERIFY(window->grabWindow().save(QString("%1/advanced-%2-%3-%4.png").arg(output, model, language).arg(size.width())));
+        }
+        // A row opens its page and closes the panel, and the tap goes no
+        // further: at 980 px the Battery row lies over the Off tile, which
+        // used to switch noise control off too.
+        auto* batteryRow = window->findChild<QQuickItem*>("advancedBatteryRow");
+        QVERIFY(batteryRow);
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                          batteryRow->mapToScene(QPointF(batteryRow->width() / 2, batteryRow->height() / 2)).toPoint());
+        QTRY_COMPARE(window->property("navIndex").toInt(), 5);
+        QVERIFY(!window->property("advancedOpen").toBool());
+        QTest::qWait(300);
+        QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
+        window->setProperty("navIndex", 0);
+        window->setProperty("advancedOpen", true);
+        window->requestActivate();
+        QTRY_VERIFY(window->isActive());
+        QTest::keyClick(window, Qt::Key_Escape);
+        QTRY_VERIFY(!window->property("advancedOpen").toBool());
+        window->setProperty("navIndex", 6); // the About card checks below need Settings shown
+        // The regular-font option swaps every dot display for the body
+        // face, persists, and switches back.
+        const bool previousPlainFont = controller.plainFont();
+        auto* nameDots = window->findChild<QQuickItem*>("deviceNameDots");
+        QVERIFY(nameDots);
+        controller.setPlainFont(true);
+        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("plainFont").toBool(), true);
+        QTRY_VERIFY(nameDots->property("plain").toBool());
+        QVERIFY(nameDots->implicitHeight() > 0);
+        QCOMPARE(window->findChild<QObject*>("plainFontSwitch")->property("checked").toBool(), true);
+        if (!output.isEmpty()) {
+            for (int page : {0, 2, 5}) {
+                window->setProperty("navIndex", page);
+                QTest::qWait(400);
+                QVERIFY(window->grabWindow().save(QString("%1/plain-%2-%3-%4-page%5.png")
+                    .arg(output, model, language).arg(size.width()).arg(page)));
+            }
+        }
+        controller.setPlainFont(false);
+        QTRY_VERIFY(!nameDots->property("plain").toBool());
+        controller.setPlainFont(previousPlainFont);
         // The About card follows the checker: idle, then the release with
         // both actions once the (canned) reply is in.
         auto* updateStatus = window->findChild<QObject*>("updateStatus");
@@ -301,6 +396,18 @@ private slots:
             QTRY_COMPARE_WITH_TIMEOUT(controller.clearBass(), -3, 3000);
             QTRY_COMPARE_WITH_TIMEOUT(bassValue->property("value").toInt(), -3, 3000);
         }
+        // Last, since the simulated set stays off: power off from the
+        // panel closes it, and both buttons grey out.
+        window->setProperty("navIndex", 0);
+        window->setProperty("advancedOpen", true);
+        QTRY_VERIFY(panelPower->isVisible());
+        QTest::qWait(500); // the slide, if animations are on
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                          panelPower->mapToScene(QPointF(panelPower->width() / 2, panelPower->height() / 2)).toPoint());
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.isConnected(), 5000);
+        QVERIFY(!window->property("advancedOpen").toBool());
+        QTRY_VERIFY(!panelPower->isEnabled() && !sidebarPower->isEnabled());
+        QVERIFY(sidebarState->property("text").toString() != controller.t("connected"));
         controller.setThemeMode(previousTheme);
         controller.setLanguage(previousLanguage);
         QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join("\n")));

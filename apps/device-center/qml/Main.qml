@@ -9,10 +9,13 @@ ApplicationWindow {
     id: window
     width: 1180
     height: 780
-    minimumWidth: 980
-    minimumHeight: 660
+    // Narrow enough to stand beside other windows as a tall strip; below
+    // 760 the sidebar folds to its icons.
+    minimumWidth: 460
+    minimumHeight: 640
     visible: !startHidden
-    title: "Sony Device Center — " + controller.deviceName
+    // The device name lives in the header; the title bar names the app.
+    title: "Sony Device Center"
 
     // Closing hides the window when a tray icon exists to bring it back;
     // quitting for real is the tray menu's job.
@@ -33,6 +36,12 @@ ApplicationWindow {
     palette.highlightedText: "#FFFFFF"
 
     property int navIndex: 0
+    property bool advancedOpen: false
+    readonly property bool compact: width < 760
+    // Below this the page is too narrow for two cards side by side (the
+    // sidebar still takes its full width down to 760).
+    readonly property bool stacked: width < 1000
+    readonly property real pageMargin: compact ? 20 : 32
 
     // Reactive i18n helper
     function tr(key) {
@@ -55,6 +64,7 @@ ApplicationWindow {
     Binding { target: Theme; property: "iconAntialiasing"; value: controller.iconAntialiasing }
     Binding { target: Theme; property: "mode"; value: controller.themeMode }
     Binding { target: Theme; property: "animationsEnabled"; value: controller.animationsEnabled }
+    Binding { target: Theme; property: "plainFont"; value: controller.plainFont }
     Binding { target: Theme; property: "systemReducedMotion"; value: controller.systemReducedMotion }
 
     // Icon library. Named, not scattered as magic strings.
@@ -103,6 +113,9 @@ ApplicationWindow {
     RowLayout {
         anchors.fill: parent
         spacing: 0
+        // Nothing under the advanced panel reacts while it is open: pointer
+        // handlers below its rows would otherwise take the same tap.
+        enabled: !window.advancedOpen
 
         Sidebar { appWindow: window }
 
@@ -114,12 +127,12 @@ ApplicationWindow {
             DeviceHeader { appWindow: window;
                 Layout.fillWidth: true
                 Layout.fillHeight: false
-                Layout.leftMargin: 32
-                Layout.rightMargin: 32
-                Layout.topMargin: 28
+                Layout.leftMargin: window.pageMargin
+                Layout.rightMargin: window.pageMargin
+                Layout.topMargin: window.compact ? 20 : 28
             }
 
-            Rectangle { Layout.fillWidth: true; Layout.leftMargin: 32; Layout.rightMargin: 32; Layout.topMargin: 22; height: 1; color: Theme.line }
+            Rectangle { Layout.fillWidth: true; Layout.leftMargin: window.pageMargin; Layout.rightMargin: window.pageMargin; Layout.topMargin: window.compact ? 16 : 22; height: 1; color: Theme.line }
 
             // Not disabled while a command is in flight: disabling the tree drops
             // the mouse grab, which cut every slider drag short after its first
@@ -138,12 +151,13 @@ ApplicationWindow {
                 Settings { appWindow: window }
             }
 
-            // Status strip. Errors are the only thing allowed to shout here.
+            // Status strip: errors and work in progress only. The connection
+            // state lives at the foot of the sidebar.
             RowLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: false
-                Layout.leftMargin: 32
-                Layout.rightMargin: 32
+                Layout.leftMargin: window.pageMargin
+                Layout.rightMargin: window.pageMargin
                 Layout.bottomMargin: 14
                 Layout.topMargin: 6
                 spacing: 12
@@ -155,8 +169,7 @@ ApplicationWindow {
                     color: controller.lastError.length ? Theme.danger : Theme.txtFaint
                     font.pixelSize: 9
                     font.capitalization: Font.AllUppercase
-                    text: controller.lastError.length ? controller.lastError :
-                        controller.busy ? window.tr("working") : window.tr("connection_prefix") + window.trState(controller.connectionState)
+                    text: controller.lastError.length ? controller.lastError : controller.busy ? window.tr("working") : ""
                 }
                 Text {
                     textFormat: Text.PlainText
@@ -168,5 +181,11 @@ ApplicationWindow {
                 Rectangle { width: 28; height: 1; color: Theme.txtFaint }
             }
         }
+    }
+
+    // Above everything, including the sidebar.
+    AdvancedPanel {
+        appWindow: window
+        anchors.fill: parent
     }
 }

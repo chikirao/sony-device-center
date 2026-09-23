@@ -19,24 +19,28 @@ ViewPage {
     // Every row's button is as wide as the widest label the column can
     // show, so the buttons line up down the list in every language and
     // never clip; the probes are measured, never shown.
-    readonly property real actionWidth: Math.max(120, activeProbe.implicitWidth, connectProbe.implicitWidth)
+    readonly property real actionWidth: Math.max(appWindow.compact ? 96 : 120, activeProbe.implicitWidth, connectProbe.implicitWidth)
     PillButton { id: activeProbe; appWindow: root.appWindow; visible: false; text: appWindow.tr("active") }
     PillButton { id: connectProbe; appWindow: root.appWindow; visible: false; text: appWindow.tr("connect"); glyphPath: appWindow.icons.swap }
 
     // A long list of paired sets runs past the minimum window height, so
     // the page scrolls like Settings does.
+    WheelScroll { flickable: devicesFlick }
     Flickable {
+        id: devicesFlick
         anchors.fill: parent
         contentWidth: width
         contentHeight: devicesColumn.implicitHeight + 54
         clip: true
         boundsBehavior: Flickable.StopAtBounds
+        // Wheel only: a drag is the slider's under the pointer.
+        interactive: false
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
     ColumnLayout {
         id: devicesColumn
-        x: 32; y: 22
-        width: parent.width - 64
+        x: appWindow.pageMargin; y: 22
+        width: parent.width - 2 * appWindow.pageMargin
         spacing: 22
 
         RowLayout {
@@ -147,11 +151,13 @@ ViewPage {
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 20
-            anchors.rightMargin: 20
-            spacing: 16
+            anchors.leftMargin: devCard.appWindow.compact ? 16 : 20
+            anchors.rightMargin: devCard.appWindow.compact ? 14 : 20
+            spacing: devCard.appWindow.compact ? 12 : 16
 
+            // Narrow windows leave the name the room instead.
             Rectangle {
+                visible: !devCard.appWindow.compact
                 Layout.preferredWidth: 48
                 Layout.preferredHeight: 48
                 radius: Theme.cardRadius

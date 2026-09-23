@@ -4,368 +4,247 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 
+// The product on a stage, ringed by its noise mode; the three modes to pick
+// from; and two cards with what the header does not say: how long the
+// charge lasts and how the sound is shaped. Wide windows put the controls
+// in a column beside the stage, narrow ones under it.
 ViewPage {
     id: root
 
-    readonly property string modeTitle: !controller.connected || controller.noiseControlMode === "unknown" ? appWindow.tr("unknown")
-        : controller.noiseControlMode === "cancelling" ? appWindow.tr("noise_cancelling")
-        : controller.noiseControlMode === "ambient" ? appWindow.tr("ambient_sound") : appWindow.tr("nc_title_off")
-    readonly property string modeDesc: !controller.connected || controller.noiseControlMode === "unknown" ? appWindow.tr("state_unknown_waiting")
-        : controller.noiseControlMode === "cancelling" ? appWindow.tr("nc_desc_cancelling")
-        : controller.noiseControlMode === "ambient" ? appWindow.tr("nc_desc_ambient").arg(controller.ambientLevel) : appWindow.tr("nc_desc_off")
-    readonly property int batteryPercent: !controller.connected ? -1
-        : controller.hasDualBattery ? Math.min(controller.batteryLeft < 0 ? 100 : controller.batteryLeft,
-                                               controller.batteryRight < 0 ? 100 : controller.batteryRight)
-        : controller.batteryLevel
+    readonly property bool wide: width >= 900
+    readonly property string mode: controller.connected ? controller.noiseControlMode : "unknown"
 
-    ColumnLayout {
+    readonly property var modes: [
+        { mode: "cancelling", title: appWindow.tr("noise_cancelling"), glyph: appWindow.icons.shield, show: controller.hasAnc,
+          detail: appWindow.tr("mode_short_cancelling"), longDetail: appWindow.tr("nc_desc_cancelling") },
+        { mode: "ambient", title: appWindow.tr("ambient_sound"), glyph: appWindow.icons.ambient, show: controller.hasAmbient,
+          detail: appWindow.tr("mode_short_ambient"), longDetail: appWindow.tr("nc_desc_ambient").arg(controller.ambientLevel) },
+        { mode: "off", title: appWindow.tr("noise_control_off"), glyph: appWindow.icons.power, show: true,
+          detail: appWindow.tr("nc_card_off"), longDetail: appWindow.tr("nc_desc_off") }
+    ]
+    function apply(mode) {
+        if (mode === "cancelling") controller.setAnc(true)
+        else if (mode === "ambient") controller.setAmbient(controller.ambientLevel, controller.focusOnVoice)
+        else controller.setNoiseControlOff()
+    }
+
+    // The last day's charge, in 48 half-hour buckets, for the card's bars.
+    // Reread when the log changes, not on a timer.
+    property var levels: []
+    function readLevels() {
+        var now = Date.now(), span = 24 * 3600 * 1000, n = 48
+        var samples = controller.batterySamples(now - span)
+        var out = [], last = -1, j = 0
+        for (var b = 0; b < n; ++b) {
+            var edge = now - span + (b + 1) * span / n
+            while (j < samples.length && samples[j].t <= edge) {
+                last = samples[j].event === "disconnected" ? -1 : samples[j].level
+                ++j
+            }
+            out.push(last)
+        }
+        levels = out
+    }
+    Component.onCompleted: readLevels()
+    Connections { target: controller; function onBatteryHistoryChanged() { root.readLevels() } }
+
+    GridLayout {
         anchors.fill: parent
-        anchors.margins: 32
-        anchors.topMargin: 22
-        spacing: 16
+        anchors.margins: appWindow.pageMargin
+        anchors.topMargin: 12
+        columns: root.wide ? 2 : 1
+        columnSpacing: 32
+        rowSpacing: 16
 
-        // Hero: the mode you are in, and the thing on your head.
-        Card { appWindow: root.appWindow;
+        // Stage
+        Item {
+            id: stage
+            objectName: "overviewStage"
             Layout.fillWidth: true
             Layout.fillHeight: true
-            clip: true
+            Layout.minimumHeight: 150
 
-            ColumnLayout {
-                id: heroCopy
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.margins: 28
-                width: Math.max(300, parent.width * 0.5)
-                spacing: 0
-
-                Eyebrow { appWindow: root.appWindow; text: appWindow.tr("sound_mode") }
-                DotText {
-                    objectName: "modeDots"
-                    Layout.topMargin: 16
-                    text: root.modeTitle
-                    dot: 6
-                    maxWidth: heroCopy.width
-                    color: Theme.txt
-                }
-                Text {
-                    Layout.topMargin: 14
-                    Layout.fillWidth: true
-                    textFormat: Text.PlainText
-                    text: root.modeDesc
-                    color: Theme.txtDim
-                    font.pixelSize: 16
-                    wrapMode: Text.Wrap
-                    maximumLineCount: 3
-                    elide: Text.ElideRight
-                }
-                Item { Layout.fillHeight: true }
-                RowLayout {
-                    spacing: 10
-                    PillButton { appWindow: root.appWindow;
-                        text: appWindow.tr("noise_cancelling")
-                        glyphPath: appWindow.icons.shield
-                        visible: controller.hasAnc
-                        active: controller.noiseControlMode === "cancelling"
-                        enabled: controller.connected
-                        onClicked: controller.setAnc(true)
-                    }
-                    PillButton { appWindow: root.appWindow;
-                        text: appWindow.tr("ambient")
-                        glyphPath: appWindow.icons.ambient
-                        visible: controller.hasAmbient
-                        active: controller.noiseControlMode === "ambient"
-                        enabled: controller.connected
-                        onClicked: controller.setAmbient(controller.ambientLevel, controller.focusOnVoice)
-                    }
-                    PillButton { appWindow: root.appWindow;
-                        text: appWindow.tr("noise_control_off")
-                        glyphPath: appWindow.icons.power
-                        active: controller.noiseControlMode === "off"
-                        enabled: controller.connected
-                        onClicked: controller.setNoiseControlOff()
-                    }
-                }
+            readonly property real ringSize: Math.min(width, height) - 16
+            ModeRing {
+                id: ring
+                objectName: "modeRing"
+                anchors.centerIn: parent
+                width: stage.ringSize
+                height: width
+                mode: root.mode
             }
-
-            // Product, framed by a dotted orbit and a pinch of type.
-            Item {
-                id: stage
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.margins: 8
-                width: parent.width - heroCopy.width - 56
-
-                Canvas {
-                    id: orbit
-                    anchors.fill: parent
-                    opacity: 0.55
-                    onWidthChanged: requestPaint()
-                    onHeightChanged: requestPaint()
-                    Connections { target: Theme; function onLightChanged() { orbit.requestPaint() } }
-                    onPaint: {
-                        var ctx = getContext("2d")
-                        ctx.reset()
-                        var r = Math.min(width, height) * 0.46
-                        ctx.strokeStyle = Theme.lineHi
-                        ctx.lineWidth = 1.2
-                        ctx.setLineDash([2, 5])
-                        ctx.beginPath()
-                        ctx.arc(width * 0.52, height * 0.5, r, Math.PI * 0.55, Math.PI * 1.75)
-                        ctx.stroke()
-                    }
-                }
-
-                Image {
-                    id: product
-                    anchors.centerIn: parent
-                    width: Math.min(parent.width * 0.7, parent.height * 0.92)
-                    height: width
-                    fillMode: Image.PreserveAspectFit
-                    smooth: true
-                    mipmap: true
-                    source: "qrc:/" + controller.heroImagePath
-                    opacity: controller.connected ? 1.0 : 0.4
-                    scale: productHover.hovered ? 1.04 : 1.0
-                    Behavior on scale { NumberAnimation { duration: Theme.duration(320); easing.type: Easing.OutCubic } }
-                    Behavior on opacity { NumberAnimation { duration: Theme.tSlow } }
-                    HoverHandler { id: productHover }
-                }
-
-                // Dot grid, top right.
-                Grid {
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.margins: 24
-                    columns: 4
-                    spacing: 7
-                    Repeater {
-                        model: 20
-                        Rectangle { width: 3; height: 3; radius: 1.5; color: Theme.lineHi }
-                    }
-                }
-
-                Text {
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    anchors.margins: 26
-                    width: 92
-                    textFormat: Text.PlainText
-                    text: appWindow.tr("hero_tagline")
-                    color: Theme.txtDim
-                    font.pixelSize: 9
-                    font.capitalization: Font.AllUppercase
-                    lineHeight: 1.5
-                    wrapMode: Text.Wrap
-                    horizontalAlignment: Text.AlignLeft
-                }
+            Image {
+                id: product
+                anchors.centerIn: parent
+                width: stage.ringSize * 0.74
+                height: width
+                sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
+                source: "qrc:/" + controller.heroImagePath
+                opacity: controller.connected ? 1.0 : 0.4
+                scale: productHover.hovered ? 1.03 : 1.0
+                Behavior on scale { NumberAnimation { duration: Theme.duration(320); easing.type: Easing.OutCubic } }
+                Behavior on opacity { NumberAnimation { duration: Theme.tSlow } }
+                HoverHandler { id: productHover }
             }
         }
 
-        // Vitals
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: false
-            Layout.preferredHeight: 158
-            spacing: 16
+        // Controls
+        ColumnLayout {
+            Layout.fillWidth: !root.wide
+            Layout.preferredWidth: root.wide ? 340 : -1
+            Layout.maximumWidth: root.wide ? 380 : Number.POSITIVE_INFINITY
+            Layout.alignment: Qt.AlignVCenter
+            spacing: 12
 
-            // The three cards share the row 6:5:4 (preferred widths are
-            // proportions, in pixels so a minimum can sit beside them).
-            // Battery & connection
-            Card { appWindow: root.appWindow;
+            GridLayout {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.preferredWidth: 300
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 18
-                    spacing: 12
-                    CardTitle { appWindow: root.appWindow; text: appWindow.tr("battery_connection"); onClicked: appWindow.navIndex = 5 }
-                    RowLayout {
-                        Layout.fillHeight: true
-                        spacing: 18
-                        ColumnLayout {
-                            id: batteryColumn
-                            spacing: 12
-                            Layout.preferredWidth: 104
-                            Layout.maximumWidth: 104
-                            DotText {
-                                text: root.batteryPercent >= 0 ? root.batteryPercent + "%" : "—"
-                                dot: 4.5
-                                maxWidth: batteryColumn.width
-                                color: root.batteryPercent >= 0 && root.batteryPercent <= 20 ? Theme.danger : Theme.txt
-                            }
+                columns: root.wide ? 1 : 3
+                rowSpacing: 12
+                columnSpacing: 12
+                Repeater {
+                    model: root.modes
+                    delegate: ModeButton {
+                        required property var modelData
+                        objectName: "modeButton_" + modelData.mode
+                        appWindow: root.appWindow
+                        visible: modelData.show
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: 1
+                        tile: !root.wide
+                        glyphPath: modelData.glyph
+                        title: modelData.title
+                        detail: root.wide ? modelData.longDetail : modelData.detail
+                        current: root.mode === modelData.mode
+                        enabled: controller.connected
+                        onClicked: root.apply(modelData.mode)
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: false
+                Layout.topMargin: root.wide ? 4 : 0
+                spacing: 12
+
+                // Time left
+                LinkCard {
+                    objectName: "timeLeftCard"
+                    appWindow: root.appWindow
+                    title: appWindow.tr("time_left")
+                    onClicked: appWindow.navIndex = 5
+                    DotText {
+                        objectName: "timeLeftDots"
+                        text: !controller.connected ? "—"
+                            : controller.isCharging ? appWindow.tr("charging")
+                            : controller.batteryMinutesLeft >= 0
+                              ? Math.floor(controller.batteryMinutesLeft / 60) + ":" + ("0" + controller.batteryMinutesLeft % 60).slice(-2)
+                              : "—"
+                        dot: 3
+                        maxWidth: parent ? parent.width : 120
+                        color: Theme.txt
+                    }
+                    Item { Layout.fillHeight: true; Layout.minimumHeight: 8 }
+                    // The last day, one bar per half hour.
+                    Row {
+                        id: bars
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 24
+                        height: 24
+                        spacing: 1
+                        Repeater {
+                            model: root.levels
                             Rectangle {
-                                Layout.fillWidth: true
-                                height: 5
-                                radius: 2.5
-                                color: Theme.surfaceSunk
+                                required property var modelData
+                                width: Math.max(1, (bars.width - 47) / 48)
+                                height: modelData < 0 ? 1 : Math.max(2, bars.height * modelData / 100)
+                                anchors.bottom: parent.bottom
+                                color: modelData < 0 ? Theme.line : Theme.txtFaint
+                            }
+                        }
+                    }
+                }
+
+                // Equalizer
+                LinkCard {
+                    objectName: "equalizerCard"
+                    appWindow: root.appWindow
+                    title: appWindow.tr("nav_equalizer")
+                    visible: controller.hasEqualizer
+                    onClicked: appWindow.navIndex = 2
+                    Text {
+                        textFormat: Text.PlainText
+                        Layout.fillWidth: true
+                        text: controller.connected && controller.equalizerPreset >= 0 ? appWindow.trPreset(controller.equalizerPreset) : "—"
+                        color: Theme.txt
+                        font.pixelSize: 15
+                        font.weight: Font.DemiBold
+                        elide: Text.ElideRight
+                    }
+                    Item { Layout.fillHeight: true; Layout.minimumHeight: 8 }
+                    // The curve as five faders.
+                    Row {
+                        Layout.alignment: Qt.AlignHCenter
+                        spacing: 10
+                        height: 30
+                        Repeater {
+                            model: 5
+                            Item {
+                                required property int index
+                                width: 8; height: 30
+                                readonly property int v: controller.equalizerBands && controller.equalizerBands[index] !== undefined
+                                                         ? controller.equalizerBands[index] : 0
+                                Rectangle { anchors.horizontalCenter: parent.horizontalCenter; width: 1; height: parent.height; color: Theme.line }
                                 Rectangle {
-                                    width: parent.width * Math.max(0, root.batteryPercent) / 100
-                                    height: parent.height
-                                    radius: parent.radius
-                                    color: root.batteryPercent >= 0 && root.batteryPercent <= 20 ? Theme.danger : Theme.accent
-                                    Behavior on width { NumberAnimation { duration: Theme.duration(600); easing.type: Easing.OutCubic } }
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: 6; height: 10; radius: 2
+                                    color: Theme.txt
+                                    y: Math.max(0, Math.min(parent.height - height, parent.height / 2 - height / 2 - parent.v * 1.2))
+                                    Behavior on y { NumberAnimation { duration: Theme.tBase; easing.type: Easing.OutCubic } }
                                 }
                             }
-                            Item { Layout.fillHeight: true }
-                        }
-                        Rectangle { width: 1; Layout.fillHeight: true; color: Theme.line }
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 12
-                            VitalRow { appWindow: root.appWindow;
-                                glyph: appWindow.icons.bluetooth
-                                title: controller.connected ? appWindow.tr("connected") : appWindow.tr("disconnected")
-                                detail: controller.connected ? appWindow.tr("stable_connection") : appWindow.trState(controller.connectionState)
-                            }
-                            VitalRow { appWindow: root.appWindow;
-                                glyph: appWindow.icons.waveform
-                                title: controller.connected && controller.codec.length ? controller.codec : "—"
-                                detail: appWindow.tr("high_quality_audio")
-                            }
                         }
                     }
-                }
-            }
-
-            // Battery history
-            Card { appWindow: root.appWindow;
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.preferredWidth: 250
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 18
-                    anchors.topMargin: 16
-                    anchors.bottomMargin: 14
-                    spacing: 8
-                    CardTitle { appWindow: root.appWindow; text: appWindow.tr("battery_title"); onClicked: appWindow.navIndex = 5 }
-                    RowLayout {
-                        Layout.fillHeight: true
-                        spacing: 12
-                        Stat { appWindow: root.appWindow;
-                            label: appWindow.tr("time_left")
-                            value: !controller.connected ? "—" : controller.isCharging ? appWindow.tr("charging")
-                                 : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : "—"
-                            note: controller.batteryEstimateRated ? appWindow.tr("battery_estimate_rated")
-                                : controller.batterySessionStart > 0 && !controller.isCharging
-                                ? appWindow.tr("battery_session_since").arg(Qt.formatTime(new Date(controller.batterySessionStart), "HH:mm")) : ""
-                        }
-                        Rectangle { width: 1; Layout.fillHeight: true; color: Theme.line }
-                        Stat { appWindow: root.appWindow;
-                            label: appWindow.tr("battery_rate")
-                            value: controller.connected && controller.batteryDischargeRate > 0 ? controller.batteryDischargeRate.toFixed(1) + "%" : "—"
-                            // A session with no rate yet is the normal state
-                            // for the first half hour after a charge; say so
-                            // rather than leave two dashes unexplained.
-                            note: !controller.connected || controller.isCharging ? ""
-                                : controller.batteryDischargeRate > 0 ? appWindow.tr("per_hour") : appWindow.tr("battery_estimate_pending")
-                        }
-                    }
-                }
-            }
-
-            // Quick actions. Never narrower than its widest button: the
-            // labels are the point of the card, so at the minimum window
-            // width the two cards beside it give way (their values elide
-            // and wrap) rather than "Открыть эквалайзер" losing its tail.
-            Card { appWindow: root.appWindow;
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.preferredWidth: 200
-                Layout.minimumWidth: quickActions.implicitWidth + 36
-                ColumnLayout {
-                    id: quickActions
-                    anchors.fill: parent
-                    anchors.margins: 18
-                    spacing: 10
-                    CardTitle { appWindow: root.appWindow; text: appWindow.tr("quick_actions"); showChevron: false }
-                    PillButton { appWindow: root.appWindow;
-                        Layout.fillWidth: true
-                        compact: true
-                        text: appWindow.tr("open_equalizer")
-                        glyphPath: appWindow.icons.sliders
-                        onClicked: appWindow.navIndex = 2
-                    }
-                    PillButton { appWindow: root.appWindow;
-                        Layout.fillWidth: true
-                        compact: true
-                        text: controller.connected ? appWindow.tr("power_off") : appWindow.tr("nav_device_switcher")
-                        glyphPath: controller.connected ? appWindow.icons.power : appWindow.icons.swap
-                        onClicked: { if (controller.connected) controller.powerOff(); else appWindow.navIndex = 4 }
-                    }
-                    Item { Layout.fillHeight: true }
                 }
             }
         }
     }
 
-    component CardTitle: RowLayout {
-        id: cardTitle
-        required property var appWindow
-        property string text: ""
-        property bool showChevron: true
-        signal clicked()
-        Layout.fillWidth: true
-        Text {
-            textFormat: Text.PlainText
-            Layout.fillWidth: true
-            text: cardTitle.text
-            color: Theme.txt
-            font.pixelSize: 14
-            font.weight: Font.DemiBold
-        }
-        Glyph { appWindow: cardTitle.appWindow; visible: cardTitle.showChevron; path: appWindow.icons.chevronRight; size: 16; color: Theme.txtDim }
-        TapHandler { enabled: cardTitle.showChevron; onTapped: cardTitle.clicked() }
-        HoverHandler { enabled: cardTitle.showChevron; cursorShape: Qt.PointingHandCursor }
-    }
-
-    component VitalRow: RowLayout {
-        id: vital
-        required property var appWindow
-        property string glyph: ""
+    // A small card that opens a page: title with a chevron, then content.
+    component LinkCard: Card {
+        id: linkCard
         property string title: ""
-        property string detail: ""
-        spacing: 12
-        Rectangle {
-            width: 34; height: 34; radius: 17
-            color: Theme.surfaceHi
-            border.width: 1
-            border.color: Theme.line
-            Glyph { appWindow: vital.appWindow; anchors.centerIn: parent; path: vital.glyph; size: 16; color: Theme.txt; weight: 1.7 }
-        }
-        ColumnLayout {
-            spacing: 2
-            Layout.fillWidth: true
-            Text { textFormat: Text.PlainText; text: vital.title; color: Theme.txt; font.pixelSize: 12; font.weight: Font.DemiBold; elide: Text.ElideRight; Layout.fillWidth: true }
-            Text { textFormat: Text.PlainText; text: vital.detail; color: Theme.txtDim; font.pixelSize: 11; elide: Text.ElideRight; Layout.fillWidth: true }
-        }
-    }
-
-    component Stat: ColumnLayout {
-        id: stat
-        required property var appWindow
-        property string label: ""
-        property string value: ""
-        property string note: ""
+        signal clicked()
+        default property alias content: linkColumn.data
         Layout.fillWidth: true
-        // Equal columns: otherwise the row splits by label width and the
-        // narrower stat is left with no room for its note.
         Layout.preferredWidth: 1
-        Layout.alignment: Qt.AlignTop
-        spacing: 6
-        // One line, elided: the card has no height for a wrapped label on
-        // top of a two-line note, so the labels are kept short in every
-        // language instead ("Разряд", "Décharge").
-        Text { textFormat: Text.PlainText; text: stat.label; color: Theme.txtDim; font.pixelSize: 11
-               elide: Text.ElideRight; Layout.fillWidth: true }
-        DotText { text: stat.value; dot: 3.6; maxWidth: stat.width; color: Theme.txt }
-        // Two lines: "Discharging since 13:30" does not fit one at the
-        // minimum window width, and the card has the height to spare.
-        Text { textFormat: Text.PlainText; visible: text !== ""; text: stat.note; color: Theme.txtDim; font.pixelSize: 11
-               wrapMode: Text.Wrap; maximumLineCount: 2; elide: Text.ElideRight; Layout.fillWidth: true }
-        Item { Layout.fillHeight: true }
+        Layout.preferredHeight: root.wide ? 136 : 118
+        hovered: linkHover.hovered
+        HoverHandler { id: linkHover; cursorShape: Qt.PointingHandCursor }
+        TapHandler { onTapped: linkCard.clicked() }
+        Accessible.role: Accessible.Button
+        Accessible.name: title
+        ColumnLayout {
+            id: linkColumn
+            anchors.fill: parent
+            anchors.margins: 16
+            anchors.bottomMargin: 14
+            spacing: 8
+            RowLayout {
+                Layout.fillWidth: true
+                Text {
+                    textFormat: Text.PlainText
+                    Layout.fillWidth: true
+                    text: linkCard.title
+                    color: Theme.txtDim
+                    font.pixelSize: 11
+                    elide: Text.ElideRight
+                }
+                Glyph { appWindow: linkCard.appWindow; path: appWindow.icons.chevronRight; size: 14; color: Theme.txtFaint }
+            }
+        }
     }
 }
