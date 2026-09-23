@@ -14,7 +14,8 @@ constexpr const char* kDefaultName = "WH-1000XM5";
 constexpr const char* kDefaultAddress = "CC:98:8B:00:11:22";
 }
 
-SimulatedDeviceTransport::SimulatedDeviceTransport(bool earbuds) : _earbuds(earbuds) {}
+SimulatedDeviceTransport::SimulatedDeviceTransport(bool earbuds, bool legacyV1)
+    : _earbuds(earbuds), _legacyV1(legacyV1) {}
 
 size_t SimulatedDeviceTransport::send(std::span<const std::byte> data) {
     const size_t written = FakeTransport::send(data);
@@ -79,7 +80,24 @@ void SimulatedDeviceTransport::handle(const std::vector<uint8_t>& p) {
         if (type == 0x02) reply({0x13, 0x02, 0x10});
         break;
 
+    case 0x18: // V1 codec: 19 00 <code>, 0x10 = LDAC
+        if (type == 0x00) reply({0x19, 0x00, 0x10});
+        break;
+
+    case 0x10: // V1 single battery: 10 00 -> 11 00 <level> <charging>
+        if (type == 0x00)
+            reply({0x11, 0x00, _battery, static_cast<uint8_t>(_charging ? 1 : 0)});
+        break;
+
     case 0x22: { // battery
+        if (_legacyV1) {
+            // On V1 this opcode is POWER OFF, never a battery query.
+            if (type == 0x00 && p.size() >= 3 && p[2] == 0x01) {
+                setFailConnect(true, SonyErrorCode::TransportFailure);
+                simulateDisconnect();
+            }
+            break;
+        }
         const auto charging = static_cast<uint8_t>(_charging ? 1 : 0);
         if (_earbuds) {
             // 22 09 -> 23 09 <L> <Lchg> <R> <Rchg>; 22 0a -> 23 0a <case> <chg>
@@ -92,18 +110,30 @@ void SimulatedDeviceTransport::handle(const std::vector<uint8_t>& p) {
     }
 
     case 0x66: // noise control query
-        if (type == 0x17) reply({0x67, 0x17, 0x01, _noise[0], _noise[1], _noise[2], _noise[3]});
+        if (type == 0x17) {
+            reply({0x67, 0x17, 0x01, _noise[0], _noise[1], _noise[2], _noise[3]});
+        } else if (type == 0x02) {
+            const uint8_t dualSingle = _noise[1] == 0x01 ? 0x00 : 0x02;
+            reply({0x67, 0x02, _noise[0], 0x01, dualSingle, 0x01, _noise[2], _noise[3]});
+        }
         break;
 
     case 0x68: // noise control set: 68 17 01 <effect> <settingType> <voice> <level>
         if (type == 0x17 && p.size() >= 7) {
             std::copy(p.begin() + 3, p.begin() + 7, _noise.begin());
             reply({0x69, 0x17, 0x01, _noise[0], _noise[1], _noise[2], _noise[3]});
+        } else if (type == 0x02 && p.size() >= 8) {
+            _noise = {
+                p[2],
+                static_cast<uint8_t>(p[2] != 0 && p[4] == 0 ? 0x01 : 0x00),
+                p[6],
+                p[7]
+            };
         }
         break;
 
     case 0x56: { // equalizer query
-        std::vector<uint8_t> out{0x57, 0x00, _eqPreset, 0x06};
+        std::vector<uint8_t> out{0x57, type, _eqPreset, 0x06};
         out.insert(out.end(), _eqBands.begin(), _eqBands.end());
         reply(std::move(out));
         break;
@@ -120,10 +150,12 @@ void SimulatedDeviceTransport::handle(const std::vector<uint8_t>& p) {
 
     case 0xe6: // DSEE query
         if (type == 0x01) reply({0xe7, 0x01, static_cast<uint8_t>(_dsee ? 1 : 0)});
+        if (type == 0x02) reply({0xe7, 0x02, 0x00, static_cast<uint8_t>(_dsee ? 1 : 0)});
         break;
 
     case 0xe8: // DSEE set
         if (type == 0x01 && p.size() >= 3) _dsee = p[2] != 0;
+        if (type == 0x02 && p.size() >= 4) _dsee = p[3] != 0;
         break;
 
     case 0x24: // power set; type 03 = power off
@@ -143,15 +175,19 @@ void SimulatedDeviceTransport::handle(const std::vector<uint8_t>& p) {
         if (type == 0x05 && p.size() >= 4) _autoPowerOff = {p[2], p[3]};
         break;
 
-    case 0xf6: // system settings query; both flags are reported inverted on the wire
+    case 0xf6: // system settings query; V2 flags are inverted, V1 values are not
         if (type == 0x0c) reply({0xf7, 0x0c, static_cast<uint8_t>(_speakToChat ? 0 : 1)});
         if (type == 0x0a) reply({0xf7, 0x0a, static_cast<uint8_t>(_adaptiveVolume ? 0 : 1)});
+        if (type == 0x05) reply({0xf7, 0x05, 0x00, static_cast<uint8_t>(_speakToChat ? 1 : 0)});
+        if (type == 0x04) reply({0xf7, 0x04, 0x01, _autoPowerOff[0], _autoPowerOff[1]});
         break;
 
     case 0xf8: // system settings set
         if (p.size() >= 3) {
             if (type == 0x0c) _speakToChat = p[2] == 0;
             if (type == 0x0a) _adaptiveVolume = p[2] == 0;
+            if (type == 0x05 && p.size() >= 4) _speakToChat = p[3] != 0;
+            if (type == 0x04 && p.size() >= 5) _autoPowerOff = {p[3], p[4]};
         }
         break;
 
@@ -165,7 +201,8 @@ SimulatedDevice createSimulatedDevice(std::string name, std::string address) {
     device.name = name.empty() ? kDefaultName : std::move(name);
     device.address = address.empty() ? kDefaultAddress : std::move(address);
     const bool earbuds = device.name.rfind("WF-", 0) == 0 || device.name.rfind("LinkBuds", 0) == 0;
-    device.transport = std::make_shared<SimulatedDeviceTransport>(earbuds);
+    const bool legacyV1 = device.name.rfind("WH-1000XM3", 0) == 0 || device.name.rfind("WH-1000XM4", 0) == 0;
+    device.transport = std::make_shared<SimulatedDeviceTransport>(earbuds, legacyV1);
     device.discovery = std::make_shared<transport::FakeDeviceDiscovery>();
     device.discovery->addDevice(transport::DiscoveredDevice{
         .name = device.name,

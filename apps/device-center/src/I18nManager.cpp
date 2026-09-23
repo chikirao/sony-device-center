@@ -284,6 +284,7 @@ void I18nManager::_initTranslations() {
     en["advanced"]                        = "Advanced";
     en["advanced_desc"]                   = "Sound and device, one line each";
     en["close"]                           = "Close";
+    en["apo_when_taken_off"]              = "When Taken Off";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -526,6 +527,7 @@ void I18nManager::_initTranslations() {
     pt["advanced"]                        = "Avançado";
     pt["advanced_desc"]                   = "Som e dispositivo, uma linha cada";
     pt["close"]                           = "Fechar";
+    pt["apo_when_taken_off"]              = "Ao Retirar";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -768,6 +770,7 @@ void I18nManager::_initTranslations() {
     es["advanced"]                        = "Avanzado";
     es["advanced_desc"]                   = "Sonido y dispositivo, una línea cada uno";
     es["close"]                           = "Cerrar";
+    es["apo_when_taken_off"]              = "Al Quitárselos";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -1010,6 +1013,7 @@ void I18nManager::_initTranslations() {
     de["advanced"]                        = "Erweitert";
     de["advanced_desc"]                   = "Klang und Gerät, je eine Zeile";
     de["close"]                           = "Schließen";
+    de["apo_when_taken_off"]              = "Beim Abnehmen";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1252,6 +1256,7 @@ void I18nManager::_initTranslations() {
     fr["advanced"]                        = "Avancé";
     fr["advanced_desc"]                   = "Son et appareil, une ligne chacun";
     fr["close"]                           = "Fermer";
+    fr["apo_when_taken_off"]              = "Lors du retrait";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1494,6 +1499,7 @@ void I18nManager::_initTranslations() {
     ja["advanced"]                        = "詳細設定";
     ja["advanced_desc"]                   = "サウンドとデバイスを一行ずつ";
     ja["close"]                           = "閉じる";
+    ja["apo_when_taken_off"]              = "取り外したとき";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1736,6 +1742,7 @@ void I18nManager::_initTranslations() {
     ru["advanced"]                        = "Дополнительно";
     ru["advanced_desc"]                   = "Звук и устройство, по строке на всё";
     ru["close"]                           = "Закрыть";
+    ru["apo_when_taken_off"]              = "При снятии";
 }
 
 } // namespace sony::devicecenter

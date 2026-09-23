@@ -452,9 +452,20 @@ verify on hardware → fixture → `IProtocol` + `DeviceState` +
 
 ## Phase 4 — Protocol gaps on other devices ⚠
 
-- [ ] **V1 (XM3/XM4): DSEE and Auto Power-Off.** Devices respond to
-  `0xe6 0x02` and `0xf6 0x04`, but the responses aren't decoded yet
-  (`device-matrix.md`).
+- [x] **V1 (XM4): Speak-to-Chat.** Smart Talking Mode (`0xf6 0x05`) is
+  enabled for the WH-1000XM4 profile after verification on firmware 3.0.1;
+  enabling it writes the Standard (~30 s) timeout configuration first.
+- [~] **V1 (XM4): DSEE and Auto Power-Off contributor test.** DSEE on/off was
+  confirmed through the GUI on firmware 3.0.1, although the CLI failed to
+  connect and produced no literal TX/RX dump. Auto Power-Off did not work, so
+  its XM4 profile flag is disabled again while the Gadgetbridge-based code is
+  retained as an unverified implementation hint. The same build aligns the
+  six APO labels with the documented code table; a fresh XM5 readback is still
+  required before that label change moves to the main PR.
+- [ ] **V1 (XM4): investigate Noise Control Off.** The contributor reported
+  that ANC and Ambient work but Off does not in the combined build. This path
+  is unchanged from `main`; establish whether it reproduces in the installed
+  build and capture the `0x68 0x02` exchange before altering protocol bytes.
 - [ ] **XM6: 10-band EQ.** Already done in upstream PR #44 (Cyrus7):
   inquired type `0x04`, 10 bands without Clear Bass, verified on real XM6
   hardware. Don't reimplement — wait for the merge and pull it in.

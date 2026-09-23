@@ -18,7 +18,7 @@ This document tracks hardware-level verification and protocol capability support
 | Device | Protocol | Connection | Battery | ANC | Ambient | EQ | DSEE | Firmware | Codec | Speak-to-Chat | Auto Power-Off | Tested Firmware | Tester |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **WH-1000XM3** | V1 | RFCOMM | Verified | Verified | Verified | N/A (V1) | N/A (V1) | Unknown | SBC, AAC, LDAC, aptX | N/A | N/A | 4.5.2 | Community |
-| **WH-1000XM4** | V1 | RFCOMM | Verified | Verified | Verified | Verified | Not implemented (V1) | Verified | AAC verified | N/A | Not implemented (V1) | 3.0.1 | Community (Windows) |
+| **WH-1000XM4** | V1 | RFCOMM | Verified | Verified | Verified | Verified | Verified (GUI on/off; dump unavailable) | Verified | AAC verified | Verified (on/off; Standard ~30s) | Disabled (contributor test unsuccessful) | 3.0.1 | Community (Windows) |
 | **WH-1000XM5** | V2 | RFCOMM | Verified | Verified | Verified | Verified | Verified | Verified | SBC, AAC, LDAC | Verified | Verified | 2.3.1 | Core Dev |
 | **WH-1000XM6** | V2 | RFCOMM | Expected | Expected | Expected | Expected | Expected | Expected | Expected | Expected | Expected | — | Unreleased |
 | **WF-1000XM4** | V2 | RFCOMM | Expected (Dual+Case) | Expected | Expected | Expected | Expected | Expected | SBC, AAC, LDAC | Expected | Expected | — | Awaiting HW |
@@ -38,7 +38,18 @@ This document tracks hardware-level verification and protocol capability support
 - 5-band equalizer with Clear Bass via `0x56` / `0x57` / `0x58` with inquired type `0x01` (V2 uses `0x00`).
 - Firmware `0x04 0x02` (returns `0x05`), codec `0x18 0x00` (returns `0x19`).
 - **Opcode `0x22` is POWER OFF** — must NEVER be transmitted to a V1 device to query battery. The only legitimate use is `powerOff()`, which sends `0x22 0x00 0x01` (Gadgetbridge layout; not yet verified on V1 hardware).
-- DSEE (`0xe6 0x02`) and auto power-off (`0xf6 0x04`) do answer on a WH-1000XM4 but are not decoded or exposed yet.
+- DSEE (`0xe6 0x02` → `0xe7 0x02 0x00 <on>`) was confirmed working on and off
+  through the GUI on XM4 firmware 3.0.1. The contributor's `sonyctl -v` run
+  could not connect, so a literal TX/RX capture is still unavailable.
+- Auto power-off (`0xf6 0x04` → `0xf7 0x04 0x01 <code0> <code1>`) remains an
+  implementation hint from Gadgetbridge. It did not work in the contributor
+  build and is disabled in the XM4 profile until a successful capture shows
+  the real firmware 3.0.1 exchange.
+- The Noise Control **Off** transition was also reported unsuccessful in the
+  combined contributor build. That V1 command path is unchanged from `main`;
+  compare against the installed build and capture TX/RX before changing its
+  established `0x68 0x02` layout.
+- Speak-to-Chat is Smart Talking Mode: GET `0xf6 0x05` → RET `0xf7 0x05 <kind> <onOff>`, SET enable `0xf8 0x05 0x01 <0|1>`. Enable is **not** inverted. Config SET `0xfc 0x05 0x00 <sensitivity> <focus> <timeout>` is required on enable; without it an XM4 session never times out. `kind 0x02` is an active talking session, not off. Timeout bytes match Headphones Connect: `0x00` ~15s, `0x01` Standard ~30s (what we write today), `0x02` ~1 min, `0x03` do not close. Sensitivity/timeout UI is a nice-to-have.
 
 ### Protocol V2 (e.g. WH-1000XM5, WF-1000XM4/M5, LinkBuds, ULT WEAR)
 - Extended variable-length payload structures.
@@ -49,6 +60,9 @@ This document tracks hardware-level verification and protocol capability support
 - DSEE Extreme toggle (`0xe6` / `0xe7` / `0xe8`).
 - Speak-to-Chat toggle (`0xf6` / `0xf7` / `0xf8`).
 - Auto Power-Off configuration (`0x26` / `0x27` / `0x28`).
+  The contributor test build labels its documented codes as Off, 5 minutes,
+  30 minutes, 1 hour, 3 hours, and When Taken Off. This mapping still awaits
+  a fresh XM5 readback before it is treated as newly verified.
 - Power off: `0x24 0x03 0x01` (verified on WH-1000XM5).
 
 ---

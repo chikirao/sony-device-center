@@ -38,7 +38,7 @@ void printHelp() {
               << "  dsee on|off|auto           Toggle DSEE sound enhancement\n"
               << "  stc on|off                 Toggle Speak-to-Chat\n"
               << "  adaptive on|off            Toggle Adaptive Volume\n"
-              << "  apo <0-5>                  Set Auto-Power-Off duration preset index\n"
+              << "  apo get|<0-5>              Read or set Auto-Power-Off preset index\n"
               << "  power off                  Turn the headphones off\n"
               << "  connect <address> [name]   Connect to a specific paired device\n"
               << "  disconnect                 Drop the current connection\n"

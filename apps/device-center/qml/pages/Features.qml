@@ -9,6 +9,9 @@ ViewPage {
 
     function availability(key) { return controller.featureStatus[key] }
     function known(key) { var a = availability(key); return controller.connected && a && a.availability === "valid" }
+    // A connected model without the feature keeps its card, greyed and
+    // locked, so the page reads the same on every model.
+    function lacks(has) { return controller.connected && !has }
 
     // Scrolls once a narrow window stacks the tiles.
     WheelScroll { flickable: flick }
@@ -43,6 +46,8 @@ ViewPage {
                 // needed a third layout pass with Linux fonts. The narrow
                 // window adds room for a wrapped description.
                 Layout.preferredHeight: appWindow.compact ? 118 : 108
+                objectName: "dseeCard"
+                opacity: root.lacks(controller.hasDsee) ? 0.45 : 1
                 RowLayout {
                     anchors.fill: parent
                     anchors.margins: 18
@@ -101,6 +106,8 @@ ViewPage {
                         id: tile
                         required property var modelData
                         readonly property bool ready: modelData.supported && root.known(modelData.key)
+                        objectName: modelData.key + "Tile"
+                        opacity: root.lacks(modelData.supported) ? 0.45 : 1
                         Layout.fillWidth: true
                         Layout.preferredWidth: 1
                         Layout.preferredHeight: 168
@@ -139,8 +146,10 @@ ViewPage {
 
             // Auto power off: the wide row with a picker on the right.
             Card { appWindow: root.appWindow;
+                objectName: "autoPowerOffCard"
                 Layout.fillWidth: true
                 Layout.preferredHeight: 84
+                opacity: root.lacks(controller.hasAutoPowerOff) ? 0.45 : 1
                 RowLayout {
                     anchors.fill: parent
                     anchors.margins: 18
@@ -157,14 +166,16 @@ ViewPage {
                         Layout.fillWidth: true
                         spacing: 2
                         Text { textFormat: Text.PlainText; text: appWindow.tr("auto_power_off"); color: Theme.txt; font.pixelSize: 15; font.weight: Font.DemiBold }
-                        Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: appWindow.tr("auto_power_off_desc"); color: Theme.txtDim; font.pixelSize: 12; elide: Text.ElideRight }
+                        Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: root.lacks(controller.hasAutoPowerOff) ? appWindow.tr("not_supported") : appWindow.tr("auto_power_off_desc"); color: Theme.txtDim; font.pixelSize: 12; elide: Text.ElideRight }
                     }
                     ComboBox {
                         id: powerCombo
+                        objectName: "autoPowerOffCombo"
                         implicitWidth: appWindow.compact ? 132 : 150
                         implicitHeight: 40
-                        enabled: controller.connected
-                        model: [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_15min"), appWindow.tr("apo_30min"), appWindow.tr("apo_1h"), appWindow.tr("apo_3h")]
+                        enabled: controller.connected && controller.hasAutoPowerOff
+                        // The six protocol codes, in order.
+                        model: [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_30min"), appWindow.tr("apo_1h"), appWindow.tr("apo_3h"), appWindow.tr("apo_when_taken_off")]
                         currentIndex: root.known("autoPowerOff") ? controller.autoPowerOff : -1
                         Connections {
                             target: controller

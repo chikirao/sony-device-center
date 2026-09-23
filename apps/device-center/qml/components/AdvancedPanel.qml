@@ -20,7 +20,8 @@ Item {
 
     visible: shown > 0
     function known(key) { var a = controller.featureStatus[key]; return controller.connected && a && a.availability === "valid" }
-    function supported(key) { var a = controller.featureStatus[key]; return !a || a.availability !== "unsupported" }
+    // A connected model without a feature keeps its line, greyed and locked.
+    function lacks(has) { return controller.connected && !has }
     function close() { appWindow.advancedOpen = false }
     function go(index) { appWindow.navIndex = index; close() }
 
@@ -137,34 +138,34 @@ Item {
                     onClicked: panel.go(1)
                 }
 
-                Divider { visible: controller.hasDsee || controller.hasSpeakToChat || controller.hasAdaptiveVolume }
+                Divider {}
 
                 Toggle_ {
                     appWindow: panel.appWindow
                     objectName: "advancedDsee"
-                    visible: controller.hasDsee
+                    opacity: panel.lacks(controller.hasDsee) ? 0.45 : 1
                     glyph: appWindow.icons.sparkle
                     title: "DSEE Extreme"
                     checked: controller.dsee
-                    ready: panel.known("dsee")
+                    ready: controller.hasDsee && panel.known("dsee")
                     onToggled: function(on) { controller.setDsee(on) }
                 }
                 Toggle_ {
                     appWindow: panel.appWindow
-                    visible: controller.hasSpeakToChat
+                    opacity: panel.lacks(controller.hasSpeakToChat) ? 0.45 : 1
                     glyph: appWindow.icons.chat
                     title: "Speak-to-Chat"
                     checked: controller.speakToChat
-                    ready: panel.known("speakToChat")
+                    ready: controller.hasSpeakToChat && panel.known("speakToChat")
                     onToggled: function(on) { controller.setSpeakToChat(on) }
                 }
                 Toggle_ {
                     appWindow: panel.appWindow
-                    visible: controller.hasAdaptiveVolume
+                    opacity: panel.lacks(controller.hasAdaptiveVolume) ? 0.45 : 1
                     glyph: appWindow.icons.volume
                     title: "Adaptive Volume"
                     checked: controller.adaptiveVolume
-                    ready: panel.known("adaptiveVolume")
+                    ready: controller.hasAdaptiveVolume && panel.known("adaptiveVolume")
                     onToggled: function(on) { controller.setAdaptiveVolume(on) }
                 }
 
@@ -173,12 +174,14 @@ Item {
                 // Device
                 Row_ {
                     appWindow: panel.appWindow
-                    visible: panel.supported("autoPowerOff")
+                    objectName: "advancedAutoPowerOff"
+                    enabled: !panel.lacks(controller.hasAutoPowerOff)
                     glyph: appWindow.icons.clock
                     title: appWindow.tr("auto_power_off")
-                    value: !panel.known("autoPowerOff") ? "—"
-                         : [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_15min"), appWindow.tr("apo_30min"),
-                            appWindow.tr("apo_1h"), appWindow.tr("apo_3h")][controller.autoPowerOff] || "—"
+                    value: panel.lacks(controller.hasAutoPowerOff) ? appWindow.tr("not_supported")
+                         : !panel.known("autoPowerOff") ? "—"
+                         : [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_30min"),
+                            appWindow.tr("apo_1h"), appWindow.tr("apo_3h"), appWindow.tr("apo_when_taken_off")][controller.autoPowerOff] || "—"
                     onClicked: panel.go(3)
                 }
                 Row_ {

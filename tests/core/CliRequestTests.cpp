@@ -78,6 +78,8 @@ TEST_CASE("sonyctl words map onto the typed request", "[core][cli]") {
     SECTION("power, auto power-off, connections") {
         CHECK(cli({"power", "off"}).request["method"] == "powerOff");
         CHECK_THROWS_AS(cli({"power", "on"}), std::invalid_argument);
+        CHECK(cli({"apo", "get"}).request["method"] == "autoPowerOffGet");
+        CHECK(cli({"apo", "get"}).select == "autoPowerOff");
         CHECK(cli({"apo", "3"}).request["params"]["index"] == 3);
         CHECK_THROWS_AS(cli({"apo", "6"}), std::invalid_argument);
         const auto connect = cli({"connect", "cc:98:8b:00:11:22", "WH-1000XM5", "mine"}).request;
@@ -130,6 +132,10 @@ TEST_CASE("Typed CLI requests run end to end against the simulator", "[core][cli
     auto status = run({"status"});
     CHECK(status["data"]["connected"] == true);
     CHECK(status["data"]["name"] == "WH-1000XM5");
+
+    auto apo = run({"apo", "get"});
+    REQUIRE(apo["ok"] == true);
+    CHECK(apo["data"] == 0);
 
     REQUIRE(run({"ambient", "7"})["ok"] == true);
     CHECK(eventually([&] { return service.snapshot()->noiseControl.ambientLevel == 7; }));

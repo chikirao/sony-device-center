@@ -243,6 +243,20 @@ void SonyDevice::refreshDsee() {
     }
 }
 
+int SonyDevice::readAutoPowerOff() {
+    if (!_protocol || !isConnected())
+        throw SonyException(SonyErrorCode::Disconnected, "Headphones are disconnected");
+    if (!_capabilities.autoPowerOff)
+        throw SonyException(SonyErrorCode::Unsupported, "Auto Power Off is not supported by this device");
+    const int value = _protocol->getAutoPowerOff();
+    {
+        std::lock_guard lock(_stateMutex);
+        _state.autoPowerOff = value;
+        _markSuccess("autoPowerOff");
+    }
+    return value;
+}
+
 void SonyDevice::setNoiseControl(const protocol::NoiseControlState& nc) {
     if (!_protocol) return;
     _protocol->setNoiseControl(nc);
@@ -382,8 +396,7 @@ void SonyDevice::refreshSettingsStep() {
             feature = "adaptiveVolume"; auto value = _protocol->getAdaptiveVolume();
             std::lock_guard lock(_stateMutex); _state.adaptiveVolume = value; _markSuccess(feature);
         } else if (step == 7 && _capabilities.autoPowerOff) {
-            feature = "autoPowerOff"; auto value = _protocol->getAutoPowerOff();
-            std::lock_guard lock(_stateMutex); _state.autoPowerOff = value; _markSuccess(feature);
+            feature = "autoPowerOff"; readAutoPowerOff();
         }
     } catch (const SonyException& ex) { if (!feature.empty()) _markError(feature, ex); }
     _dispatcher.dispatch(protocol::DeviceStateChanged{snapshot()});

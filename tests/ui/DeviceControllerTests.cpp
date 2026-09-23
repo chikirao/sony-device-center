@@ -63,7 +63,7 @@ private slots:
         QTest::addColumn<QString>("model");
         QTest::addColumn<QString>("language");
         QTest::addColumn<QSize>("size");
-        for (const auto& model : {"WH-1000XM5", "WF-1000XM5"})
+        for (const auto& model : {"WH-1000XM3", "WH-1000XM4", "WH-1000XM5", "WF-1000XM5"})
             for (const auto& language : {"en", "ru"})
                 // The narrow strip (sidebar folded), the old minimum, a big screen.
                 for (const auto size : {QSize(460, 760), QSize(980, 660), QSize(1600, 1000)}) {
@@ -116,6 +116,45 @@ private slots:
         QVERIFY2(!engine.rootObjects().isEmpty(), qPrintable(warnings.join("\n")));
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
         QVERIFY(window);
+        if (model == "WH-1000XM3") {
+            QVERIFY(controller.isConnected());
+            QVERIFY(!controller.hasAutoPowerOff());
+            auto* autoPowerOff = window->findChild<QObject*>("autoPowerOffCombo");
+            QVERIFY(autoPowerOff);
+            QVERIFY(!autoPowerOff->property("enabled").toBool());
+        } else if (model == "WH-1000XM4") {
+            QVERIFY(controller.isConnected());
+            QVERIFY(!controller.hasAutoPowerOff());
+            auto* autoPowerOff = window->findChild<QObject*>("autoPowerOffCombo");
+            QVERIFY(autoPowerOff);
+            QVERIFY(!autoPowerOff->property("enabled").toBool());
+        }
+        {
+            // Audio Features keeps every card; what the connected model
+            // lacks is greyed out and its control locked.
+            window->setProperty("navIndex", 3);
+            QTest::qWait(50);
+            // Repeater tiles are visual children only, so walk childItems().
+            std::function<QQuickItem*(QQuickItem*, const QString&)> find = [&](QQuickItem* item, const QString& name) -> QQuickItem* {
+                if (item->objectName() == name) return item;
+                for (auto* child : item->childItems())
+                    if (auto* found = find(child, name)) return found;
+                return nullptr;
+            };
+            const auto greyed = [&](const char* name, bool has) {
+                auto* item = find(window->contentItem(), name);
+                QVERIFY2(item && item->isVisible(), name);
+                QCOMPARE(item->opacity() < 1.0, !has);
+            };
+            greyed("dseeCard", controller.hasDsee());
+            greyed("speakToChatTile", controller.hasSpeakToChat());
+            greyed("adaptiveVolumeTile", controller.hasAdaptiveVolume());
+            greyed("autoPowerOffCard", controller.hasAutoPowerOff());
+            auto* combo = find(window->contentItem(), "autoPowerOffCombo");
+            QVERIFY(combo);
+            QCOMPARE(combo->isEnabled(), controller.hasAutoPowerOff());
+            window->setProperty("navIndex", 0);
+        }
         controller.setLanguage(language);
         window->resize(size);
         const auto previousTheme = controller.themeMode();
