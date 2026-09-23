@@ -388,6 +388,10 @@ private slots:
         QVERIFY(ambientRow && ambientSlider);
         QTRY_VERIFY(ambientRow->isVisible());
         QVERIFY(!ambientSlider->isVisible());
+        // Click only once the sheet has slid all the way in.
+        auto* sheet = window->findChild<QQuickItem*>("advancedPanel");
+        QVERIFY(sheet);
+        QTRY_COMPARE(sheet->mapToScene(QPointF(sheet->width(), 0)).x(), qreal(window->width()));
         QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
                           ambientRow->mapToScene(QPointF(ambientRow->width() / 2, ambientRow->height() / 2)).toPoint());
         QTRY_VERIFY(ambientSlider->isVisible());
