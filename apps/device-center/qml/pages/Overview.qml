@@ -10,6 +10,7 @@ import "../components"
 // in a column beside the stage, narrow ones under it.
 ViewPage {
     id: root
+    objectName: "overviewPage"
 
     readonly property bool wide: width >= 900
     readonly property string mode: controller.connected ? controller.noiseControlMode : "unknown"

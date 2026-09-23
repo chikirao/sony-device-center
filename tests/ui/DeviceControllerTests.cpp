@@ -415,8 +415,11 @@ private slots:
             QVERIFY(ambientButton);
             auto* overviewSlider = find(ambientButton, "overviewAmbientSlider");
             QVERIFY(overviewSlider);
-            // Only the 1600 px window leaves the page 900 px or more.
-            const bool wide = size.width() >= 1200;
+            // Read from the page: a runner's screen can be smaller than the
+            // requested window, which Windows then shrinks.
+            auto* overviewPage = find(window->contentItem(), "overviewPage");
+            QVERIFY(overviewPage);
+            const bool wide = overviewPage->property("wide").toBool();
             QTRY_COMPARE(overviewSlider->isVisible(), wide);
             controller.setAnc(true);
             QTRY_VERIFY(!overviewSlider->isVisible());
