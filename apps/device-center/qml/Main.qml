@@ -9,8 +9,10 @@ ApplicationWindow {
     id: window
     width: 1180
     height: 780
-    minimumWidth: 980
-    minimumHeight: 660
+    // Narrow enough to stand beside other windows as a tall strip; below
+    // 760 the sidebar folds to its icons.
+    minimumWidth: 460
+    minimumHeight: 640
     visible: !startHidden
     // The device name lives in the header; the title bar names the app.
     title: "Sony Device Center"
@@ -34,6 +36,9 @@ ApplicationWindow {
     palette.highlightedText: "#FFFFFF"
 
     property int navIndex: 0
+    property bool advancedOpen: false
+    readonly property bool compact: width < 760
+    readonly property real pageMargin: compact ? 20 : 32
 
     // Reactive i18n helper
     function tr(key) {
@@ -116,12 +121,12 @@ ApplicationWindow {
             DeviceHeader { appWindow: window;
                 Layout.fillWidth: true
                 Layout.fillHeight: false
-                Layout.leftMargin: 32
-                Layout.rightMargin: 32
-                Layout.topMargin: 28
+                Layout.leftMargin: window.pageMargin
+                Layout.rightMargin: window.pageMargin
+                Layout.topMargin: window.compact ? 20 : 28
             }
 
-            Rectangle { Layout.fillWidth: true; Layout.leftMargin: 32; Layout.rightMargin: 32; Layout.topMargin: 22; height: 1; color: Theme.line }
+            Rectangle { Layout.fillWidth: true; Layout.leftMargin: window.pageMargin; Layout.rightMargin: window.pageMargin; Layout.topMargin: window.compact ? 16 : 22; height: 1; color: Theme.line }
 
             // Not disabled while a command is in flight: disabling the tree drops
             // the mouse grab, which cut every slider drag short after its first
@@ -145,8 +150,8 @@ ApplicationWindow {
             RowLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: false
-                Layout.leftMargin: 32
-                Layout.rightMargin: 32
+                Layout.leftMargin: window.pageMargin
+                Layout.rightMargin: window.pageMargin
                 Layout.bottomMargin: 14
                 Layout.topMargin: 6
                 spacing: 12
@@ -170,5 +175,11 @@ ApplicationWindow {
                 Rectangle { width: 28; height: 1; color: Theme.txtFaint }
             }
         }
+    }
+
+    // Above everything, including the sidebar.
+    AdvancedPanel {
+        appWindow: window
+        anchors.fill: parent
     }
 }

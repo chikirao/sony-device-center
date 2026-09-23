@@ -3,12 +3,14 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "components"
 
-// Always-dark rail: wordmark, navigation, and the device at the foot.
+// Always-dark rail: wordmark, navigation, and the device at the foot. In a
+// narrow window it folds to its icons, with the labels as tooltips.
 Rectangle {
     id: root
     required property var appWindow
+    readonly property bool folded: appWindow.compact
     Layout.fillHeight: true
-    Layout.preferredWidth: 212
+    Layout.preferredWidth: folded ? 68 : 212
     color: Theme.sidebarBg
 
     Rectangle {
@@ -20,16 +22,17 @@ Rectangle {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 18
+        anchors.margins: root.folded ? 12 : 18
         anchors.topMargin: 26
         spacing: 0
 
         // Wordmark
         RowLayout {
-            Layout.leftMargin: 6
+            Layout.leftMargin: root.folded ? 7 : 6
             spacing: 12
             BrandMark { appWindow: root.appWindow; size: 30; color: Theme.sidebarTxt }
             Text {
+                visible: !root.folded
                 textFormat: Text.PlainText
                 text: "Device"
                 color: Theme.sidebarTxt
@@ -59,8 +62,10 @@ Rectangle {
                     required property var modelData
                     readonly property bool current: appWindow.navIndex === modelData.idx
                     Layout.fillWidth: true
-                    height: 48
+                    height: root.folded ? 44 : 48
                     radius: 10
+                    Accessible.role: Accessible.PageTab
+                    Accessible.name: appWindow.tr(modelData.key)
                     color: current ? Theme.sidebarSurface : navHover.hovered ? Theme.sidebarSurfaceSunk : "transparent"
                     border.width: 1
                     border.color: current ? Theme.sidebarLineHi : "transparent"
@@ -69,10 +74,21 @@ Rectangle {
                     HoverHandler { id: navHover; cursorShape: Qt.PointingHandCursor }
                     TapHandler { onTapped: appWindow.navIndex = navItem.modelData.idx }
 
+                    ToolTip {
+                        visible: root.folded && navHover.hovered
+                        delay: 400
+                        x: navItem.width + 10
+                        y: (navItem.height - height) / 2
+                        text: appWindow.tr(navItem.modelData.key)
+                        padding: 8
+                        contentItem: Text { textFormat: Text.PlainText; text: appWindow.tr(navItem.modelData.key); color: Theme.txt; font.pixelSize: 12 }
+                        background: Rectangle { radius: Theme.controlRadius; color: Theme.surfaceHi; border.width: 1; border.color: Theme.lineHi }
+                    }
+
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 14
+                        anchors.leftMargin: root.folded ? 12 : 14
+                        anchors.rightMargin: root.folded ? 12 : 14
                         spacing: 14
                         Glyph { appWindow: root.appWindow;
                             path: navItem.modelData.glyph
@@ -81,6 +97,7 @@ Rectangle {
                             color: navItem.current ? Theme.sidebarTxt : navHover.hovered ? Theme.sidebarTxtDim : Theme.sidebarTxtDim
                         }
                         Text {
+                            visible: !root.folded
                             textFormat: Text.PlainText
                             Layout.fillWidth: true
                             text: appWindow.tr(navItem.modelData.key)
@@ -101,15 +118,20 @@ Rectangle {
 
         // Connection state at the foot: a live dot and a word. The device
         // name is the header's; the sidebar only says whether it is there.
-        RowLayout {
+        // Folded, the word goes and the dot sits above the button.
+        GridLayout {
             Layout.topMargin: 18
             // The dot lines up with the navigation glyphs above.
-            Layout.leftMargin: 20
-            Layout.rightMargin: 4
+            Layout.leftMargin: root.folded ? 0 : 20
+            Layout.rightMargin: root.folded ? 0 : 4
             Layout.bottomMargin: 8
-            spacing: 10
+            Layout.alignment: root.folded ? Qt.AlignHCenter : Qt.AlignLeft
+            columns: root.folded ? 1 : 2
+            rowSpacing: 14
+            columnSpacing: 10
             RowLayout {
-                Layout.fillWidth: true
+                Layout.fillWidth: !root.folded
+                Layout.alignment: Qt.AlignHCenter
                 spacing: 10
                 Rectangle {
                     width: 6; height: 6; radius: 3
@@ -123,6 +145,7 @@ Rectangle {
                 }
                 Text {
                     objectName: "sidebarConnectionState"
+                    visible: !root.folded
                     textFormat: Text.PlainText
                     Layout.fillWidth: true
                     // Not connected: say why ("Connecting", "Disconnected by

@@ -294,6 +294,11 @@ int main(int argc, char *argv[]) {
                 hub.open(QRect(window->x() + window->width() - 40, window->y() + window->height() - 1, 24, 1));
             } else if (page == 11) {
                 if (hub.window()) hub.window()->grabWindow().save(QString("%1/hub.png").arg(shotDir));
+                // Last, the Overview with the advanced panel slid over it.
+                window->setProperty("navIndex", 0);
+                window->setProperty("advancedOpen", true);
+            } else if (page == 12) {
+                window->grabWindow().save(QString("%1/page0-advanced.png").arg(shotDir));
                 ticker->stop(); app.quit(); return;
             }
             if (page <= 6) window->setProperty("navIndex", page);

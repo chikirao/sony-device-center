@@ -279,6 +279,11 @@ void I18nManager::_initTranslations() {
     en["plain_font_desc"]                 = "Titles and values in the regular typeface instead of the dot-matrix display";
     en["battery_estimate_rated"]          = "Rated";
     en["battery_estimate_rated_hint"]     = "Until this charge has been measured, the estimate uses the model's rated playback time for the current noise mode.";
+    en["mode_short_cancelling"]           = "Block distractions";
+    en["mode_short_ambient"]              = "Stay aware";
+    en["advanced"]                        = "Advanced";
+    en["advanced_desc"]                   = "Sound and device, one line each";
+    en["close"]                           = "Close";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -516,6 +521,11 @@ void I18nManager::_initTranslations() {
     pt["plain_font_desc"]                 = "Títulos e valores na fonte normal em vez da matriz de pontos";
     pt["battery_estimate_rated"]          = "Nominal";
     pt["battery_estimate_rated_hint"]     = "Até a descarga desta carga ser medida, a estimativa usa a autonomia nominal do modelo no modo de ruído atual.";
+    pt["mode_short_cancelling"]           = "Bloqueia distrações";
+    pt["mode_short_ambient"]              = "Fique atento";
+    pt["advanced"]                        = "Avançado";
+    pt["advanced_desc"]                   = "Som e dispositivo, uma linha cada";
+    pt["close"]                           = "Fechar";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -753,6 +763,11 @@ void I18nManager::_initTranslations() {
     es["plain_font_desc"]                 = "Títulos y valores con la fuente normal en lugar de la matriz de puntos";
     es["battery_estimate_rated"]          = "Nominal";
     es["battery_estimate_rated_hint"]     = "Hasta medir la descarga de esta carga, la estimación usa la autonomía nominal del modelo en el modo de ruido actual.";
+    es["mode_short_cancelling"]           = "Bloquea distracciones";
+    es["mode_short_ambient"]              = "Mantente alerta";
+    es["advanced"]                        = "Avanzado";
+    es["advanced_desc"]                   = "Sonido y dispositivo, una línea cada uno";
+    es["close"]                           = "Cerrar";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -990,6 +1005,11 @@ void I18nManager::_initTranslations() {
     de["plain_font_desc"]                 = "Titel und Werte in normaler Schrift statt als Punktmatrix";
     de["battery_estimate_rated"]          = "Laut Datenblatt";
     de["battery_estimate_rated_hint"]     = "Bis die Entladung dieser Ladung gemessen ist, nutzt die Schätzung die Nennlaufzeit des Modells im aktuellen Geräuschmodus.";
+    de["mode_short_cancelling"]           = "Blendet Störungen aus";
+    de["mode_short_ambient"]              = "Umgebung hören";
+    de["advanced"]                        = "Erweitert";
+    de["advanced_desc"]                   = "Klang und Gerät, je eine Zeile";
+    de["close"]                           = "Schließen";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1227,6 +1247,11 @@ void I18nManager::_initTranslations() {
     fr["plain_font_desc"]                 = "Titres et valeurs dans la police normale au lieu de la matrice de points";
     fr["battery_estimate_rated"]          = "Valeur nominale";
     fr["battery_estimate_rated_hint"]     = "Tant que la décharge de cette charge n'est pas mesurée, l'estimation utilise l'autonomie nominale du modèle dans le mode de bruit actuel.";
+    fr["mode_short_cancelling"]           = "Bloque les distractions";
+    fr["mode_short_ambient"]              = "Restez attentif";
+    fr["advanced"]                        = "Avancé";
+    fr["advanced_desc"]                   = "Son et appareil, une ligne chacun";
+    fr["close"]                           = "Fermer";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1464,6 +1489,11 @@ void I18nManager::_initTranslations() {
     ja["plain_font_desc"]                 = "タイトルと数値をドットマトリクスではなく標準フォントで表示";
     ja["battery_estimate_rated"]          = "公称値";
     ja["battery_estimate_rated_hint"]     = "この充電の放電を測定するまでは、現在のノイズモードでのモデルの公称再生時間から推定します。";
+    ja["mode_short_cancelling"]           = "雑音を遮断";
+    ja["mode_short_ambient"]              = "周囲を聞く";
+    ja["advanced"]                        = "詳細設定";
+    ja["advanced_desc"]                   = "サウンドとデバイスを一行ずつ";
+    ja["close"]                           = "閉じる";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1701,6 +1731,11 @@ void I18nManager::_initTranslations() {
     ru["plain_font_desc"]                 = "Заголовки и значения обычным шрифтом вместо точечного";
     ru["battery_estimate_rated"]          = "По паспорту";
     ru["battery_estimate_rated_hint"]     = "Пока разряд этой зарядки не измерен, оценка берётся из паспортного времени работы модели в текущем режиме шумоподавления.";
+    ru["mode_short_cancelling"]           = "Без отвлечений";
+    ru["mode_short_ambient"]              = "Слышать вокруг";
+    ru["advanced"]                        = "Дополнительно";
+    ru["advanced_desc"]                   = "Звук и устройство, по строке на всё";
+    ru["close"]                           = "Закрыть";
 }
 
 } // namespace sony::devicecenter

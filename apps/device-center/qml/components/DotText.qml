@@ -64,6 +64,9 @@ Item {
     onDChanged: canvas.requestPaint()
     onProgressChanged: canvas.requestPaint()
     onPlainChanged: if (!plain) canvas.requestPaint()
+    // A paint requested while hidden (a closed panel, a page not shown)
+    // can be dropped; paint again on the way in.
+    onVisibleChanged: if (visible) canvas.requestPaint()
     Component.onCompleted: rebuild()
 
     SequentialAnimation {
@@ -85,6 +88,8 @@ Item {
         id: canvas
         anchors.fill: parent
         visible: !root.plain
+        onWidthChanged: requestPaint()
+        onHeightChanged: requestPaint()
         onPaint: {
             var ctx = getContext("2d")
             ctx.reset()
