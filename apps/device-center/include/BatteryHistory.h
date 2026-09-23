@@ -60,6 +60,18 @@ public:
 
     [[nodiscard]] Estimate estimate(qint64 nowMs) const;
 
+    // Sony's rated music playback in hours, with noise processing on (noise
+    // cancelling or ambient sound) and off, looked up by the model in the
+    // device name. Zero for a model the table does not know.
+    struct Rating {
+        double processingOn{0.0};
+        double processingOff{0.0};
+    };
+    static Rating ratedPlayback(const QString& deviceName);
+    // What a charge level is worth at a rating: level percent of the rated
+    // hours, in minutes. -1 when either is unknown.
+    static int ratedMinutesLeft(int level, double ratedHours);
+
     // Replaces the log with a synthetic week of use ending at nowMs. Used by
     // the simulator so the chart and the estimate can be looked at at once.
     void seedDemoData(qint64 nowMs);

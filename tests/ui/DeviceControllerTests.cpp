@@ -674,17 +674,27 @@ private slots:
         QCOMPARE(log.samples().size(), 1);
         QCOMPARE(log.samples()[0].event, BatteryHistory::Event::Connected);
         QCOMPARE(log.samples()[0].level, 87);
-        QCOMPARE(controller.batteryMinutesLeft(), -1);
-        QCOMPARE(controller.batteryTimeLeft(), QString());
+        // Nothing measured yet: the WH-1000XM5's rating stands in, 30 h
+        // with noise cancelling on, so 87% is 26 h 6 min.
+        QVERIFY(controller.batteryEstimateRated());
+        QCOMPARE(controller.batteryMinutesLeft(), 87 * 30 * 60 / 100);
+        QCOMPARE(controller.batteryDischargeRate(), 0.0);
 
         simulated.transport->setBattery(86, false);
         QTRY_COMPARE_WITH_TIMEOUT(log.samples().size(), 2, 3000);
         QCOMPARE(log.samples()[1].level, 86);
-        QVERIFY2(controller.batteryMinutesLeft() == -1, "seconds of data are not an estimate");
+        QVERIFY2(controller.batteryEstimateRated(), "seconds of data are not a measurement");
+        QCOMPARE(controller.batteryMinutesLeft(), 86 * 30 * 60 / 100);
+        // Without noise processing the rating is 40 h.
+        controller.setNoiseControlOff();
+        QTRY_COMPARE_WITH_TIMEOUT(controller.noiseControlMode(), QString("off"), 3000);
+        QCOMPARE(controller.batteryMinutesLeft(), 86 * 40 * 60 / 100);
         simulated.transport->setBattery(86, true);
         QTRY_COMPARE_WITH_TIMEOUT(log.samples().size(), 3, 3000);
         QVERIFY(log.samples()[2].charging);
         QCOMPARE(controller.batteryDischargeRate(), 0.0);
+        QCOMPARE(controller.batteryMinutesLeft(), -1);
+        QVERIFY(!controller.batteryEstimateRated());
         QVERIFY(history.count() >= 3);
         QVERIFY(QFile::exists(dir.path() + "/battery-history/CC-98-8B-00-11-22.json"));
 

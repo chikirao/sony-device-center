@@ -437,6 +437,29 @@ private slots:
         QCOMPARE(h.samples().last().event, BatteryHistory::Event::Level);
     }
 
+    void ratesByModel() {
+        const auto xm5 = BatteryHistory::ratedPlayback("WH-1000XM5");
+        QCOMPARE(xm5.processingOn, 30.0);
+        QCOMPARE(xm5.processingOff, 40.0);
+        // Spelling of the advertised name does not matter.
+        QCOMPARE(BatteryHistory::ratedPlayback("wh1000xm4").processingOff, 38.0);
+        QCOMPARE(BatteryHistory::ratedPlayback("LE_WH-1000XM4").processingOn, 30.0);
+        // Earbuds are not mistaken for the headphones of the same generation.
+        QCOMPARE(BatteryHistory::ratedPlayback("WF-1000XM5").processingOn, 8.0);
+        QCOMPARE(BatteryHistory::ratedPlayback("LinkBuds S").processingOff, 9.0);
+        QCOMPARE(BatteryHistory::ratedPlayback("WH-ULT900N").processingOff, 50.0);
+        QCOMPARE(BatteryHistory::ratedPlayback("Some Speaker").processingOn, 0.0);
+    }
+
+    void ratedMinutesScaleWithTheLevel() {
+        QCOMPARE(BatteryHistory::ratedMinutesLeft(100, 30), 30 * 60);
+        QCOMPARE(BatteryHistory::ratedMinutesLeft(50, 40), 20 * 60);
+        QCOMPARE(BatteryHistory::ratedMinutesLeft(1, 8), 5);
+        QCOMPARE(BatteryHistory::ratedMinutesLeft(0, 30), 0);
+        QCOMPARE(BatteryHistory::ratedMinutesLeft(-1, 30), -1);
+        QCOMPARE(BatteryHistory::ratedMinutesLeft(80, 0), -1);
+    }
+
     void sanitizesAddresses() {
         QCOMPARE(BatteryHistory::sanitizeAddress("CC:98:8B:00:11:22"), QString("CC-98-8B-00-11-22"));
         QCOMPARE(BatteryHistory::sanitizeAddress("../x\\y z"), QString("xyz"));

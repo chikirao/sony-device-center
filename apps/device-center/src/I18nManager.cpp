@@ -277,6 +277,8 @@ void I18nManager::_initTranslations() {
     en["hub_tray_no_devices"]             = "No devices to show yet.";
     en["plain_font"]                      = "Regular font";
     en["plain_font_desc"]                 = "Titles and values in the regular typeface instead of the dot-matrix display";
+    en["battery_estimate_rated"]          = "Rated";
+    en["battery_estimate_rated_hint"]     = "Until this charge has been measured, the estimate uses the model's rated playback time for the current noise mode.";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -512,6 +514,8 @@ void I18nManager::_initTranslations() {
     pt["hub_tray_no_devices"]             = "Ainda não há dispositivos.";
     pt["plain_font"]                      = "Fonte normal";
     pt["plain_font_desc"]                 = "Títulos e valores na fonte normal em vez da matriz de pontos";
+    pt["battery_estimate_rated"]          = "Nominal";
+    pt["battery_estimate_rated_hint"]     = "Até a descarga desta carga ser medida, a estimativa usa a autonomia nominal do modelo no modo de ruído atual.";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -747,6 +751,8 @@ void I18nManager::_initTranslations() {
     es["hub_tray_no_devices"]             = "Todavía no hay dispositivos.";
     es["plain_font"]                      = "Fuente normal";
     es["plain_font_desc"]                 = "Títulos y valores con la fuente normal en lugar de la matriz de puntos";
+    es["battery_estimate_rated"]          = "Nominal";
+    es["battery_estimate_rated_hint"]     = "Hasta medir la descarga de esta carga, la estimación usa la autonomía nominal del modelo en el modo de ruido actual.";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -982,6 +988,8 @@ void I18nManager::_initTranslations() {
     de["hub_tray_no_devices"]             = "Noch keine Geräte.";
     de["plain_font"]                      = "Normale Schrift";
     de["plain_font_desc"]                 = "Titel und Werte in normaler Schrift statt als Punktmatrix";
+    de["battery_estimate_rated"]          = "Laut Datenblatt";
+    de["battery_estimate_rated_hint"]     = "Bis die Entladung dieser Ladung gemessen ist, nutzt die Schätzung die Nennlaufzeit des Modells im aktuellen Geräuschmodus.";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1217,6 +1225,8 @@ void I18nManager::_initTranslations() {
     fr["hub_tray_no_devices"]             = "Aucun appareil pour l’instant.";
     fr["plain_font"]                      = "Police normale";
     fr["plain_font_desc"]                 = "Titres et valeurs dans la police normale au lieu de la matrice de points";
+    fr["battery_estimate_rated"]          = "Valeur nominale";
+    fr["battery_estimate_rated_hint"]     = "Tant que la décharge de cette charge n'est pas mesurée, l'estimation utilise l'autonomie nominale du modèle dans le mode de bruit actuel.";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1452,6 +1462,8 @@ void I18nManager::_initTranslations() {
     ja["hub_tray_no_devices"]             = "まだデバイスがありません。";
     ja["plain_font"]                      = "標準フォント";
     ja["plain_font_desc"]                 = "タイトルと数値をドットマトリクスではなく標準フォントで表示";
+    ja["battery_estimate_rated"]          = "公称値";
+    ja["battery_estimate_rated_hint"]     = "この充電の放電を測定するまでは、現在のノイズモードでのモデルの公称再生時間から推定します。";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1687,6 +1699,8 @@ void I18nManager::_initTranslations() {
     ru["hub_tray_no_devices"]             = "Пока нет устройств.";
     ru["plain_font"]                      = "Обычный шрифт";
     ru["plain_font_desc"]                 = "Заголовки и значения обычным шрифтом вместо точечного";
+    ru["battery_estimate_rated"]          = "По паспорту";
+    ru["battery_estimate_rated_hint"]     = "Пока разряд этой зарядки не измерен, оценка берётся из паспортного времени работы модели в текущем режиме шумоподавления.";
 }
 
 } // namespace sony::devicecenter

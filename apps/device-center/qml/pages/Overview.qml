@@ -234,7 +234,8 @@ ViewPage {
                             label: appWindow.tr("time_left")
                             value: !controller.connected ? "—" : controller.isCharging ? appWindow.tr("charging")
                                  : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : "—"
-                            note: controller.batterySessionStart > 0 && !controller.isCharging
+                            note: controller.batteryEstimateRated ? appWindow.tr("battery_estimate_rated")
+                                : controller.batterySessionStart > 0 && !controller.isCharging
                                 ? appWindow.tr("battery_session_since").arg(Qt.formatTime(new Date(controller.batterySessionStart), "HH:mm")) : ""
                         }
                         Rectangle { width: 1; Layout.fillHeight: true; color: Theme.line }

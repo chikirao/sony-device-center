@@ -67,7 +67,8 @@ ViewPage {
                     var session = controller.batterySessionStart > 0
                              ? appWindow.tr("battery_session_since").arg(batteryPage.formatSessionStart(controller.batterySessionStart)) : dash
                     return [
-                        { k: appWindow.tr("time_left"), v: left },
+                        { k: controller.batteryEstimateRated ? appWindow.tr("time_left") + " · " + appWindow.tr("battery_estimate_rated")
+                                                             : appWindow.tr("time_left"), v: left },
                         { k: appWindow.tr("battery_rate"), v: rate },
                         { k: appWindow.tr("battery_session"), v: session }
                     ]
@@ -324,7 +325,7 @@ ViewPage {
         Text {
             textFormat: Text.PlainText
             Layout.fillWidth: true
-            text: appWindow.tr("battery_estimate_hint")
+            text: controller.batteryEstimateRated ? appWindow.tr("battery_estimate_rated_hint") : appWindow.tr("battery_estimate_hint")
             color: Theme.txtFaint
             font.pixelSize: 12
             wrapMode: Text.Wrap
