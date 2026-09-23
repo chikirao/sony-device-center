@@ -91,8 +91,10 @@
   // The product as a grid of ink dots. The sound mode changes how the grid
   // behaves: cancelling holds it dense and still, ambient lets a slow wave
   // run through it from the middle, off leaves it light and quiet. The
-  // pointer works as a small lens. Frames are drawn only while something
-  // moves and the hero is on screen.
+  // pointer blows the dots apart like dust: they swell and drift away from
+  // it, faster the faster it moves, and spring back to their place once it
+  // leaves. Frames are drawn only while something moves and the hero is on
+  // screen.
   var canvas = document.getElementById("halftone");
   var H = window.HALFTONE;
   var art = null;
@@ -103,13 +105,14 @@
       for (var y = 0; y < H.rows; ++y)
         for (var x = 0; x < H.columns; ++x) {
           var v = H.cells.charCodeAt(y * H.columns + x) - 48;
-          if (v > 0) cells.push({ x: x, y: y, v: Math.sqrt(v / 9), j: ((x * 37 + y * 91) % 100) / 100 });
+          if (v > 0) cells.push({ x: x, y: y, v: Math.sqrt(v / 9), j: ((x * 37 + y * 91) % 100) / 100,
+                                  dx: 0, dy: 0, vx: 0, vy: 0, g: 0 });
         }
       var size = { w: 0, h: 0, cell: 0, ox: 0, oy: 0, dpr: 1 };
       var weights = { cancelling: 1, ambient: 0, off: 0 };
       var target = "cancelling";
       var introStart = -1, introLength = 0;
-      var pointer = null;
+      var pointer = null, speed = 0, lastFrame = 0;
       var visible = true, frame = 0, color = ink();
 
       function resize() {
@@ -136,6 +139,11 @@
           weights[m] = next;
         }
         var t = still ? 0 : now;
+        var dt = lastFrame ? Math.min(3, (now - lastFrame) / 16.7) : 1;
+        lastFrame = now;
+        // The pointer's push fades with its speed, so a resting cursor holds
+        // a calm hole and a fast one kicks up more dust.
+        speed *= Math.pow(0.9, dt);
         var intro = 1;
         if (introStart >= 0 && !still) {
           intro = (now - introStart) / introLength;
@@ -143,17 +151,18 @@
         }
         var cell = size.cell, half = cell / 2;
         var cx = size.ox + cell * H.columns / 2, cy = size.oy + cell * H.rows * 0.42;
-        var lensR = cell * 11;
+        var reach = cell * 20;
+        var push = cell * (0.16 + Math.min(0.5, speed * 0.02));
         ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
         ctx.clearRect(0, 0, size.w, size.h);
         ctx.fillStyle = color;
         ctx.beginPath();
         for (var i = 0; i < cells.length; ++i) {
           var c = cells[i];
-          var px = size.ox + c.x * cell + half, py = size.oy + c.y * cell + half;
+          var hx = size.ox + c.x * cell + half, hy = size.oy + c.y * cell + half;
           var r = half * c.v * 0.94;
           // Mode shaping.
-          var dist = Math.hypot(px - cx, py - cy) / cell;
+          var dist = Math.hypot(hx - cx, hy - cy) / cell;
           var wave = 0.5 + 0.5 * Math.sin(dist * 0.5 - t * 0.0022);
           r *= weights.cancelling * 1.0 + weights.ambient * (0.66 + 0.4 * wave) + weights.off * 0.62;
           // Intro sweep, column by column like the dot text.
@@ -162,11 +171,32 @@
             if (local <= 0) continue;
             if (local < 1) r *= 1 - Math.pow(1 - local, 3);
           }
-          // Pointer lens.
+          // Scatter: pushed out from the pointer at a slightly skewed angle
+          // per dot (so it reads as dust, not a lens), pulled home by a
+          // damped spring.
+          var grow = 0;
           if (pointer && !still) {
-            var d = Math.hypot(px - pointer.x, py - pointer.y);
-            if (d < lensR) r *= 1 + 0.55 * Math.pow(1 - d / lensR, 2);
+            var ax = hx - pointer.x, ay = hy - pointer.y;
+            var d = Math.hypot(ax, ay);
+            if (d < reach) {
+              var f = Math.pow(1 - d / reach, 2);
+              var angle = Math.atan2(ay, ax) + (c.j - 0.5) * 1.4;
+              c.vx += Math.cos(angle) * push * f * (0.6 + c.j * 0.8) * dt;
+              c.vy += Math.sin(angle) * push * f * (0.6 + c.j * 0.8) * dt;
+              grow = f;
+            }
           }
+          if (!still) {
+            c.vx += -c.dx * 0.07 * dt; c.vy += -c.dy * 0.07 * dt;
+            var damp = Math.pow(0.84, dt);
+            c.vx *= damp; c.vy *= damp;
+            c.dx += c.vx * dt; c.dy += c.vy * dt;
+            c.g += (grow - c.g) * Math.min(1, 0.18 * dt);
+            if (Math.abs(c.dx) + Math.abs(c.dy) > 0.02 || Math.abs(c.vx) + Math.abs(c.vy) > 0.02 || c.g > 0.005) moving = true;
+            else { c.dx = c.dy = c.vx = c.vy = 0; c.g = 0; }
+          } else { c.dx = c.dy = c.vx = c.vy = 0; c.g = 0; }
+          var px = hx + c.dx, py = hy + c.dy;
+          r *= 1 + 0.9 * c.g;
           if (r < 0.25) continue;
           ctx.moveTo(px + r, py);
           ctx.arc(px, py, r, 0, Math.PI * 2);
@@ -179,10 +209,15 @@
 
       canvas.addEventListener("pointermove", function (e) {
         var rect = canvas.getBoundingClientRect();
-        pointer = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        var next = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        if (pointer) speed = Math.max(speed, Math.hypot(next.x - pointer.x, next.y - pointer.y));
+        pointer = next;
         request();
       });
-      canvas.addEventListener("pointerleave", function () { pointer = null; request(); });
+      var release = function () { pointer = null; request(); };
+      canvas.addEventListener("pointerleave", release);
+      canvas.addEventListener("pointercancel", release);
+      canvas.addEventListener("pointerup", function (e) { if (e.pointerType !== "mouse") release(); });
       window.addEventListener("resize", resize);
       darkScheme.addEventListener("change", function () { color = ink(); request(); });
       reduceMotion.addEventListener("change", request);
