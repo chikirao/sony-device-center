@@ -20,7 +20,8 @@ Item {
 
     visible: shown > 0
     function known(key) { var a = controller.featureStatus[key]; return controller.connected && a && a.availability === "valid" }
-    function supported(key) { var a = controller.featureStatus[key]; return !a || a.availability !== "unsupported" }
+    // A connected model without a feature keeps its line, greyed and locked.
+    function lacks(has) { return controller.connected && !has }
     function close() { appWindow.advancedOpen = false }
     function go(index) { appWindow.navIndex = index; close() }
 
@@ -118,7 +119,7 @@ Item {
                     glyph: appWindow.icons.sliders
                     title: appWindow.tr("nav_equalizer")
                     value: controller.connected && controller.equalizerPreset >= 0 ? appWindow.trPreset(controller.equalizerPreset) : "—"
-                    onClicked: panel.go(2)
+                    onClicked: panel.go(appWindow.pages.equalizer)
                 }
                 Row_ {
                     appWindow: panel.appWindow
@@ -126,45 +127,75 @@ Item {
                     glyph: appWindow.icons.waveform
                     title: appWindow.tr("clear_bass")
                     value: !controller.connected ? "—" : controller.clearBass > 0 ? "+" + controller.clearBass : String(controller.clearBass)
-                    onClicked: panel.go(2)
+                    onClicked: panel.go(appWindow.pages.equalizer)
                 }
+                // Ambient level opens a slider in place; setting it (or
+                // Focus on Voice) switches the headset to Ambient Sound.
                 Row_ {
+                    id: ambientRow
+                    objectName: "advancedAmbientRow"
                     appWindow: panel.appWindow
                     visible: controller.hasAmbient
+                    enabled: controller.connected
+                    property bool expanded: false
                     glyph: appWindow.icons.ambient
                     title: appWindow.tr("ambient_level")
                     value: controller.ambientLevel > 0 ? String(controller.ambientLevel) : "—"
-                    onClicked: panel.go(1)
+                    chevronAngle: expanded ? 90 : 0
+                    onClicked: expanded = !expanded
+                }
+                NeoSlider {
+                    objectName: "advancedAmbientSlider"
+                    appWindow: panel.appWindow
+                    inverse: true
+                    visible: controller.hasAmbient && ambientRow.expanded
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 40
+                    Layout.rightMargin: 6
+                    from: 1; to: 20; stepSize: 1
+                    confirmedValue: controller.ambientLevel
+                    enabled: controller.connected
+                    onMoved: controller.setAmbient(Math.round(value), controller.focusOnVoice)
+                }
+                Toggle_ {
+                    appWindow: panel.appWindow
+                    objectName: "advancedFocusOnVoice"
+                    visible: controller.hasAmbient
+                    glyph: appWindow.icons.mic
+                    title: appWindow.tr("focus_on_voice")
+                    checked: controller.focusOnVoice
+                    ready: controller.connected
+                    onToggled: function(on) { controller.setAmbient(controller.ambientLevel, on) }
                 }
 
-                Divider { visible: controller.hasDsee || controller.hasSpeakToChat || controller.hasAdaptiveVolume }
+                Divider {}
 
                 Toggle_ {
                     appWindow: panel.appWindow
                     objectName: "advancedDsee"
-                    visible: controller.hasDsee
+                    opacity: panel.lacks(controller.hasDsee) ? 0.45 : 1
                     glyph: appWindow.icons.sparkle
                     title: "DSEE Extreme"
                     checked: controller.dsee
-                    ready: panel.known("dsee")
+                    ready: controller.hasDsee && panel.known("dsee")
                     onToggled: function(on) { controller.setDsee(on) }
                 }
                 Toggle_ {
                     appWindow: panel.appWindow
-                    visible: controller.hasSpeakToChat
+                    opacity: panel.lacks(controller.hasSpeakToChat) ? 0.45 : 1
                     glyph: appWindow.icons.chat
                     title: "Speak-to-Chat"
                     checked: controller.speakToChat
-                    ready: panel.known("speakToChat")
+                    ready: controller.hasSpeakToChat && panel.known("speakToChat")
                     onToggled: function(on) { controller.setSpeakToChat(on) }
                 }
                 Toggle_ {
                     appWindow: panel.appWindow
-                    visible: controller.hasAdaptiveVolume
+                    opacity: panel.lacks(controller.hasAdaptiveVolume) ? 0.45 : 1
                     glyph: appWindow.icons.volume
                     title: "Adaptive Volume"
                     checked: controller.adaptiveVolume
-                    ready: panel.known("adaptiveVolume")
+                    ready: controller.hasAdaptiveVolume && panel.known("adaptiveVolume")
                     onToggled: function(on) { controller.setAdaptiveVolume(on) }
                 }
 
@@ -173,13 +204,15 @@ Item {
                 // Device
                 Row_ {
                     appWindow: panel.appWindow
-                    visible: panel.supported("autoPowerOff")
+                    objectName: "advancedAutoPowerOff"
+                    enabled: !panel.lacks(controller.hasAutoPowerOff)
                     glyph: appWindow.icons.clock
                     title: appWindow.tr("auto_power_off")
-                    value: !panel.known("autoPowerOff") ? "—"
-                         : [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_15min"), appWindow.tr("apo_30min"),
-                            appWindow.tr("apo_1h"), appWindow.tr("apo_3h")][controller.autoPowerOff] || "—"
-                    onClicked: panel.go(3)
+                    value: panel.lacks(controller.hasAutoPowerOff) ? appWindow.tr("not_supported")
+                         : !panel.known("autoPowerOff") ? "—"
+                         : [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_30min"),
+                            appWindow.tr("apo_1h"), appWindow.tr("apo_3h"), appWindow.tr("apo_when_taken_off")][controller.autoPowerOff] || "—"
+                    onClicked: panel.go(appWindow.pages.features)
                 }
                 Row_ {
                     objectName: "advancedBatteryRow"
@@ -188,14 +221,14 @@ Item {
                     title: appWindow.tr("nav_battery")
                     value: !controller.connected ? "—" : controller.isCharging ? appWindow.tr("charging")
                          : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : "—"
-                    onClicked: panel.go(5)
+                    onClicked: panel.go(appWindow.pages.battery)
                 }
                 Row_ {
                     appWindow: panel.appWindow
                     glyph: appWindow.icons.swap
                     title: appWindow.tr("nav_device_switcher")
                     value: ""
-                    onClicked: panel.go(4)
+                    onClicked: panel.go(appWindow.pages.devices)
                 }
                 Row_ {
                     appWindow: panel.appWindow
@@ -256,6 +289,7 @@ Item {
         property string title: ""
         property string value: ""
         property bool chevron: true
+        property real chevronAngle: 0
         signal clicked()
         Layout.fillWidth: true
         implicitHeight: 40
@@ -295,6 +329,8 @@ Item {
                 path: line.appWindow.icons.chevronRight
                 size: 14
                 color: Theme.sidebarTxtFaint
+                rotation: line.chevronAngle
+                Behavior on rotation { NumberAnimation { duration: Theme.tBase } }
             }
         }
     }

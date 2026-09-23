@@ -213,7 +213,7 @@ combination would fire instead of being recorded. To see the card with
 assigned shortcuts and a conflict, it's enough to write values into the
 registry — `HKCU\Software\SonyBridge\SonyDeviceCenter\hotkeys\<action>` with
 a `shortcut` (Qt's portable form, e.g. `Ctrl+Alt+N`) and `enabled`; a
-`SONY_UI_SCREENSHOTS` run additionally saves `page6-hotkeys.png` — the
+`SONY_UI_SCREENSHOTS` run additionally saves `settings-hotkeys.png` — the
 Settings page scrolled to that card. The tests
 (`hotkeyBindingsPersistAndParse`, `hotkeysRouteActionsToController`) run in
 the `hotkeys-test` group and, on Windows, additionally send `WM_HOTKEY` via

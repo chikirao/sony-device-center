@@ -23,9 +23,9 @@ Sony locks headphone settings and telemetry behind their mobile-only apps (*Sony
 
 ![Overview](docs/screenshots/overview.png)
 
-| Noise Control | Equalizer | Audio Features |
+| Ambient Sound | Equalizer | Audio Features |
 | :---: | :---: | :---: |
-| ![Noise Control](docs/screenshots/noise-control.png) | ![Equalizer](docs/screenshots/equalizer.png) | ![Audio Features](docs/screenshots/audio-features.png) |
+| ![Ambient Sound, with its level and Focus on Voice on the Overview](docs/screenshots/ambient-sound.png) | ![Equalizer](docs/screenshots/equalizer.png) | ![Audio Features](docs/screenshots/audio-features.png) |
 
 | Battery History | Device Switcher | Settings |
 | :---: | :---: | :---: |
@@ -69,7 +69,7 @@ real hardware.
 | **WH-1000XM6** | V2 | ⚠️ Partially working | Controls work; **equalizer has no effect** ([#10](../../issues/10)), battery intermittent ([#11](../../issues/11)) |
 | **WF-1000XM6** | V2 | ✅ Verified | Community report |
 | **MDR-1000X** | V1 | ❌ Known broken | Shows as disconnected, no controls work ([#12](../../issues/12)) |
-| **WH-1000XM4** | V1 | ✅ Verified | Community report (firmware 3.0.1, Windows): battery, noise control readback, EQ + Clear Bass, firmware, codec |
+| **WH-1000XM4** | V1 | ✅ Verified | Community report (firmware 3.0.1, Windows): battery, noise control readback, EQ + Clear Bass, firmware, codec. Speak-to-Chat on/off verified (Standard ~30s timeout; 15s / 1 min / do-not-close UI is a nice-to-have). |
 | WF-1000XM5, WF-1000XM4 | V2 | 🟡 Untested | TWS battery reporting unverified |
 | WH-CH720N, ULT WEAR, LinkBuds S, WF-C700N | V2 | 🟡 Untested | |
 | WH-XB910N, WH-CH520 | V2 | 🟡 Untested | |

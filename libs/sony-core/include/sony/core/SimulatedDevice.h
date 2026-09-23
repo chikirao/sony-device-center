@@ -10,16 +10,16 @@
 
 namespace sony::core {
 
-// In-memory stand-in for a Protocol V2 headset. It ACKs every command, answers
-// the queries the V2 command set issues from a small mutable state, applies SET
-// commands to that state, and raises the same unsolicited notifications a real
-// device sends after a change. Enough for the daemon, the CLI and the GUI to
-// run end to end without Bluetooth hardware.
+// In-memory stand-in for a Sony headset. It ACKs every command, answers the
+// queries the selected command set issues from a small mutable state, applies
+// SET commands to that state, and raises the same unsolicited notifications a
+// real device sends after a change. Enough for the daemon, the CLI and the GUI
+// to run end to end without Bluetooth hardware.
 class SimulatedDeviceTransport : public transport::FakeTransport {
 public:
     // Earbuds report left/right/case batteries and ignore the single-cell
     // query; over-ear models do the opposite.
-    explicit SimulatedDeviceTransport(bool earbuds = false);
+    explicit SimulatedDeviceTransport(bool earbuds = false, bool legacyV1 = false);
 
     size_t send(std::span<const std::byte> data) override;
 
@@ -35,6 +35,7 @@ private:
     uint8_t _sequence{0};
 
     bool _earbuds{false};
+    bool _legacyV1{false};
     uint8_t _battery{87};
     bool _charging{false};
     uint8_t _batteryLeft{81};

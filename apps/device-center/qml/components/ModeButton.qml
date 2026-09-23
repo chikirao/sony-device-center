@@ -13,12 +13,23 @@ Rectangle {
     property string detail: ""
     property bool current: false
     property bool tile: false
+    // Row shape only: opens an area under the row for the mode's own
+    // settings (Ambient Sound's level and Focus on Voice).
+    property bool expanded: false
+    default property alias extra: extraColumn.data
     signal clicked()
+    readonly property real rowHeight: 84
+    // The height steps and the area fades in. An animated height resized
+    // the rounded rectangle every frame, and Qt 6.4's software renderer
+    // (CI, offscreen) crashed redrawing its cached corners.
+    readonly property bool opened: expanded && !tile
+    property real open: opened ? 1 : 0
+    Behavior on open { NumberAnimation { duration: Theme.duration(260); easing.type: Easing.OutCubic } }
 
     readonly property color fg: current ? Theme.accentText : Theme.txt
     readonly property color fgDim: current ? Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.62) : Theme.txtDim
 
-    implicitHeight: tile ? 96 : 84
+    implicitHeight: tile ? 96 : opened ? rowHeight + Math.ceil(extraColumn.implicitHeight) + 18 : rowHeight
     radius: Theme.cardRadius + 2
     color: current ? Theme.accent : hover.hovered && enabled ? Theme.surfaceHi : Theme.surface
     border.width: 1
@@ -34,12 +45,16 @@ Rectangle {
     Accessible.onPressAction: if (enabled) clicked()
 
     HoverHandler { id: hover; enabled: button.enabled; cursorShape: Qt.PointingHandCursor }
-    TapHandler { enabled: button.enabled; onTapped: button.clicked() }
+    // Taps on the row only: the area under it has its own controls.
+    TapHandler { enabled: button.enabled; onTapped: function(point) { if (point.position.y < button.rowHeight) button.clicked() } }
 
     // Row
     RowLayout {
         visible: !button.tile
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: button.rowHeight
         anchors.leftMargin: 22
         anchors.rightMargin: 22
         spacing: 16
@@ -87,6 +102,19 @@ Rectangle {
                 Behavior on scale { NumberAnimation { duration: Theme.duration(260); easing.type: Easing.OutBack } }
             }
         }
+    }
+
+    ColumnLayout {
+        id: extraColumn
+        visible: button.opened
+        opacity: button.open
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.topMargin: button.rowHeight - 6
+        anchors.leftMargin: 60
+        anchors.rightMargin: 22
+        spacing: 8
     }
 
     // Tile

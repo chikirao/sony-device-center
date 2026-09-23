@@ -10,6 +10,7 @@ import "../components"
 // in a column beside the stage, narrow ones under it.
 ViewPage {
     id: root
+    objectName: "overviewPage"
 
     readonly property bool wide: width >= 900
     readonly property string mode: controller.connected ? controller.noiseControlMode : "unknown"
@@ -120,6 +121,54 @@ ViewPage {
                         current: root.mode === modelData.mode
                         enabled: controller.connected
                         onClicked: root.apply(modelData.mode)
+                        // Ambient Sound in use, in the wide column: its level
+                        // and Focus on Voice right under it.
+                        expanded: root.wide && current && modelData.mode === "ambient"
+                        RowLayout {
+                            visible: modelData.mode === "ambient"
+                            Layout.fillWidth: true
+                            spacing: 12
+                            NeoSlider {
+                                objectName: "overviewAmbientSlider"
+                                appWindow: root.appWindow
+                                inked: true
+                                Layout.fillWidth: true
+                                from: 1; to: 20; stepSize: 1
+                                confirmedValue: controller.ambientLevel
+                                enabled: controller.connected
+                                onMoved: controller.setAmbient(Math.round(value), controller.focusOnVoice)
+                            }
+                            Text {
+                                textFormat: Text.PlainText
+                                Layout.preferredWidth: 20
+                                horizontalAlignment: Text.AlignRight
+                                text: String(controller.ambientLevel)
+                                color: Theme.accentText
+                                font.pixelSize: 13
+                                font.weight: Font.DemiBold
+                            }
+                        }
+                        RowLayout {
+                            visible: modelData.mode === "ambient"
+                            Layout.fillWidth: true
+                            spacing: 10
+                            Text {
+                                textFormat: Text.PlainText
+                                Layout.fillWidth: true
+                                text: appWindow.tr("focus_on_voice")
+                                color: Theme.accentText
+                                font.pixelSize: 13
+                                elide: Text.ElideRight
+                            }
+                            NeoSwitch {
+                                objectName: "overviewFocusOnVoice"
+                                appWindow: root.appWindow
+                                inked: true
+                                confirmedChecked: controller.focusOnVoice
+                                enabled: controller.connected
+                                onToggled: controller.setAmbient(controller.ambientLevel, checked)
+                            }
+                        }
                     }
                 }
             }
@@ -135,7 +184,7 @@ ViewPage {
                     objectName: "timeLeftCard"
                     appWindow: root.appWindow
                     title: appWindow.tr("time_left")
-                    onClicked: appWindow.navIndex = 5
+                    onClicked: appWindow.navIndex = appWindow.pages.battery
                     DotText {
                         objectName: "timeLeftDots"
                         text: !controller.connected ? "—"
@@ -174,7 +223,7 @@ ViewPage {
                     appWindow: root.appWindow
                     title: appWindow.tr("nav_equalizer")
                     visible: controller.hasEqualizer
-                    onClicked: appWindow.navIndex = 2
+                    onClicked: appWindow.navIndex = appWindow.pages.equalizer
                     Text {
                         textFormat: Text.PlainText
                         Layout.fillWidth: true

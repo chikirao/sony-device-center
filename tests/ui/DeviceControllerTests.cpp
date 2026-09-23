@@ -63,7 +63,7 @@ private slots:
         QTest::addColumn<QString>("model");
         QTest::addColumn<QString>("language");
         QTest::addColumn<QSize>("size");
-        for (const auto& model : {"WH-1000XM5", "WF-1000XM5"})
+        for (const auto& model : {"WH-1000XM3", "WH-1000XM4", "WH-1000XM5", "WF-1000XM5"})
             for (const auto& language : {"en", "ru"})
                 // The narrow strip (sidebar folded), the old minimum, a big screen.
                 for (const auto size : {QSize(460, 760), QSize(980, 660), QSize(1600, 1000)}) {
@@ -116,6 +116,45 @@ private slots:
         QVERIFY2(!engine.rootObjects().isEmpty(), qPrintable(warnings.join("\n")));
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
         QVERIFY(window);
+        if (model == "WH-1000XM3") {
+            QVERIFY(controller.isConnected());
+            QVERIFY(!controller.hasAutoPowerOff());
+            auto* autoPowerOff = window->findChild<QObject*>("autoPowerOffCombo");
+            QVERIFY(autoPowerOff);
+            QVERIFY(!autoPowerOff->property("enabled").toBool());
+        } else if (model == "WH-1000XM4") {
+            QVERIFY(controller.isConnected());
+            QVERIFY(!controller.hasAutoPowerOff());
+            auto* autoPowerOff = window->findChild<QObject*>("autoPowerOffCombo");
+            QVERIFY(autoPowerOff);
+            QVERIFY(!autoPowerOff->property("enabled").toBool());
+        }
+        {
+            // Audio Features keeps every card; what the connected model
+            // lacks is greyed out and its control locked.
+            window->setProperty("navIndex", 2); // Audio Features
+            QTest::qWait(50);
+            // Repeater tiles are visual children only, so walk childItems().
+            std::function<QQuickItem*(QQuickItem*, const QString&)> find = [&](QQuickItem* item, const QString& name) -> QQuickItem* {
+                if (item->objectName() == name) return item;
+                for (auto* child : item->childItems())
+                    if (auto* found = find(child, name)) return found;
+                return nullptr;
+            };
+            const auto greyed = [&](const char* name, bool has) {
+                auto* item = find(window->contentItem(), name);
+                QVERIFY2(item && item->isVisible(), name);
+                QCOMPARE(item->opacity() < 1.0, !has);
+            };
+            greyed("dseeCard", controller.hasDsee());
+            greyed("speakToChatTile", controller.hasSpeakToChat());
+            greyed("adaptiveVolumeTile", controller.hasAdaptiveVolume());
+            greyed("autoPowerOffCard", controller.hasAutoPowerOff());
+            auto* combo = find(window->contentItem(), "autoPowerOffCombo");
+            QVERIFY(combo);
+            QCOMPARE(combo->isEnabled(), controller.hasAutoPowerOff());
+            window->setProperty("navIndex", 0);
+        }
         controller.setLanguage(language);
         window->resize(size);
         const auto previousTheme = controller.themeMode();
@@ -132,7 +171,7 @@ private slots:
         const auto output = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
         if (!output.isEmpty()) {
             QDir().mkpath(output);
-            window->setProperty("navIndex", 6);
+            window->setProperty("navIndex", 5);
             QTest::qWait(400);
             QVERIFY(window->grabWindow().save(QString("%1/light-%2-%3-%4.png").arg(output, model, language).arg(size.width())));
         }
@@ -218,7 +257,7 @@ private slots:
             // mode with its device list open.
             QTest::qWait(300);
             QVERIFY(hub.window()->grabWindow().save(QString("%1/hub-%2-%3-pinned.png").arg(output, model, language)));
-            window->setProperty("navIndex", 6);
+            window->setProperty("navIndex", 5);
             auto* flick = window->findChild<QQuickItem*>("settingsFlick");
             auto* card = window->findChild<QQuickItem*>("hubCard");
             auto* content = flick ? flick->property("contentItem").value<QQuickItem*>() : nullptr;
@@ -258,7 +297,7 @@ private slots:
         hub.close();
         QTRY_VERIFY(!hub.isVisible());
         controller.setAnimationsEnabled(previousAnimations);
-        for (int page = 0; page < 7; ++page) {
+        for (int page = 0; page < 6; ++page) {
             QVERIFY(window->setProperty("navIndex", page));
             const auto screenshotDirectory = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
             QTest::qWait(screenshotDirectory.isEmpty() ? 30 : 400);
@@ -331,7 +370,7 @@ private slots:
         QVERIFY(batteryRow);
         QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
                           batteryRow->mapToScene(QPointF(batteryRow->width() / 2, batteryRow->height() / 2)).toPoint());
-        QTRY_COMPARE(window->property("navIndex").toInt(), 5);
+        QTRY_COMPARE(window->property("navIndex").toInt(), 4);
         QVERIFY(!window->property("advancedOpen").toBool());
         QTest::qWait(300);
         QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
@@ -341,7 +380,51 @@ private slots:
         QTRY_VERIFY(window->isActive());
         QTest::keyClick(window, Qt::Key_Escape);
         QTRY_VERIFY(!window->property("advancedOpen").toBool());
-        window->setProperty("navIndex", 6); // the About card checks below need Settings shown
+        // Ambient level opens a slider in the panel instead of a page, and
+        // Focus on Voice switches from there.
+        window->setProperty("advancedOpen", true);
+        auto* ambientRow = window->findChild<QQuickItem*>("advancedAmbientRow");
+        auto* ambientSlider = window->findChild<QQuickItem*>("advancedAmbientSlider");
+        QVERIFY(ambientRow && ambientSlider);
+        QTRY_VERIFY(ambientRow->isVisible());
+        QVERIFY(!ambientSlider->isVisible());
+        // Click only once the sheet has slid all the way in.
+        auto* sheet = window->findChild<QQuickItem*>("advancedPanel");
+        QVERIFY(sheet);
+        QTRY_COMPARE(sheet->mapToScene(QPointF(sheet->width(), 0)).x(), qreal(window->width()));
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                          ambientRow->mapToScene(QPointF(ambientRow->width() / 2, ambientRow->height() / 2)).toPoint());
+        QTRY_VERIFY(ambientSlider->isVisible());
+        QVERIFY(window->property("advancedOpen").toBool());
+        QCOMPARE(window->property("navIndex").toInt(), 0);
+        const bool voiceBefore = controller.focusOnVoice();
+        QVERIFY(QMetaObject::invokeMethod(window->findChild<QObject*>("advancedFocusOnVoice"), "toggled", Q_ARG(bool, !voiceBefore)));
+        QTRY_COMPARE(controller.focusOnVoice(), !voiceBefore);
+        QTRY_COMPARE(controller.noiseControlMode(), QString("ambient"));
+        window->setProperty("advancedOpen", false);
+        QTRY_VERIFY(!window->property("advancedOpen").toBool());
+        // Ambient Sound in use opens its button on a wide Overview.
+        {
+            std::function<QQuickItem*(QQuickItem*, const QString&)> find = [&](QQuickItem* item, const QString& name) -> QQuickItem* {
+                if (item->objectName() == name) return item;
+                for (auto* child : item->childItems())
+                    if (auto* found = find(child, name)) return found;
+                return nullptr;
+            };
+            auto* ambientButton = find(window->contentItem(), "modeButton_ambient");
+            QVERIFY(ambientButton);
+            auto* overviewSlider = find(ambientButton, "overviewAmbientSlider");
+            QVERIFY(overviewSlider);
+            // Read from the page: a runner's screen can be smaller than the
+            // requested window, which Windows then shrinks.
+            auto* overviewPage = find(window->contentItem(), "overviewPage");
+            QVERIFY(overviewPage);
+            const bool wide = overviewPage->property("wide").toBool();
+            QTRY_COMPARE(overviewSlider->isVisible(), wide);
+            controller.setAnc(true);
+            QTRY_VERIFY(!overviewSlider->isVisible());
+        }
+        window->setProperty("navIndex", 5); // the About card checks below need Settings shown
         // The regular-font option swaps every dot display for the body
         // face, persists, and switches back.
         const bool previousPlainFont = controller.plainFont();
@@ -353,7 +436,7 @@ private slots:
         QVERIFY(nameDots->implicitHeight() > 0);
         QCOMPARE(window->findChild<QObject*>("plainFontSwitch")->property("checked").toBool(), true);
         if (!output.isEmpty()) {
-            for (int page : {0, 2, 5}) {
+            for (int page : {0, 1, 4}) {
                 window->setProperty("navIndex", page);
                 QTest::qWait(400);
                 QVERIFY(window->grabWindow().save(QString("%1/plain-%2-%3-%4-page%5.png")

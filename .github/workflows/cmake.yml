@@ -79,6 +79,16 @@ jobs:
         run: |
           ctest --test-dir build -C ${BUILD_TYPE} --output-on-failure --no-tests=error
 
+      # The Windows log does not carry the UI suite's output; the suite also
+      # writes it to a file, kept here when something fails.
+      - name: Upload UI test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results-${{ matrix.os }}
+          path: build/**/ui-test-results.txt
+          if-no-files-found: ignore
+
       # The DMG is built on every push so packaging breakage shows up in the
       # PR, not at release time. It is also the download for macOS testers.
       - name: Build and verify the disk image (macOS)

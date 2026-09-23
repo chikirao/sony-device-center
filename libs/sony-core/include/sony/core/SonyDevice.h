@@ -47,6 +47,7 @@ public:
     void refreshNoiseControl();
     void refreshEqualizer();
     void refreshDsee();
+    int readAutoPowerOff();
     void refreshSettingsStep();
 
     // Control operations
