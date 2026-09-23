@@ -64,7 +64,7 @@ RowLayout {
             color: header.batteryLow ? Theme.danger : Theme.txt
         }
         HoverHandler { id: batteryHover; cursorShape: Qt.PointingHandCursor }
-        TapHandler { onTapped: appWindow.navIndex = 5 }
+        TapHandler { onTapped: appWindow.navIndex = appWindow.pages.battery }
     }
 
     // Everything the Overview leaves out lives behind this.

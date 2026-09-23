@@ -46,7 +46,6 @@ void I18nManager::_initTranslations() {
     // English (en) - Source
     auto& en = _strings["en"];
     en["nav_overview"]                    = "Overview";
-    en["nav_noise_control"]               = "Noise Control";
     en["nav_equalizer"]                   = "Equalizer";
     en["nav_audio_features"]              = "Audio Features";
     en["nav_device_switcher"]             = "Device Switcher";
@@ -97,19 +96,13 @@ void I18nManager::_initTranslations() {
     en["mode_anc"]                        = "ANC";
     en["mode_ambient"]                    = "Ambient";
     en["mode_off"]                        = "Off";
-    en["nc_title_off"]                    = "Processing Off";
     en["nc_desc_cancelling"]              = "The outside world is sealed out";
     en["nc_desc_ambient"]                 = "Level %1 · hearing your surroundings";
     en["nc_desc_off"]                     = "Straight signal, no processing";
     en["eq_chip"]                         = "EQ · ";
-    en["isolation"]                       = "Isolation";
-    en["nc_page_desc"]                    = "Choose how much of the world gets through.";
-    en["nc_card_cancelling"]              = "Seal out the room";
-    en["nc_card_ambient"]                 = "Let the room in";
     en["nc_card_off"]                     = "No processing";
     en["ambient"]                         = "Ambient";
     en["sound_level"]                     = "Sound Level";
-    en["focus_on_voice_desc"]             = "Lift human speech, filter the low rumble";
     en["signature"]                       = "Signature";
     en["eq_page_desc"]                    = "Five bands, plus dedicated Clear Bass.";
     en["clear_bass_desc"]                 = "Sub-bass weight, no distortion";
@@ -195,7 +188,6 @@ void I18nManager::_initTranslations() {
     en["high_quality_audio"]              = "High-quality audio";
     en["quick_actions"]                   = "Quick actions";
     en["open_equalizer"]                  = "Open Equalizer";
-    en["current_mode"]                    = "Current mode";
     en["five_band"]                       = "5-band equalizer";
     en["active_preset"]                   = "Active preset";
     en["wireless_headphones"]             = "Wireless noise cancelling headphones";
@@ -289,7 +281,6 @@ void I18nManager::_initTranslations() {
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
     pt["nav_overview"]                    = "Visão Geral";
-    pt["nav_noise_control"]               = "Controle de Ruído";
     pt["nav_equalizer"]                   = "Equalizador";
     pt["nav_audio_features"]              = "Recursos de Áudio";
     pt["nav_device_switcher"]             = "Alternar Dispositivo";
@@ -340,19 +331,13 @@ void I18nManager::_initTranslations() {
     pt["mode_anc"]                        = "ANC";
     pt["mode_ambient"]                    = "Ambiente";
     pt["mode_off"]                        = "Desligado";
-    pt["nc_title_off"]                    = "Processamento Desligado";
     pt["nc_desc_cancelling"]              = "O mundo exterior fica do lado de fora";
     pt["nc_desc_ambient"]                 = "Nível %1 · ouvindo o ambiente";
     pt["nc_desc_off"]                     = "Sinal direto, sem processamento";
     pt["eq_chip"]                         = "EQ · ";
-    pt["isolation"]                       = "Isolamento";
-    pt["nc_page_desc"]                    = "Escolha quanto do mundo passa.";
-    pt["nc_card_cancelling"]              = "Isole o ambiente";
-    pt["nc_card_ambient"]                 = "Deixe o ambiente entrar";
     pt["nc_card_off"]                     = "Sem processamento";
     pt["ambient"]                         = "Ambiente";
     pt["sound_level"]                     = "Nível de Som";
-    pt["focus_on_voice_desc"]             = "Realça a fala, filtra o ruído grave";
     pt["signature"]                       = "Assinatura";
     pt["eq_page_desc"]                    = "Cinco bandas, mais Clear Bass dedicado.";
     pt["clear_bass_desc"]                 = "Peso de sub-graves, sem distorção";
@@ -438,7 +423,6 @@ void I18nManager::_initTranslations() {
     pt["high_quality_audio"]              = "Áudio de alta qualidade";
     pt["quick_actions"]                   = "Ações rápidas";
     pt["open_equalizer"]                  = "Abrir equalizador";
-    pt["current_mode"]                    = "Modo atual";
     pt["five_band"]                       = "Equalizador de 5 bandas";
     pt["active_preset"]                   = "Predefinição ativa";
     pt["wireless_headphones"]             = "Fones sem fio com cancelamento de ruído";
@@ -532,7 +516,6 @@ void I18nManager::_initTranslations() {
     // Español (es)
     auto& es = _strings["es"];
     es["nav_overview"]                    = "Resumen";
-    es["nav_noise_control"]               = "Control de Ruido";
     es["nav_equalizer"]                   = "Ecualizador";
     es["nav_audio_features"]              = "Funciones de Audio";
     es["nav_device_switcher"]             = "Cambiar Dispositivo";
@@ -583,19 +566,13 @@ void I18nManager::_initTranslations() {
     es["mode_anc"]                        = "ANC";
     es["mode_ambient"]                    = "Ambiente";
     es["mode_off"]                        = "Apagado";
-    es["nc_title_off"]                    = "Procesamiento Apagado";
     es["nc_desc_cancelling"]              = "El mundo exterior queda fuera";
     es["nc_desc_ambient"]                 = "Nivel %1 · escuchando el entorno";
     es["nc_desc_off"]                     = "Señal directa, sin procesamiento";
     es["eq_chip"]                         = "EQ · ";
-    es["isolation"]                       = "Aislamiento";
-    es["nc_page_desc"]                    = "Elige cuánto del mundo entra.";
-    es["nc_card_cancelling"]              = "Aísla la sala";
-    es["nc_card_ambient"]                 = "Deja entrar la sala";
     es["nc_card_off"]                     = "Sin procesamiento";
     es["ambient"]                         = "Ambiente";
     es["sound_level"]                     = "Nivel de Sonido";
-    es["focus_on_voice_desc"]             = "Realza la voz, filtra el retumbo grave";
     es["signature"]                       = "Firma";
     es["eq_page_desc"]                    = "Cinco bandas, más Clear Bass dedicado.";
     es["clear_bass_desc"]                 = "Peso de subgraves, sin distorsión";
@@ -681,7 +658,6 @@ void I18nManager::_initTranslations() {
     es["high_quality_audio"]              = "Audio de alta calidad";
     es["quick_actions"]                   = "Acciones rápidas";
     es["open_equalizer"]                  = "Abrir ecualizador";
-    es["current_mode"]                    = "Modo actual";
     es["five_band"]                       = "Ecualizador de 5 bandas";
     es["active_preset"]                   = "Preajuste activo";
     es["wireless_headphones"]             = "Auriculares inalámbricos con cancelación de ruido";
@@ -775,7 +751,6 @@ void I18nManager::_initTranslations() {
     // Deutsch (de)
     auto& de = _strings["de"];
     de["nav_overview"]                    = "Übersicht";
-    de["nav_noise_control"]               = "Geräuschkontrolle";
     de["nav_equalizer"]                   = "Equalizer";
     de["nav_audio_features"]              = "Audiofunktionen";
     de["nav_device_switcher"]             = "Geräte wechseln";
@@ -826,19 +801,13 @@ void I18nManager::_initTranslations() {
     de["mode_anc"]                        = "ANC";
     de["mode_ambient"]                    = "Umgebung";
     de["mode_off"]                        = "Aus";
-    de["nc_title_off"]                    = "Verarbeitung aus";
     de["nc_desc_cancelling"]              = "Die Außenwelt bleibt draußen";
     de["nc_desc_ambient"]                 = "Stufe %1 · Umgebung hörbar";
     de["nc_desc_off"]                     = "Direktes Signal, keine Verarbeitung";
     de["eq_chip"]                         = "EQ · ";
-    de["isolation"]                       = "Isolation";
-    de["nc_page_desc"]                    = "Wähle, wie viel von der Welt durchkommt.";
-    de["nc_card_cancelling"]              = "Den Raum ausblenden";
-    de["nc_card_ambient"]                 = "Den Raum hereinlassen";
     de["nc_card_off"]                     = "Keine Verarbeitung";
     de["ambient"]                         = "Umgebung";
     de["sound_level"]                     = "Lautstärke";
-    de["focus_on_voice_desc"]             = "Sprache anheben, tiefes Rumpeln filtern";
     de["signature"]                       = "Signatur";
     de["eq_page_desc"]                    = "Fünf Bänder plus eigener Clear Bass.";
     de["clear_bass_desc"]                 = "Subbass-Druck ohne Verzerrung";
@@ -924,7 +893,6 @@ void I18nManager::_initTranslations() {
     de["high_quality_audio"]              = "Audio in hoher Qualität";
     de["quick_actions"]                   = "Schnellaktionen";
     de["open_equalizer"]                  = "Equalizer öffnen";
-    de["current_mode"]                    = "Aktueller Modus";
     de["five_band"]                       = "5-Band-Equalizer";
     de["active_preset"]                   = "Aktive Voreinstellung";
     de["wireless_headphones"]             = "Kabellose Noise-Cancelling-Kopfhörer";
@@ -1018,7 +986,6 @@ void I18nManager::_initTranslations() {
     // Français (fr)
     auto& fr = _strings["fr"];
     fr["nav_overview"]                    = "Aperçu";
-    fr["nav_noise_control"]               = "Contrôle du Bruit";
     fr["nav_equalizer"]                   = "Égaliseur";
     fr["nav_audio_features"]              = "Fonctions Audio";
     fr["nav_device_switcher"]             = "Changer d'Appareil";
@@ -1069,19 +1036,13 @@ void I18nManager::_initTranslations() {
     fr["mode_anc"]                        = "ANC";
     fr["mode_ambient"]                    = "Ambiant";
     fr["mode_off"]                        = "Désactivé";
-    fr["nc_title_off"]                    = "Traitement désactivé";
     fr["nc_desc_cancelling"]              = "Le monde extérieur reste dehors";
     fr["nc_desc_ambient"]                 = "Niveau %1 · vous entendez votre environnement";
     fr["nc_desc_off"]                     = "Signal direct, sans traitement";
     fr["eq_chip"]                         = "EQ · ";
-    fr["isolation"]                       = "Isolation";
-    fr["nc_page_desc"]                    = "Choisissez ce qui passe du monde extérieur.";
-    fr["nc_card_cancelling"]              = "Isoler la pièce";
-    fr["nc_card_ambient"]                 = "Laisser entrer la pièce";
     fr["nc_card_off"]                     = "Sans traitement";
     fr["ambient"]                         = "Ambiant";
     fr["sound_level"]                     = "Niveau sonore";
-    fr["focus_on_voice_desc"]             = "Rehausser la voix, filtrer les basses";
     fr["signature"]                       = "Signature";
     fr["eq_page_desc"]                    = "Cinq bandes, plus un Clear Bass dédié.";
     fr["clear_bass_desc"]                 = "Poids des sub-basses, sans distorsion";
@@ -1167,7 +1128,6 @@ void I18nManager::_initTranslations() {
     fr["high_quality_audio"]              = "Audio haute qualité";
     fr["quick_actions"]                   = "Actions rapides";
     fr["open_equalizer"]                  = "Ouvrir l'égaliseur";
-    fr["current_mode"]                    = "Mode actuel";
     fr["five_band"]                       = "Égaliseur 5 bandes";
     fr["active_preset"]                   = "Préréglage actif";
     fr["wireless_headphones"]             = "Casque sans fil à réduction de bruit";
@@ -1261,7 +1221,6 @@ void I18nManager::_initTranslations() {
     // 日本語 (ja)
     auto& ja = _strings["ja"];
     ja["nav_overview"]                    = "概要";
-    ja["nav_noise_control"]               = "ノイズコントロール";
     ja["nav_equalizer"]                   = "イコライザー";
     ja["nav_audio_features"]              = "オーディオ機能";
     ja["nav_device_switcher"]             = "デバイス切り替え";
@@ -1312,19 +1271,13 @@ void I18nManager::_initTranslations() {
     ja["mode_anc"]                        = "ANC";
     ja["mode_ambient"]                    = "外音";
     ja["mode_off"]                        = "オフ";
-    ja["nc_title_off"]                    = "処理オフ";
     ja["nc_desc_cancelling"]              = "外の世界を遮断";
     ja["nc_desc_ambient"]                 = "レベル %1 · 周囲の音が聞こえます";
     ja["nc_desc_off"]                     = "処理なしのストレート信号";
     ja["eq_chip"]                         = "EQ · ";
-    ja["isolation"]                       = "遮音";
-    ja["nc_page_desc"]                    = "どれだけ外の音を通すか選びます。";
-    ja["nc_card_cancelling"]              = "部屋の音を遮断";
-    ja["nc_card_ambient"]                 = "周囲の音を取り込む";
     ja["nc_card_off"]                     = "処理なし";
     ja["ambient"]                         = "外音取り込み";
     ja["sound_level"]                     = "音量レベル";
-    ja["focus_on_voice_desc"]             = "人の声を強調し、低い騒音を抑える";
     ja["signature"]                       = "シグネチャー";
     ja["eq_page_desc"]                    = "5バンドと専用のClear Bass。";
     ja["clear_bass_desc"]                 = "歪みのない重低音";
@@ -1410,7 +1363,6 @@ void I18nManager::_initTranslations() {
     ja["high_quality_audio"]              = "高音質オーディオ";
     ja["quick_actions"]                   = "クイック操作";
     ja["open_equalizer"]                  = "イコライザーを開く";
-    ja["current_mode"]                    = "現在のモード";
     ja["five_band"]                       = "5バンドイコライザー";
     ja["active_preset"]                   = "現在のプリセット";
     ja["wireless_headphones"]             = "ワイヤレスノイズキャンセリングヘッドホン";
@@ -1504,7 +1456,6 @@ void I18nManager::_initTranslations() {
     // Русский (ru)
     auto& ru = _strings["ru"];
     ru["nav_overview"]                    = "Обзор";
-    ru["nav_noise_control"]               = "Шумоподавление";
     ru["nav_equalizer"]                   = "Эквалайзер";
     ru["nav_audio_features"]              = "Аудиофункции";
     ru["nav_device_switcher"]             = "Устройства";
@@ -1555,19 +1506,13 @@ void I18nManager::_initTranslations() {
     ru["mode_anc"]                        = "ANC";
     ru["mode_ambient"]                    = "Окружение";
     ru["mode_off"]                        = "Выкл";
-    ru["nc_title_off"]                    = "Обработка выключена";
     ru["nc_desc_cancelling"]              = "Внешний мир отсечён";
     ru["nc_desc_ambient"]                 = "Уровень %1 · слышно окружение";
     ru["nc_desc_off"]                     = "Прямой сигнал без обработки";
     ru["eq_chip"]                         = "EQ · ";
-    ru["isolation"]                       = "Изоляция";
-    ru["nc_page_desc"]                    = "Выбери, сколько внешнего мира пропускать.";
-    ru["nc_card_cancelling"]              = "Отсечь всё вокруг";
-    ru["nc_card_ambient"]                 = "Впустить окружение";
     ru["nc_card_off"]                     = "Без обработки";
     ru["ambient"]                         = "Окружение";
     ru["sound_level"]                     = "Уровень звука";
-    ru["focus_on_voice_desc"]             = "Выделить речь, приглушить низкий гул";
     ru["signature"]                       = "Характер";
     ru["eq_page_desc"]                    = "Пять полос плюс отдельный Clear Bass.";
     ru["clear_bass_desc"]                 = "Глубокий бас без искажений";
@@ -1653,7 +1598,6 @@ void I18nManager::_initTranslations() {
     ru["high_quality_audio"]              = "Звук высокого качества";
     ru["quick_actions"]                   = "Быстрые действия";
     ru["open_equalizer"]                  = "Открыть эквалайзер";
-    ru["current_mode"]                    = "Текущий режим";
     ru["five_band"]                       = "5-полосный эквалайзер";
     ru["active_preset"]                   = "Текущий пресет";
     ru["wireless_headphones"]             = "Беспроводные наушники с шумоподавлением";

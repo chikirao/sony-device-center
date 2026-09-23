@@ -23,9 +23,9 @@ Sony locks headphone settings and telemetry behind their mobile-only apps (*Sony
 
 ![Overview](docs/screenshots/overview.png)
 
-| Noise Control | Equalizer | Audio Features |
+| Ambient Sound | Equalizer | Audio Features |
 | :---: | :---: | :---: |
-| ![Noise Control](docs/screenshots/noise-control.png) | ![Equalizer](docs/screenshots/equalizer.png) | ![Audio Features](docs/screenshots/audio-features.png) |
+| ![Ambient Sound, with its level and Focus on Voice on the Overview](docs/screenshots/ambient-sound.png) | ![Equalizer](docs/screenshots/equalizer.png) | ![Audio Features](docs/screenshots/audio-features.png) |
 
 | Battery History | Device Switcher | Settings |
 | :---: | :---: | :---: |

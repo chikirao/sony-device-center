@@ -354,16 +354,25 @@ before/after screenshots (en + ru, both themes).
   font stays the default; a Settings switch renders every `DotText` /
   `DotValue` in the body font instead.
   Done: "Regular font" switch, QSettings `plainFont`, sized to the dot grid.
-- [ ] **Rated battery estimate** (`feat/battery-rated-estimate`). Until
+- [x] **Rated battery estimate** (`feat/battery-estimate`). Until
   `BatteryHistory` has measured a discharge rate, show "time left" from
   the model's rated playback hours, labelled as rated. Matters most on the
   XM4, which reports battery in 10 % steps, so a measured rate takes hours.
   The contributor tried this in vkhawse2/sony-device-center — review and
   reuse with credit if sound.
-- [ ] **Noise-control animation** (`feat/noise-control-animation`). A live
+  Done (0.5.0): per-model rated hours with NC on/off, labelled "Rated"
+  until two level changes give a measured rate.
+- [x] **Noise-control animation** (shipped in `feat/overview-redesign`). A live
   illustration that changes with ANC / Ambient / Off. Only cheap property
   animations, stopped when the page or window is hidden and when motion is
   off; idle CPU is measured before and after, and it is dropped if it costs.
+  Done (0.5.0): the mode ring on the Overview (solid for NC, dots for
+  ambient, faint dots for off), one Canvas repainted on change only.
+- [x] **Noise control on the Overview** (`feat/ambient-inline`). The Noise
+  Control page is gone: the Overview's mode buttons pick the mode, and
+  Ambient Sound in use opens under its button (wide window) with the level
+  slider and Focus on Voice. The Advanced panel has both too — its Ambient
+  level line opens a slider in place — so narrow windows keep them.
 - [ ] **Connect button and local alias** (`feat/connect-and-alias`). With no
   device, a "Connect a device" button opens the OS Bluetooth settings. A
   per-address alias ("Joe's WH-1000XM4") kept in QSettings and shown in the
@@ -380,7 +389,12 @@ before/after screenshots (en + ru, both themes).
 
 Not taken: dropping the device name when there is a picture (models look
 alike, and two Sony sets need telling apart); LDAC® / DSEE™ logo artwork
-(trademarks — plain bordered text badges instead).
+(trademarks — plain bordered text badges instead); mode buttons as a
+horizontal row of squares on wide windows (the wide column has room for
+each mode's description, and Ambient Sound opens under its button — tiles
+stay for narrow windows); renaming Overview to "My device" (the header
+already names the device); removing equalizer presets (they are the
+headset's own presets, one click from the phone's sound).
 
 ---
 

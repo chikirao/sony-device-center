@@ -36,6 +36,8 @@ ApplicationWindow {
     palette.highlightedText: "#FFFFFF"
 
     property int navIndex: 0
+    // Page numbers by name, in the order of the page stack below.
+    readonly property var pages: ({ overview: 0, equalizer: 1, features: 2, devices: 3, battery: 4, settings: 5 })
     property bool advancedOpen: false
     readonly property bool compact: width < 760
     // Below this the page is too narrow for two cards side by side (the
@@ -143,7 +145,6 @@ ApplicationWindow {
                 currentIndex: window.navIndex
 
                 Overview { appWindow: window }
-                NoiseControl { appWindow: window }
                 Equalizer { appWindow: window }
                 Features { appWindow: window }
                 DeviceSwitcher { appWindow: window }

@@ -266,8 +266,12 @@ int main(int argc, char *argv[]) {
         if (size.size() == 2) window->resize(size[0].toInt(), size[1].toInt());
         auto* ticker = new QTimer(&app);
         int page = 0;
-        QObject::connect(ticker, &QTimer::timeout, &app, [&, ticker, window]() mutable {
-            if (page > 0 && page <= 7) window->grabWindow().save(QString("%1/page%2.png").arg(shotDir).arg(page - 1));
+        // Captures are named after the pages, in the order of Main.qml's
+        // page stack, so a page added or removed renames nothing else.
+        static const QStringList pages{"overview", "equalizer", "features", "devices", "battery", "settings"};
+        const int count = static_cast<int>(pages.size());
+        QObject::connect(ticker, &QTimer::timeout, &app, [&, ticker, window, count]() mutable {
+            if (page > 0 && page <= count) window->grabWindow().save(QString("%1/%2.png").arg(shotDir, pages[page - 1]));
             // Settings is taller than the window: two more captures, scrolled
             // to the hotkeys card and then to the About/updates card.
             auto scrollTo = [window](const char* card) {
@@ -280,28 +284,33 @@ int main(int argc, char *argv[]) {
                     flick->setProperty("contentY", std::clamp(y - 16, 0.0, std::max(0.0, max)));
                 }
             };
-            if (page == 7) {
+            if (page == count) {
                 scrollTo("hotkeysCard");
-            } else if (page == 8) {
-                window->grabWindow().save(QString("%1/page6-hotkeys.png").arg(shotDir));
+            } else if (page == count + 1) {
+                window->grabWindow().save(QString("%1/settings-hotkeys.png").arg(shotDir));
                 scrollTo("aboutCard");
-            } else if (page == 9) {
-                window->grabWindow().save(QString("%1/page6-about.png").arg(shotDir));
+            } else if (page == count + 2) {
+                window->grabWindow().save(QString("%1/settings-about.png").arg(shotDir));
                 scrollTo("hubCard");
-            } else if (page == 10) {
-                window->grabWindow().save(QString("%1/page6-hub.png").arg(shotDir));
+            } else if (page == count + 3) {
+                window->grabWindow().save(QString("%1/settings-hub.png").arg(shotDir));
                 // The hub, as it would sit above a bottom taskbar.
                 hub.open(QRect(window->x() + window->width() - 40, window->y() + window->height() - 1, 24, 1));
-            } else if (page == 11) {
+            } else if (page == count + 4) {
                 if (hub.window()) hub.window()->grabWindow().save(QString("%1/hub.png").arg(shotDir));
                 // Last, the Overview with the advanced panel slid over it.
                 window->setProperty("navIndex", 0);
                 window->setProperty("advancedOpen", true);
-            } else if (page == 12) {
-                window->grabWindow().save(QString("%1/page0-advanced.png").arg(shotDir));
+            } else if (page == count + 5) {
+                window->grabWindow().save(QString("%1/overview-advanced.png").arg(shotDir));
+                // And Ambient Sound in use, which opens its button when wide.
+                window->setProperty("advancedOpen", false);
+                controller.setAmbient(controller.ambientLevel(), controller.focusOnVoice());
+            } else if (page == count + 6) {
+                window->grabWindow().save(QString("%1/overview-ambient.png").arg(shotDir));
                 ticker->stop(); app.quit(); return;
             }
-            if (page <= 6) window->setProperty("navIndex", page);
+            if (page < count) window->setProperty("navIndex", page);
             ++page;
         });
         ticker->start(1500);

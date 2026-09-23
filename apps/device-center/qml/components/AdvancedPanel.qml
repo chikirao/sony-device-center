@@ -119,7 +119,7 @@ Item {
                     glyph: appWindow.icons.sliders
                     title: appWindow.tr("nav_equalizer")
                     value: controller.connected && controller.equalizerPreset >= 0 ? appWindow.trPreset(controller.equalizerPreset) : "—"
-                    onClicked: panel.go(2)
+                    onClicked: panel.go(appWindow.pages.equalizer)
                 }
                 Row_ {
                     appWindow: panel.appWindow
@@ -127,15 +127,45 @@ Item {
                     glyph: appWindow.icons.waveform
                     title: appWindow.tr("clear_bass")
                     value: !controller.connected ? "—" : controller.clearBass > 0 ? "+" + controller.clearBass : String(controller.clearBass)
-                    onClicked: panel.go(2)
+                    onClicked: panel.go(appWindow.pages.equalizer)
                 }
+                // Ambient level opens a slider in place; setting it (or
+                // Focus on Voice) switches the headset to Ambient Sound.
                 Row_ {
+                    id: ambientRow
+                    objectName: "advancedAmbientRow"
                     appWindow: panel.appWindow
                     visible: controller.hasAmbient
+                    enabled: controller.connected
+                    property bool expanded: false
                     glyph: appWindow.icons.ambient
                     title: appWindow.tr("ambient_level")
                     value: controller.ambientLevel > 0 ? String(controller.ambientLevel) : "—"
-                    onClicked: panel.go(1)
+                    chevronAngle: expanded ? 90 : 0
+                    onClicked: expanded = !expanded
+                }
+                NeoSlider {
+                    objectName: "advancedAmbientSlider"
+                    appWindow: panel.appWindow
+                    inverse: true
+                    visible: controller.hasAmbient && ambientRow.expanded
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 40
+                    Layout.rightMargin: 6
+                    from: 1; to: 20; stepSize: 1
+                    confirmedValue: controller.ambientLevel
+                    enabled: controller.connected
+                    onMoved: controller.setAmbient(Math.round(value), controller.focusOnVoice)
+                }
+                Toggle_ {
+                    appWindow: panel.appWindow
+                    objectName: "advancedFocusOnVoice"
+                    visible: controller.hasAmbient
+                    glyph: appWindow.icons.mic
+                    title: appWindow.tr("focus_on_voice")
+                    checked: controller.focusOnVoice
+                    ready: controller.connected
+                    onToggled: function(on) { controller.setAmbient(controller.ambientLevel, on) }
                 }
 
                 Divider {}
@@ -182,7 +212,7 @@ Item {
                          : !panel.known("autoPowerOff") ? "—"
                          : [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_30min"),
                             appWindow.tr("apo_1h"), appWindow.tr("apo_3h"), appWindow.tr("apo_when_taken_off")][controller.autoPowerOff] || "—"
-                    onClicked: panel.go(3)
+                    onClicked: panel.go(appWindow.pages.features)
                 }
                 Row_ {
                     objectName: "advancedBatteryRow"
@@ -191,14 +221,14 @@ Item {
                     title: appWindow.tr("nav_battery")
                     value: !controller.connected ? "—" : controller.isCharging ? appWindow.tr("charging")
                          : controller.batteryTimeLeft !== "" ? controller.batteryTimeLeft : "—"
-                    onClicked: panel.go(5)
+                    onClicked: panel.go(appWindow.pages.battery)
                 }
                 Row_ {
                     appWindow: panel.appWindow
                     glyph: appWindow.icons.swap
                     title: appWindow.tr("nav_device_switcher")
                     value: ""
-                    onClicked: panel.go(4)
+                    onClicked: panel.go(appWindow.pages.devices)
                 }
                 Row_ {
                     appWindow: panel.appWindow
@@ -259,6 +289,7 @@ Item {
         property string title: ""
         property string value: ""
         property bool chevron: true
+        property real chevronAngle: 0
         signal clicked()
         Layout.fillWidth: true
         implicitHeight: 40
@@ -298,6 +329,8 @@ Item {
                 path: line.appWindow.icons.chevronRight
                 size: 14
                 color: Theme.sidebarTxtFaint
+                rotation: line.chevronAngle
+                Behavior on rotation { NumberAnimation { duration: Theme.tBase } }
             }
         }
     }

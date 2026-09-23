@@ -49,13 +49,12 @@ Rectangle {
             spacing: 4
             Repeater {
                 model: [
-                    { idx: 0, key: "nav_overview",        glyph: appWindow.icons.home },
-                    { idx: 1, key: "nav_noise_control",   glyph: appWindow.icons.waveform },
-                    { idx: 2, key: "nav_equalizer",       glyph: appWindow.icons.sliders },
-                    { idx: 3, key: "nav_audio_features",  glyph: appWindow.icons.gridDots },
-                    { idx: 4, key: "nav_device_switcher", glyph: appWindow.icons.swap },
-                    { idx: 5, key: "nav_battery",         glyph: appWindow.icons.batteryUp },
-                    { idx: 6, key: "nav_settings",        glyph: appWindow.icons.settings }
+                    { idx: appWindow.pages.overview,  key: "nav_overview",        glyph: appWindow.icons.home },
+                    { idx: appWindow.pages.equalizer, key: "nav_equalizer",       glyph: appWindow.icons.sliders },
+                    { idx: appWindow.pages.features,  key: "nav_audio_features",  glyph: appWindow.icons.gridDots },
+                    { idx: appWindow.pages.devices,   key: "nav_device_switcher", glyph: appWindow.icons.swap },
+                    { idx: appWindow.pages.battery,   key: "nav_battery",         glyph: appWindow.icons.batteryUp },
+                    { idx: appWindow.pages.settings,  key: "nav_settings",        glyph: appWindow.icons.settings }
                 ]
                 delegate: Rectangle {
                     id: navItem

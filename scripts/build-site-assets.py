@@ -75,8 +75,10 @@ def trim_bottom(img: Image.Image) -> Image.Image:
 
 
 def shots(src: Path) -> None:
-    names = {"page0.png": "overview", "page1.png": "noise", "page2.png": "equalizer",
-             "page5.png": "battery", "hub.png": "hub"}
+    # The "noise" slot shows Ambient Sound opened on the Overview: the noise
+    # page is gone, its controls live on the mode button now.
+    names = {"overview.png": "overview", "overview-ambient.png": "noise", "equalizer.png": "equalizer",
+             "battery.png": "battery", "hub.png": "hub"}
     (OUT / "shots").mkdir(parents=True, exist_ok=True)
     for theme in ("light", "dark"):
         for file, name in names.items():
