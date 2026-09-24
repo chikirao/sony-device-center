@@ -26,7 +26,7 @@ RowLayout {
         Layout.rightMargin: 16
         DotText {
             objectName: "deviceNameDots"
-            text: controller.deviceName
+            text: controller.displayName
             dot: appWindow.compact ? 2.6 : 3.6
             maxWidth: nameColumn.width
             color: controller.connected ? Theme.txt : Theme.txtFaint
@@ -35,7 +35,9 @@ RowLayout {
         Text {
             textFormat: Text.PlainText
             Layout.fillWidth: true
-            text: controller.hasDualBattery ? appWindow.tr("wireless_earbuds") : appWindow.tr("wireless_headphones")
+            // Under the user's own name, the model it stands for.
+            text: (controller.deviceAlias !== "" ? controller.deviceName + " · " : "")
+                  + (controller.hasDualBattery ? appWindow.tr("wireless_earbuds") : appWindow.tr("wireless_headphones"))
             color: Theme.txtDim
             font.pixelSize: 12
             elide: Text.ElideRight

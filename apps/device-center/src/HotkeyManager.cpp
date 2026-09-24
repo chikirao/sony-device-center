@@ -292,7 +292,7 @@ void HotkeyManager::trigger(Action action) {
 
 void HotkeyManager::_feedback(const QString& body) {
     if (!_controller.notifyHotkeys()) return;
-    const auto name = _controller.deviceName();
+    const auto name = _controller.displayName();
     _lastFeedback = body;
     _tray.showMessage(name.isEmpty() ? QStringLiteral("Sony Device Center") : name, body);
 }

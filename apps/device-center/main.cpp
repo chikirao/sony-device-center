@@ -238,6 +238,18 @@ int main(int argc, char *argv[]) {
 
     engine.load(url);
     if (!engine.rootObjects().isEmpty()) tray.setWindow(qobject_cast<QWindow*>(engine.rootObjects().first()));
+    // Hidden in the tray, the pages are unloaded (Main.qml); hand back what
+    // the scene graph and the engine still hold for them as well.
+    if (auto* mainWindow = engine.rootObjects().isEmpty() ? nullptr : qobject_cast<QQuickWindow*>(engine.rootObjects().first())) {
+        QObject::connect(mainWindow, &QWindow::visibleChanged, &engine, [mainWindow, &engine](bool visible) {
+            if (visible) return;
+            QTimer::singleShot(0, mainWindow, [mainWindow, &engine] {
+                engine.collectGarbage();
+                engine.trimComponentCache();
+                mainWindow->releaseResources();
+            });
+        });
+    }
 
     // The Device Hub off the tray icon. It lives in the same engine as the
     // main window and borrows its icons and translations.
@@ -308,6 +320,20 @@ int main(int argc, char *argv[]) {
                 controller.setAmbient(controller.ambientLevel(), controller.focusOnVoice());
             } else if (page == count + 6) {
                 window->grabWindow().save(QString("%1/overview-ambient.png").arg(shotDir));
+                // Then the support card and its donation window...
+                window->setProperty("navIndex", count - 1);
+                QTimer::singleShot(300, window, [scrollTo] { scrollTo("supportCard"); });
+            } else if (page == count + 7) {
+                window->grabWindow().save(QString("%1/settings-support.png").arg(shotDir));
+                if (auto* popup = window->findChild<QObject*>("donatePopup")) QMetaObject::invokeMethod(popup, "open");
+            } else if (page == count + 8) {
+                window->grabWindow().save(QString("%1/donate.png").arg(shotDir));
+                if (auto* popup = window->findChild<QObject*>("donatePopup")) QMetaObject::invokeMethod(popup, "close");
+                // ...and last the Overview with nothing connected.
+                window->setProperty("navIndex", 0);
+                controller.disconnectDevice();
+            } else if (page == count + 9) {
+                window->grabWindow().save(QString("%1/overview-disconnected.png").arg(shotDir));
                 ticker->stop(); app.quit(); return;
             }
             if (page < count) window->setProperty("navIndex", page);

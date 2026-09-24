@@ -220,11 +220,11 @@ void TrayController::_update() {
     QString status;
     if (!connected) status = t("disconnected");
     else if (level >= 0) {
-        status = _controller.deviceName() + " · " + QString::number(level) + "%" + (charging ? " ⚡" : "");
+        status = _controller.displayName() + " · " + QString::number(level) + "%" + (charging ? " ⚡" : "");
         // The estimate is empty until the discharge session has enough data.
         const auto left = _controller.batteryTimeLeft();
         if (!left.isEmpty()) status += " · " + t("battery_time_left_short").arg(left);
-    } else status = _controller.deviceName();
+    } else status = _controller.displayName();
     _status->setText(status);
     _tray->setToolTip("Sony Device Center — " + status);
 

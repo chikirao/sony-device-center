@@ -23,6 +23,10 @@
 #include <QQuickStyle>
 #include <QDir>
 #include <QSettings>
+#include <QClipboard>
+#include <QRawFont>
+#include "I18nManager.h"
+#include <QGuiApplication>
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
 #include "sony/protocol/FrameCodec.h"
@@ -117,6 +121,14 @@ private slots:
         QVERIFY2(!engine.rootObjects().isEmpty(), qPrintable(warnings.join("\n")));
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
         QVERIFY(window);
+        // Pages load on their first visit and stay while the window is up:
+        // only the Overview exists yet. Open each once for the checks below.
+        QVERIFY(window->findChild<QObject*>("overviewPage"));
+        QVERIFY(!window->findChild<QObject*>("equalizerPage"));
+        QVERIFY(!window->findChild<QObject*>("settingsFlick"));
+        for (int page = 5; page >= 0; --page) window->setProperty("navIndex", page);
+        QVERIFY(window->findChild<QObject*>("equalizerPage"));
+        QVERIFY(window->findChild<QObject*>("settingsFlick"));
         if (model == "WH-1000XM3") {
             QVERIFY(controller.isConnected());
             QVERIFY(!controller.hasAutoPowerOff());
@@ -433,6 +445,45 @@ private slots:
             QTRY_VERIFY(!overviewSlider->isVisible());
         }
         window->setProperty("navIndex", 5); // the About card checks below need Settings shown
+        // Support: the fork's own links with the upstream credit, and the
+        // donation window's code and copy button.
+        {
+            auto* credit = window->findChild<QObject*>("upstreamCredit");
+            QVERIFY(credit);
+            QCOMPARE(credit->property("text").toString(), controller.t("credit_upstream"));
+            auto* donate = window->findChild<QObject*>("donatePopup");
+            QVERIFY(donate);
+            QVERIFY(QMetaObject::invokeMethod(donate, "open"));
+            QTRY_VERIFY(donate->property("opened").toBool());
+            auto* qr = window->findChild<QObject*>("donateQr");
+            auto* address = window->findChild<QObject*>("donateAddress");
+            auto* copy = window->findChild<QObject*>("donateCopy");
+            QVERIFY(qr && address && copy);
+            QCOMPARE(qr->property("modules").toInt(), 29);
+            QVERIFY(address->property("text").toString().startsWith("0x"));
+            QVERIFY(QMetaObject::invokeMethod(copy, "clicked"));
+            QCOMPARE(QGuiApplication::clipboard()->text(), address->property("text").toString());
+            QCOMPARE(copy->property("text").toString(), controller.t("donate_copied"));
+            QVERIFY(QMetaObject::invokeMethod(donate, "close"));
+            QTRY_VERIFY(!donate->property("visible").toBool());
+        }
+        // A local name replaces the model name in the header and the hub's
+        // list, the model moving under it; clearing it brings the model back.
+        {
+            auto* nameDots = window->findChild<QQuickItem*>("deviceNameDots");
+            QVERIFY(nameDots);
+            const auto address = controller.deviceAddress();
+            QVERIFY(!address.isEmpty());
+            const auto previousAlias = controller.aliasFor(address);
+            controller.setAlias(address, "Desk set");
+            QTRY_COMPARE(nameDots->property("text").toString(), QString("Desk set"));
+            const int row = peripherals.indexOf(address);
+            QVERIFY(row >= 0);
+            QCOMPARE(peripherals.get(row).value("name").toString(), QString("Desk set"));
+            QCOMPARE(peripherals.get(row).value("modelName").toString(), controller.deviceName());
+            controller.setAlias(address, previousAlias);
+            QTRY_COMPARE(nameDots->property("text").toString(), controller.displayName());
+        }
         // The regular-font option swaps every dot display for the body
         // face, persists, and switches back.
         const bool previousPlainFont = controller.plainFont();
@@ -499,6 +550,19 @@ private slots:
         QVERIFY(!window->property("advancedOpen").toBool());
         QTRY_VERIFY(!panelPower->isEnabled() && !sidebarPower->isEnabled());
         QVERIFY(sidebarState->property("text").toString() != controller.t("connected"));
+        // Nothing connected: the Overview offers the system's Bluetooth
+        // settings, where there are any to open.
+        auto* connectPrompt = window->findChild<QQuickItem*>("connectPrompt");
+        QVERIFY(connectPrompt);
+        QTRY_COMPARE(connectPrompt->isVisible(), DeviceCenterController::bluetoothSettingsAvailable());
+        // Hidden in the tray, the window keeps no page; shown again, only
+        // the current one comes back.
+        window->hide();
+        QTRY_VERIFY(!window->findChild<QObject*>("overviewPage"));
+        QVERIFY(!window->findChild<QObject*>("settingsFlick"));
+        window->show();
+        QTRY_VERIFY(window->findChild<QObject*>("overviewPage"));
+        QVERIFY(!window->findChild<QObject*>("settingsFlick"));
         controller.setThemeMode(previousTheme);
         controller.setLanguage(previousLanguage);
         QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join("\n")));
@@ -582,6 +646,50 @@ private slots:
         QSettings settings("SonyBridge", "SonyDeviceCenter");
         QCOMPARE(settings.value("ambientLevel").toInt(), 14);
         settings.setValue("ambientLevel", previousLevel);
+    }
+    void translationsStayInsideTheBundledFont() {
+        // A character Manrope lacks sends Qt through the system's fallback
+        // fonts, which cost the Settings page ~80 MB for one arrow. Japanese
+        // needs the fallback anyway; every other language must not.
+        QRawFont font(QString(":/fonts/Manrope-Regular.ttf"), 14.0);
+        QVERIFY(font.isValid());
+        for (const auto& entry : I18nManager::instance().availableLanguages()) {
+            const auto code = entry.toMap().value("code").toString();
+            if (code == "ja") continue;
+            for (const auto& text : I18nManager::instance().strings(code))
+                for (const auto ch : text)
+                    if (!ch.isSpace() && !font.supportsCharacter(ch))
+                        QFAIL(qPrintable(QString("%1: U+%2 in \"%3\"").arg(code).arg(int(ch.unicode()), 4, 16, QChar(u'0')).arg(text)));
+        }
+    }
+    void aliasesPersistByAddress() {
+        // Aliases key on the address in any spelling, survive a restart and
+        // go away when cleared; the device's own name is untouched.
+        const QString address = "AA:BB:CC:DD:EE:01";
+        const auto previous = QSettings("SonyBridge", "SonyDeviceCenter").value("deviceAliases");
+        {
+            DeviceCenterController controller(nullptr, std::make_shared<SlowService>());
+            QSignalSpy changed(&controller, &DeviceCenterController::aliasesChanged);
+            controller.setAlias("aa-bb-cc-dd-ee-01", "  Joe's   XM4 ");
+            QCOMPARE(changed.count(), 1);
+            QCOMPARE(controller.aliasFor(address), QString("Joe's XM4"));
+            controller.setAlias(address, "Joe's XM4");
+            QCOMPARE(changed.count(), 1);
+            controller.setAlias(address, QString(60, 'x'));
+            QCOMPARE(controller.aliasFor(address).size(), 40);
+            controller.setAlias(address, "Joe's XM4");
+            controller.setAlias("", "nobody");
+            QCOMPARE(controller.aliasFor(""), QString());
+        }
+        {
+            DeviceCenterController controller(nullptr, std::make_shared<SlowService>());
+            QCOMPARE(controller.aliasFor("aabbccddee01"), QString("Joe's XM4"));
+            controller.setAlias(address, "");
+            QCOMPARE(controller.aliasFor(address), QString());
+        }
+        QSettings settings("SonyBridge", "SonyDeviceCenter");
+        if (previous.isValid()) settings.setValue("deviceAliases", previous);
+        else QVERIFY(!settings.contains("deviceAliases"));
     }
     void trayIconReflectsBatteryAndConnection() {
         // Rendering is pure: no tray needed, so it runs headless too.

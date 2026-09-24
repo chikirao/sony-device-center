@@ -22,7 +22,7 @@ void NotificationController::_evaluate() {
     // Connection edges. The very first snapshot is a baseline, not an event:
     // starting the app next to already-connected headphones is not news.
     if (_seenState && connected != _wasConnected && _controller.notifyConnection()) {
-        if (connected) _notify(_controller.deviceName(), t("notify_connected"));
+        if (connected) _notify(_controller.displayName(), t("notify_connected"));
         else _notify(t("notify_disconnected_title"), t("notify_disconnected"));
     }
     _seenState = true;
@@ -40,7 +40,7 @@ void NotificationController::_evaluate() {
         _lowStepAnnounced = -1;
         if (level >= 100 && !_chargedAnnounced && _controller.notifyCharged()) {
             _chargedAnnounced = true;
-            _notify(_controller.deviceName(), t("notify_charged"));
+            _notify(_controller.displayName(), t("notify_charged"));
         }
         return;
     }
@@ -52,7 +52,7 @@ void NotificationController::_evaluate() {
     const int step = level <= kCriticalBattery && kCriticalBattery < threshold ? 1 : 0;
     if (step > _lowStepAnnounced && _controller.notifyLowBattery()) {
         _lowStepAnnounced = step;
-        _notify(_controller.deviceName(), t("notify_low_battery").arg(level));
+        _notify(_controller.displayName(), t("notify_low_battery").arg(level));
     }
 }
 

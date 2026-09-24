@@ -133,13 +133,24 @@ Rectangle {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 10
                 Rectangle {
+                    id: statusDot
                     width: 6; height: 6; radius: 3
                     color: controller.connected ? Theme.sidebarSuccess : Theme.sidebarTxtFaint
-                    SequentialAnimation on opacity {
-                        running: Theme.motionEnabled && controller.connected
-                        loops: Animation.Infinite
-                        NumberAnimation { to: 0.35; duration: Theme.duration(1200); easing.type: Easing.InOutQuad }
-                        NumberAnimation { to: 1.0; duration: Theme.duration(1200); easing.type: Easing.InOutQuad }
+                    // A few breaths when the link comes up, then still: a
+                    // pulse that never stopped redrew the window at the
+                    // display's rate, a tenth of a core for one dot. Started
+                    // on the change itself; a running binding restarted it
+                    // with every state update.
+                    readonly property bool live: controller.connected
+                    onLiveChanged: if (live && Theme.motionEnabled) pulse.restart(); else pulse.stop()
+                    Component.onCompleted: if (live && Theme.motionEnabled) pulse.restart()
+                    SequentialAnimation {
+                        id: pulse
+                        loops: 3
+                        // Cut short (link lost): not left half faded.
+                        onStopped: statusDot.opacity = 1
+                        NumberAnimation { target: statusDot; property: "opacity"; to: 0.35; duration: Theme.duration(1200); easing.type: Easing.InOutQuad }
+                        NumberAnimation { target: statusDot; property: "opacity"; to: 1.0; duration: Theme.duration(1200); easing.type: Easing.InOutQuad }
                     }
                 }
                 Text {

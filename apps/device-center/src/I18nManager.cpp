@@ -139,7 +139,6 @@ void I18nManager::_initTranslations() {
     en["framework"]                       = "Framework";
     en["license"]                         = "License";
     en["license_value"]                   = "MIT Open Source";
-    en["github_sponsorship"]              = "GitHub & Sponsorship";
     en["tray_show"]                       = "Open Sony Device Center";
     en["tray_quit"]                       = "Quit";
     en["minimize_to_tray"]                = "Keep Running in the Tray";
@@ -198,7 +197,7 @@ void I18nManager::_initTranslations() {
     en["hotkeys"]                         = "Hotkeys";
     en["hotkeys_desc"]                    = "System-wide shortcuts that work while the window is hidden.";
     en["hotkeys_unavailable"]             = "Global hotkeys are available on Windows only for now.";
-    en["hotkey_toggle_noise"]             = "Noise Cancelling ↔ Ambient Sound";
+    en["hotkey_toggle_noise"]             = "Noise Cancelling / Ambient Sound";
     en["hotkey_off"]                      = "Noise control off";
     en["hotkey_speak_to_chat"]            = "Toggle Speak-to-Chat";
     en["hotkey_show_window"]              = "Show window";
@@ -277,6 +276,20 @@ void I18nManager::_initTranslations() {
     en["advanced_desc"]                   = "Sound and device, one line each";
     en["close"]                           = "Close";
     en["apo_when_taken_off"]              = "When Taken Off";
+    en["support_subtitle"]                = "Source code and donations";
+    en["btn_upstream"]                    = "Original project";
+    en["credit_upstream"]                 = "A fork of sony-device-center by marconvcm and its contributors, under the MIT License.";
+    en["donate_title"]                    = "Support the project";
+    en["donate_crypto_desc"]              = "Donations are welcome in USDT. Scan the code with your wallet or copy the address.";
+    en["donate_network"]                  = "Network";
+    en["donate_network_warning"]          = "Send only on this network. Coins sent on another network can be lost.";
+    en["donate_copy"]                     = "Copy address";
+    en["donate_copied"]                   = "Copied";
+    en["connect_device"]                  = "Connect a device";
+    en["connect_device_hint"]             = "Connect the headphones in the system's Bluetooth settings; the app picks them up by itself.";
+    en["device_alias"]                    = "Name in this app";
+    en["device_alias_hint"]               = "Only this app shows it; the headphones keep their own name.";
+    en["device_alias_reset"]              = "Reset";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -374,7 +387,6 @@ void I18nManager::_initTranslations() {
     pt["framework"]                       = "Framework";
     pt["license"]                         = "Licença";
     pt["license_value"]                   = "Código Aberto MIT";
-    pt["github_sponsorship"]              = "GitHub e Apoio";
     pt["tray_show"]                       = "Abrir Sony Device Center";
     pt["tray_quit"]                       = "Sair";
     pt["minimize_to_tray"]                = "Manter na Bandeja";
@@ -433,7 +445,7 @@ void I18nManager::_initTranslations() {
     pt["hotkeys"]                         = "Atalhos de teclado";
     pt["hotkeys_desc"]                    = "Atalhos globais que funcionam mesmo com a janela oculta.";
     pt["hotkeys_unavailable"]             = "Por enquanto, os atalhos globais só estão disponíveis no Windows.";
-    pt["hotkey_toggle_noise"]             = "Cancelamento de ruído ↔ Som ambiente";
+    pt["hotkey_toggle_noise"]             = "Cancelamento de ruído / Som ambiente";
     pt["hotkey_off"]                      = "Desligar controle de ruído";
     pt["hotkey_speak_to_chat"]            = "Alternar Speak-to-Chat";
     pt["hotkey_show_window"]              = "Mostrar janela";
@@ -512,6 +524,20 @@ void I18nManager::_initTranslations() {
     pt["advanced_desc"]                   = "Som e dispositivo, uma linha cada";
     pt["close"]                           = "Fechar";
     pt["apo_when_taken_off"]              = "Ao Retirar";
+    pt["support_subtitle"]                = "Código-fonte e doações";
+    pt["btn_upstream"]                    = "Projeto original";
+    pt["credit_upstream"]                 = "Um fork do sony-device-center de marconvcm e colaboradores, sob a Licença MIT.";
+    pt["donate_title"]                    = "Apoie o projeto";
+    pt["donate_crypto_desc"]              = "Doações são bem-vindas em USDT. Escaneie o código com sua carteira ou copie o endereço.";
+    pt["donate_network"]                  = "Rede";
+    pt["donate_network_warning"]          = "Envie apenas por esta rede. Moedas enviadas por outra rede podem ser perdidas.";
+    pt["donate_copy"]                     = "Copiar endereço";
+    pt["donate_copied"]                   = "Copiado";
+    pt["connect_device"]                  = "Conectar um dispositivo";
+    pt["connect_device_hint"]             = "Conecte os fones nas configurações de Bluetooth do sistema; o app os encontra sozinho.";
+    pt["device_alias"]                    = "Nome neste app";
+    pt["device_alias_hint"]               = "Só este app o mostra; os fones mantêm o próprio nome.";
+    pt["device_alias_reset"]              = "Redefinir";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -609,7 +635,6 @@ void I18nManager::_initTranslations() {
     es["framework"]                       = "Framework";
     es["license"]                         = "Licencia";
     es["license_value"]                   = "Código Abierto MIT";
-    es["github_sponsorship"]              = "GitHub y Patrocinio";
     es["tray_show"]                       = "Abrir Sony Device Center";
     es["tray_quit"]                       = "Salir";
     es["minimize_to_tray"]                = "Mantener en la Bandeja";
@@ -668,7 +693,7 @@ void I18nManager::_initTranslations() {
     es["hotkeys"]                         = "Atajos de teclado";
     es["hotkeys_desc"]                    = "Atajos globales que funcionan aunque la ventana esté oculta.";
     es["hotkeys_unavailable"]             = "Por ahora, los atajos globales solo están disponibles en Windows.";
-    es["hotkey_toggle_noise"]             = "Cancelación de ruido ↔ Sonido ambiente";
+    es["hotkey_toggle_noise"]             = "Cancelación de ruido / Sonido ambiente";
     es["hotkey_off"]                      = "Control de ruido desactivado";
     es["hotkey_speak_to_chat"]            = "Alternar Speak-to-Chat";
     es["hotkey_show_window"]              = "Mostrar ventana";
@@ -747,6 +772,20 @@ void I18nManager::_initTranslations() {
     es["advanced_desc"]                   = "Sonido y dispositivo, una línea cada uno";
     es["close"]                           = "Cerrar";
     es["apo_when_taken_off"]              = "Al Quitárselos";
+    es["support_subtitle"]                = "Código fuente y donaciones";
+    es["btn_upstream"]                    = "Proyecto original";
+    es["credit_upstream"]                 = "Un fork de sony-device-center de marconvcm y sus colaboradores, bajo la Licencia MIT.";
+    es["donate_title"]                    = "Apoya el proyecto";
+    es["donate_crypto_desc"]              = "Las donaciones son bienvenidas en USDT. Escanea el código con tu billetera o copia la dirección.";
+    es["donate_network"]                  = "Red";
+    es["donate_network_warning"]          = "Envía solo por esta red. Las monedas enviadas por otra red pueden perderse.";
+    es["donate_copy"]                     = "Copiar dirección";
+    es["donate_copied"]                   = "Copiado";
+    es["connect_device"]                  = "Conectar un dispositivo";
+    es["connect_device_hint"]             = "Conecta los auriculares en los ajustes de Bluetooth del sistema; la app los detecta sola.";
+    es["device_alias"]                    = "Nombre en esta app";
+    es["device_alias_hint"]               = "Solo esta app lo muestra; los auriculares conservan su propio nombre.";
+    es["device_alias_reset"]              = "Restablecer";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -844,7 +883,6 @@ void I18nManager::_initTranslations() {
     de["framework"]                       = "Framework";
     de["license"]                         = "Lizenz";
     de["license_value"]                   = "MIT Open Source";
-    de["github_sponsorship"]              = "GitHub & Sponsoring";
     de["tray_show"]                       = "Sony Device Center öffnen";
     de["tray_quit"]                       = "Beenden";
     de["minimize_to_tray"]                = "Im Infobereich weiterlaufen";
@@ -903,7 +941,7 @@ void I18nManager::_initTranslations() {
     de["hotkeys"]                         = "Tastenkürzel";
     de["hotkeys_desc"]                    = "Systemweite Kürzel, die auch bei verstecktem Fenster wirken.";
     de["hotkeys_unavailable"]             = "Globale Tastenkürzel gibt es vorerst nur unter Windows.";
-    de["hotkey_toggle_noise"]             = "Noise Cancelling ↔ Umgebungsgeräusche";
+    de["hotkey_toggle_noise"]             = "Noise Cancelling / Umgebungsgeräusche";
     de["hotkey_off"]                      = "Geräuschsteuerung aus";
     de["hotkey_speak_to_chat"]            = "Speak-to-Chat umschalten";
     de["hotkey_show_window"]              = "Fenster anzeigen";
@@ -982,6 +1020,20 @@ void I18nManager::_initTranslations() {
     de["advanced_desc"]                   = "Klang und Gerät, je eine Zeile";
     de["close"]                           = "Schließen";
     de["apo_when_taken_off"]              = "Beim Abnehmen";
+    de["support_subtitle"]                = "Quellcode und Spenden";
+    de["btn_upstream"]                    = "Ursprüngliches Projekt";
+    de["credit_upstream"]                 = "Ein Fork von sony-device-center von marconvcm und Mitwirkenden, unter der MIT-Lizenz.";
+    de["donate_title"]                    = "Projekt unterstützen";
+    de["donate_crypto_desc"]              = "Spenden sind in USDT willkommen. Scanne den Code mit deiner Wallet oder kopiere die Adresse.";
+    de["donate_network"]                  = "Netzwerk";
+    de["donate_network_warning"]          = "Nur über dieses Netzwerk senden. Über ein anderes Netzwerk gesendete Coins können verloren gehen.";
+    de["donate_copy"]                     = "Adresse kopieren";
+    de["donate_copied"]                   = "Kopiert";
+    de["connect_device"]                  = "Gerät verbinden";
+    de["connect_device_hint"]             = "Verbinde die Kopfhörer in den Bluetooth-Einstellungen des Systems; die App erkennt sie von selbst.";
+    de["device_alias"]                    = "Name in dieser App";
+    de["device_alias_hint"]               = "Nur diese App zeigt ihn an; die Kopfhörer behalten ihren eigenen Namen.";
+    de["device_alias_reset"]              = "Zurücksetzen";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1079,7 +1131,6 @@ void I18nManager::_initTranslations() {
     fr["framework"]                       = "Framework";
     fr["license"]                         = "Licence";
     fr["license_value"]                   = "Open source MIT";
-    fr["github_sponsorship"]              = "GitHub et parrainage";
     fr["tray_show"]                       = "Ouvrir Sony Device Center";
     fr["tray_quit"]                       = "Quitter";
     fr["minimize_to_tray"]                = "Garder dans la zone de notification";
@@ -1138,7 +1189,7 @@ void I18nManager::_initTranslations() {
     fr["hotkeys"]                         = "Raccourcis clavier";
     fr["hotkeys_desc"]                    = "Raccourcis globaux actifs même quand la fenêtre est masquée.";
     fr["hotkeys_unavailable"]             = "Les raccourcis globaux ne sont disponibles que sous Windows pour l’instant.";
-    fr["hotkey_toggle_noise"]             = "Réduction de bruit ↔ Son ambiant";
+    fr["hotkey_toggle_noise"]             = "Réduction de bruit / Son ambiant";
     fr["hotkey_off"]                      = "Contrôle du bruit désactivé";
     fr["hotkey_speak_to_chat"]            = "Activer/désactiver Speak-to-Chat";
     fr["hotkey_show_window"]              = "Afficher la fenêtre";
@@ -1217,6 +1268,20 @@ void I18nManager::_initTranslations() {
     fr["advanced_desc"]                   = "Son et appareil, une ligne chacun";
     fr["close"]                           = "Fermer";
     fr["apo_when_taken_off"]              = "Lors du retrait";
+    fr["support_subtitle"]                = "Code source et dons";
+    fr["btn_upstream"]                    = "Projet d'origine";
+    fr["credit_upstream"]                 = "Un fork de sony-device-center de marconvcm et de ses contributeurs, sous licence MIT.";
+    fr["donate_title"]                    = "Soutenir le projet";
+    fr["donate_crypto_desc"]              = "Les dons sont les bienvenus en USDT. Scannez le code avec votre portefeuille ou copiez l'adresse.";
+    fr["donate_network"]                  = "Réseau";
+    fr["donate_network_warning"]          = "N'envoyez que sur ce réseau. Des fonds envoyés sur un autre réseau peuvent être perdus.";
+    fr["donate_copy"]                     = "Copier l'adresse";
+    fr["donate_copied"]                   = "Copié";
+    fr["connect_device"]                  = "Connecter un appareil";
+    fr["connect_device_hint"]             = "Connectez le casque dans les réglages Bluetooth du système ; l'app le détecte d'elle-même.";
+    fr["device_alias"]                    = "Nom dans cette app";
+    fr["device_alias_hint"]               = "Seule cette app l'affiche ; le casque garde son propre nom.";
+    fr["device_alias_reset"]              = "Réinitialiser";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1314,7 +1379,6 @@ void I18nManager::_initTranslations() {
     ja["framework"]                       = "フレームワーク";
     ja["license"]                         = "ライセンス";
     ja["license_value"]                   = "MIT オープンソース";
-    ja["github_sponsorship"]              = "GitHub とスポンサー";
     ja["tray_show"]                       = "Sony Device Center を開く";
     ja["tray_quit"]                       = "終了";
     ja["minimize_to_tray"]                = "トレイで実行し続ける";
@@ -1373,7 +1437,7 @@ void I18nManager::_initTranslations() {
     ja["hotkeys"]                         = "ホットキー";
     ja["hotkeys_desc"]                    = "ウィンドウが隠れていても使えるシステム全体のショートカット。";
     ja["hotkeys_unavailable"]             = "グローバルホットキーは現在 Windows のみ対応です。";
-    ja["hotkey_toggle_noise"]             = "ノイズキャンセリング ↔ 外音取り込み";
+    ja["hotkey_toggle_noise"]             = "ノイズキャンセリング / 外音取り込み";
     ja["hotkey_off"]                      = "ノイズコントロールをオフ";
     ja["hotkey_speak_to_chat"]            = "Speak-to-Chat を切り替え";
     ja["hotkey_show_window"]              = "ウィンドウを表示";
@@ -1452,6 +1516,20 @@ void I18nManager::_initTranslations() {
     ja["advanced_desc"]                   = "サウンドとデバイスを一行ずつ";
     ja["close"]                           = "閉じる";
     ja["apo_when_taken_off"]              = "取り外したとき";
+    ja["support_subtitle"]                = "ソースコードと寄付";
+    ja["btn_upstream"]                    = "元のプロジェクト";
+    ja["credit_upstream"]                 = "marconvcm と貢献者による sony-device-center のフォークです（MIT ライセンス）。";
+    ja["donate_title"]                    = "プロジェクトを支援";
+    ja["donate_crypto_desc"]              = "USDT での寄付を受け付けています。ウォレットでコードを読み取るか、アドレスをコピーしてください。";
+    ja["donate_network"]                  = "ネットワーク";
+    ja["donate_network_warning"]          = "このネットワークでのみ送金してください。別のネットワークで送ると失われることがあります。";
+    ja["donate_copy"]                     = "アドレスをコピー";
+    ja["donate_copied"]                   = "コピーしました";
+    ja["connect_device"]                  = "デバイスを接続";
+    ja["connect_device_hint"]             = "システムの Bluetooth 設定でヘッドホンを接続してください。アプリが自動で認識します。";
+    ja["device_alias"]                    = "このアプリでの名前";
+    ja["device_alias_hint"]               = "このアプリ内だけの名前です。ヘッドホン本体の名前は変わりません。";
+    ja["device_alias_reset"]              = "リセット";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1549,7 +1627,6 @@ void I18nManager::_initTranslations() {
     ru["framework"]                       = "Фреймворк";
     ru["license"]                         = "Лицензия";
     ru["license_value"]                   = "Открытый код, MIT";
-    ru["github_sponsorship"]              = "GitHub и поддержка";
     ru["tray_show"]                       = "Открыть Sony Device Center";
     ru["tray_quit"]                       = "Выход";
     ru["minimize_to_tray"]                = "Сворачивать в трей";
@@ -1608,7 +1685,7 @@ void I18nManager::_initTranslations() {
     ru["hotkeys"]                         = "Горячие клавиши";
     ru["hotkeys_desc"]                    = "Работают во всей системе, даже когда окно скрыто.";
     ru["hotkeys_unavailable"]             = "Глобальные хоткеи пока доступны только в Windows.";
-    ru["hotkey_toggle_noise"]             = "Шумоподавление ↔ Окружающий звук";
+    ru["hotkey_toggle_noise"]             = "Шумоподавление / Окружающий звук";
     ru["hotkey_off"]                      = "Выключить шумоподавление";
     ru["hotkey_speak_to_chat"]            = "Переключить Speak-to-Chat";
     ru["hotkey_show_window"]              = "Показать окно";
@@ -1687,6 +1764,20 @@ void I18nManager::_initTranslations() {
     ru["advanced_desc"]                   = "Звук и устройство, по строке на всё";
     ru["close"]                           = "Закрыть";
     ru["apo_when_taken_off"]              = "При снятии";
+    ru["support_subtitle"]                = "Исходный код и донаты";
+    ru["btn_upstream"]                    = "Исходный проект";
+    ru["credit_upstream"]                 = "Форк sony-device-center от marconvcm и участников проекта, под лицензией MIT.";
+    ru["donate_title"]                    = "Поддержать проект";
+    ru["donate_crypto_desc"]              = "Донаты принимаются в USDT. Отсканируйте код кошельком или скопируйте адрес.";
+    ru["donate_network"]                  = "Сеть";
+    ru["donate_network_warning"]          = "Отправляйте только в этой сети. Монеты, отправленные в другой сети, могут потеряться.";
+    ru["donate_copy"]                     = "Скопировать адрес";
+    ru["donate_copied"]                   = "Скопировано";
+    ru["connect_device"]                  = "Подключить устройство";
+    ru["connect_device_hint"]             = "Подключите наушники в настройках Bluetooth системы — приложение подхватит их само.";
+    ru["device_alias"]                    = "Имя в приложении";
+    ru["device_alias_hint"]               = "Видно только в этом приложении; у самих наушников имя не меняется.";
+    ru["device_alias_reset"]              = "Сбросить";
 }
 
 } // namespace sony::devicecenter

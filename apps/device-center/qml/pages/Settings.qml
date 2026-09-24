@@ -4,6 +4,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
 import "../components"
+import "../Donation.js" as Donation
 
 ViewPage {
     id: root
@@ -1035,14 +1036,19 @@ ViewPage {
                 }
             }
 
-            // Right Card: GitHub & Donate
+            // Right Card: source and donations. The credit line is the MIT
+            // notice's human half: where this code came from.
             Card { appWindow: root.appWindow;
+                objectName: "supportCard"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.preferredHeight: 184
+                Layout.preferredHeight: supportColumn.implicitHeight + 44
 
                 ColumnLayout {
-                    anchors.fill: parent
+                    id: supportColumn
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
                     anchors.margins: 22
                     spacing: 14
 
@@ -1076,7 +1082,8 @@ ViewPage {
                             }
                             Text {
                                 textFormat: Text.PlainText
-                                text: appWindow.tr("github_sponsorship")
+                                Layout.fillWidth: true
+                                text: appWindow.tr("support_subtitle")
                                 color: Theme.txtDim
                                 wrapMode: Text.Wrap
                                 font.pixelSize: 12
@@ -1091,27 +1098,45 @@ ViewPage {
                         color: Theme.txtDim
                         font.pixelSize: 12
                         wrapMode: Text.WordWrap
-                        maximumLineCount: 2
-                        elide: Text.ElideRight
                     }
 
-                    RowLayout {
+                    Flow {
+                        Layout.fillWidth: true
                         spacing: 10
+
+                        PillButton { appWindow: root.appWindow;
+                            objectName: "supportDonateButton"
+                            compact: true
+                            active: true
+                            tint: Theme.danger
+                            glyphPath: appWindow.icons.heart
+                            text: appWindow.tr("btn_donate")
+                            onClicked: donatePopup.open()
+                        }
 
                         PillButton { appWindow: root.appWindow;
                             compact: true
                             glyphPath: appWindow.icons.github
                             text: appWindow.tr("btn_github")
-                            onClicked: controller.openUrl("https://github.com/marconvcm/sony-device-center")
+                            onClicked: controller.openUrl("https://github.com/chikirao/sony-device-center")
                         }
 
                         PillButton { appWindow: root.appWindow;
                             compact: true
-                            tint: Theme.danger
-                            glyphPath: appWindow.icons.heart
-                            text: appWindow.tr("btn_donate")
-                            onClicked: controller.openUrl("https://github.com/sponsors/marconvcm")
+                            glyphPath: appWindow.icons.externalLink
+                            text: appWindow.tr("btn_upstream")
+                            onClicked: controller.openUrl("https://github.com/marconvcm/sony-device-center")
                         }
+                    }
+
+                    Text {
+                        objectName: "upstreamCredit"
+                        textFormat: Text.PlainText
+                        Layout.fillWidth: true
+                        text: appWindow.tr("credit_upstream")
+                        color: Theme.txtFaint
+                        font.pixelSize: 11
+                        wrapMode: Text.WordWrap
                     }
                 }
             }
@@ -1193,6 +1218,111 @@ ViewPage {
             Layout.alignment: settingRow.stacked ? Qt.AlignLeft : Qt.AlignVCenter
             implicitWidth: childrenRect.width
             implicitHeight: childrenRect.height
+        }
+    }
+
+    // The donation address, as a code to scan and as text to copy.
+    Popup {
+        id: donatePopup
+        objectName: "donatePopup"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        focus: true
+        padding: 24
+        width: Math.min(400, parent ? parent.width - 32 : 400)
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        onClosed: copiedTimer.stop()
+        background: Rectangle {
+            radius: Theme.cardRadius
+            color: Theme.surface
+            border.width: 1
+            border.color: Theme.lineHi
+        }
+        Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.35) }
+        Timer { id: copiedTimer; interval: 1800 }
+        contentItem: ColumnLayout {
+            spacing: 14
+            Text {
+                textFormat: Text.PlainText
+                Layout.fillWidth: true
+                text: appWindow.tr("donate_title")
+                color: Theme.txt
+                font.pixelSize: 18
+                font.weight: Font.DemiBold
+            }
+            Text {
+                textFormat: Text.PlainText
+                Layout.fillWidth: true
+                text: appWindow.tr("donate_crypto_desc")
+                color: Theme.txtDim
+                font.pixelSize: 12
+                wrapMode: Text.WordWrap
+            }
+            QrCode {
+                objectName: "donateQr"
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: 216
+                Layout.preferredHeight: 216
+                matrix: Donation.qr
+            }
+            // Coin and network first: a wrong network is how money gets lost.
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                Text {
+                    textFormat: Text.PlainText
+                    text: appWindow.tr("donate_network")
+                    color: Theme.txtDim
+                    font.pixelSize: 12
+                }
+                Item { Layout.fillWidth: true }
+                Text {
+                    textFormat: Text.PlainText
+                    text: Donation.coin + " · " + Donation.network
+                    color: Theme.txt
+                    font.pixelSize: 12
+                    font.weight: Font.DemiBold
+                }
+            }
+            TextEdit {
+                objectName: "donateAddress"
+                Layout.fillWidth: true
+                readOnly: true
+                selectByMouse: true
+                textFormat: TextEdit.PlainText
+                wrapMode: TextEdit.WrapAnywhere
+                horizontalAlignment: TextEdit.AlignHCenter
+                text: Donation.address
+                color: Theme.txt
+                selectionColor: Theme.accent
+                selectedTextColor: Theme.accentText
+                font.family: "Consolas"
+                font.pixelSize: 13
+            }
+            Text {
+                textFormat: Text.PlainText
+                Layout.fillWidth: true
+                text: appWindow.tr("donate_network_warning")
+                color: Theme.txtFaint
+                font.pixelSize: 11
+                wrapMode: Text.WordWrap
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                Item { Layout.fillWidth: true }
+                PillButton { appWindow: root.appWindow; compact: true; text: appWindow.tr("close"); onClicked: donatePopup.close() }
+                PillButton {
+                    objectName: "donateCopy"
+                    appWindow: root.appWindow
+                    compact: true
+                    active: true
+                    glyphPath: appWindow.icons.copy
+                    text: copiedTimer.running ? appWindow.tr("donate_copied") : appWindow.tr("donate_copy")
+                    onClicked: { controller.copyText(Donation.address); copiedTimer.restart() }
+                }
+            }
         }
     }
 }

@@ -43,6 +43,7 @@ public:
         ChargingRole,
         CodecRole,         // active Sony only, else ""
         NoiseModeRole,     // active Sony only: "cancelling" | "ambient" | "off" | "unknown"
+        ModelNameRole,     // the name the device reports; NameRole is the user's alias when set
     };
     Q_ENUM(Role)
 
@@ -54,6 +55,7 @@ public:
         bool charging{false};
         QString codec;
         QString noiseMode;
+        QString modelName;
         bool operator==(const Row&) const = default;
         // Rows without an address (an early snapshot) fall back to the name.
         [[nodiscard]] QString key() const;

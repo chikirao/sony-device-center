@@ -334,10 +334,15 @@ UI was built fast; this pass removes clutter, adds a few conveniences and
 measures resource use. One branch per item, in this order; every UI PR has
 before/after screenshots (en + ru, both themes).
 
-- [ ] **Own repository and donation links** (`fix/settings-links`). The
+- [x] **Own repository and donation links** (`fix/settings-links`). The
   Settings "GitHub & Sponsorship" card still points at the upstream repo
   and `github.com/sponsors/marconvcm`. Point it at this fork and its own
   donation link; keep a credit line for the original project.
+  Done (`feat/polish-final`): Donate opens a window with the USDT (ERC-20)
+  address as a dot-style QR code and a copy button
+  (`scripts/make-donation-qr.py`); GitHub goes to the fork, "Original
+  project" to upstream, and a credit line names marconvcm and the MIT
+  License. README and site carry the same address.
 - [x] **Equalizer presets in Headphones Connect order** (`fix/quick-ui-fixes`,
   first priority). Off, Bright, Excited, Mellow, Relaxed, Vocal, Treble
   Boost, Bass Boost, Speech, Manual — the order people know from the phone.
@@ -373,12 +378,17 @@ before/after screenshots (en + ru, both themes).
   Ambient Sound in use opens under its button (wide window) with the level
   slider and Focus on Voice. The Advanced panel has both too — its Ambient
   level line opens a slider in place — so narrow windows keep them.
-- [ ] **Connect button and local alias** (`feat/connect-and-alias`). With no
+- [x] **Connect button and local alias** (`feat/connect-and-alias`). With no
   device, a "Connect a device" button opens the OS Bluetooth settings. A
   per-address alias ("Joe's WH-1000XM4") kept in QSettings and shown in the
   app, hub and tray; never written to the headset, model name stays as
   secondary text. A "My Devices" screen of past devices is deferred.
-- [ ] **Lower memory and CPU** (`perf/lazy-pages`). Measure first (working
+  Done (`feat/polish-final`): the button sits in the Overview's ring
+  (`ms-settings:bluetooth`, macOS System Settings, the first of GNOME /
+  KDE / Cinnamon / Blueman / Blueberry on Linux; hidden when there is
+  none). "Name in this app" in the Advanced panel edits the alias in
+  place; `deviceAliases` in QSettings, 40 characters, empty clears it.
+- [x] **Lower memory and CPU** (`perf/lazy-pages`). Measure first (working
   set, private bytes, idle CPU in the tray; simulated and on the XM5). The
   main `StackLayout` keeps all pages alive — load the active page with a
   `Loader`; size hero images with `sourceSize` instead of 800×800 +
@@ -386,6 +396,24 @@ before/after screenshots (en + ru, both themes).
   scene while only the tray is up. Idle CPU should be zero between polls.
   Qt Quick will not go far below ~60–70 MB, so the goal is a measured drop,
   not a number.
+  Done (`feat/polish-final`), measured with `--simulated` on Windows 11,
+  animations on, 20 s idle after 12 s:
+
+  | | before | after |
+  | --- | --- | --- |
+  | Window up: working set / private | 214 / 174 MB | 118 / 120 MB |
+  | Window up: idle CPU | 12 % of a core | 0.2–1.3 % |
+  | Tray only: working set / private | 168 / 88 MB | 65 / 34 MB |
+  | Tray only: idle CPU | 2.8 % | 0.16 % |
+
+  What did it: the sidebar's "connected" dot pulsed forever and redrew the
+  window at the display's rate (now three breaths on connect); pages load
+  on their first visit and none is kept while the window is hidden, whose
+  scene resources are released; identical snapshots from the twice-a-second
+  poll no longer re-evaluate every binding; the hero image drops mipmaps.
+  Found on the way: the "↔" in a hotkey title was outside Manrope and the
+  font fallback cost the Settings page ~80 MB — a test now keeps every
+  translation but Japanese inside the bundled font.
 
 Not taken: dropping the device name when there is a picture (models look
 alike, and two Sony sets need telling apart); LDAC® / DSEE™ logo artwork

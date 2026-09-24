@@ -48,9 +48,11 @@ Sony locks headphone settings and telemetry behind their mobile-only apps (*Sony
 - ⏻ **Power Off** — Switch the headphones off from the app or `sonyctl power off`.
 - 🔋 **Live Battery & Charging State** — Real-time telemetry for over-ear models, plus individual Left, Right, and Case battery levels for True Wireless (TWS) earbuds.
 - 🧩 **Advanced Audio Features** — Speak-to-Chat, Adaptive Volume, and Auto Power-Off timeouts (dynamically enabled based on device capability profiles).
+- 🏷️ **Your Own Device Names** — call a set "Work headphones" in the app, the Device Hub and the tray; the headphones keep their own name, and the model stays under yours.
+- 🔗 **Connect Button** — with nothing connected, one click opens the system's Bluetooth settings; the app picks the headphones up from there.
 - 💾 **Preset Library** — keep any number of named custom curves on the PC, apply them with one click, import and export them as JSON.
 - 🔄 **Instant Reconnect** (Windows) — the app listens for Bluetooth link events and reconnects the moment the headphones come up, instead of at the next backed-off retry.
-- ⌨️ **Global Hotkeys** (Windows) — bind system-wide shortcuts to Noise Cancelling ↔ Ambient, Off, Speak-to-Chat and "show window"; off by default, with a toast naming the new mode.
+- ⌨️ **Global Hotkeys** (Windows) — bind system-wide shortcuts to Noise Cancelling / Ambient, Off, Speak-to-Chat and "show window"; off by default, with a toast naming the new mode.
 - 🧬 **Dual Protocol Support** — Automatically detects and communicates with both **Protocol V1** (legacy models) and **Protocol V2** (modern models with alternating-bit Stop-and-Wait ARQ).
 - 💻 **Flexible Architecture** — Run standalone via direct Bluetooth transport, or as a background daemon with CLI and GUI clients.
 
@@ -314,6 +316,7 @@ sony-device-center --simulated --simulated-history   # plus a synthetic week of 
 
 This project builds upon the foundational reverse-engineering work of the open-source audio community:
 
+- **[sony-device-center](https://github.com/marconvcm/sony-device-center)** by marconvcm & contributors — The project this fork is built on: the SDK, the daemon, the CLI and the first desktop app.
 - **[SonyHeadphonesClient](https://github.com/Plutoberth/SonyHeadphonesClient)** by Plutoberth, Mr-M33533K5 & contributors — The original cross-platform client that decoded Sony's first-generation Bluetooth protocol.
 - **[Gadgetbridge](https://codeberg.org/Freeyourgadget/Gadgetbridge)** — Open-source Android companion app providing extensive protocol specifications and reverse-engineering insights for modern Sony devices.
 - **[SonyBridge](https://github.com/AmitRajput-Dev/SonyBridge)** by Amit Rajput — Early exploration into second-generation V2 command layouts.
@@ -341,6 +344,27 @@ especially hardware reports, are the most valuable thing you can contribute.
 
 ---
 
+## ❤️ Support
+
+Sony Device Center is free and stays free. If it saves you a phone trip, a
+donation helps keep it going.
+
+<img src="docs/assets/donate-qr.svg" width="180" align="right" alt="QR code of the donation address">
+
+**USDT on Ethereum (ERC-20)**
+
+```
+0xB38514c1818F3bE86656b2E75D4B95bA02D14284
+```
+
+Send only USDT on the Ethereum network to this address; coins sent on
+another network can be lost. The same address and code are in the app,
+under Settings → Community & Support → Donate.
+
+<br clear="right">
+
+---
+
 ## ⚠️ Disclaimer
 
 Sony Device Center is an **independent open-source project**, free for anyone to use,
@@ -353,4 +377,7 @@ interoperability.
 
 ## 📄 License
 
-Distributed under the [MIT License](LICENSE).
+Distributed under the [MIT License](LICENSE). This is a fork of
+[marconvcm/sony-device-center](https://github.com/marconvcm/sony-device-center);
+the copyright notice in `LICENSE` is kept as the license requires, and the
+app's Settings page credits the original project.
