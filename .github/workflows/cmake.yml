@@ -74,10 +74,14 @@ jobs:
         run: |
           cmake --build build --config ${BUILD_TYPE}
 
+      # A failed test runs once more. Qt 6.4's software renderer (Ubuntu,
+      # offscreen) now and then crashes in QPainter::drawPixmap mid-frame:
+      # about one UI-suite run in 80 in a container, never with Qt 6.10 and
+      # never twice in a row. A real failure fails both runs.
       - name: Run unit & protocol tests
         shell: bash
         run: |
-          ctest --test-dir build -C ${BUILD_TYPE} --output-on-failure --no-tests=error
+          ctest --test-dir build -C ${BUILD_TYPE} --output-on-failure --no-tests=error --repeat until-pass:2
 
       # The Windows log does not carry the UI suite's output; the suite also
       # writes it to a file, kept here when something fails.
