@@ -15,6 +15,7 @@ PeripheralModel::PeripheralModel(DeviceCenterController& controller, IPeripheral
     connect(&_controller, &DeviceCenterController::stateChanged, this, &PeripheralModel::_rebuild);
     connect(&_controller, &DeviceCenterController::pairedDevicesChanged, this, &PeripheralModel::_rebuild);
     connect(&_source, &IPeripheralSource::changed, this, &PeripheralModel::_rebuild);
+    connect(&_controller, &DeviceCenterController::aliasesChanged, this, &PeripheralModel::_rebuild);
     _rows = _compose();
     _lastConnected = connectedCount();
     _lastCount = int(_rows.size());
@@ -41,6 +42,7 @@ QVariant PeripheralModel::data(const QModelIndex& index, int role) const {
     case ChargingRole: return row.charging;
     case CodecRole: return row.codec;
     case NoiseModeRole: return row.noiseMode;
+    case ModelNameRole: return row.modelName;
     }
     return {};
 }
@@ -51,6 +53,7 @@ QHash<int, QByteArray> PeripheralModel::roleNames() const {
         {BatteryRole, "battery"}, {BatteryLeftRole, "batteryLeft"}, {BatteryRightRole, "batteryRight"},
         {BatteryCaseRole, "batteryCase"}, {HasDualBatteryRole, "hasDualBattery"}, {SonyRole, "sony"},
         {ActiveRole, "active"}, {ChargingRole, "charging"}, {CodecRole, "codec"}, {NoiseModeRole, "noiseMode"},
+        {ModelNameRole, "modelName"},
     };
 }
 
@@ -159,6 +162,12 @@ QList<PeripheralModel::Row> PeripheralModel::_compose() const {
         row.peripheral = system;
         row.peripheral.address = address;
         rows.append(row);
+    }
+
+    // The user's names go on last: matching above is by what devices report.
+    for (auto& row : rows) {
+        row.modelName = row.peripheral.name;
+        if (const auto alias = _controller.aliasFor(row.peripheral.address); !alias.isEmpty()) row.peripheral.name = alias;
     }
 
     std::stable_sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) {

@@ -1,5 +1,6 @@
 #include "DeviceCenterController.h"
 #include "DeviceBackend.h"
+#include "PeripheralSource.h"
 #include <QJsonDocument>
 #include <QJsonArray>
 #include "I18nManager.h"
@@ -9,12 +10,15 @@
 #include "sony/protocol/EqualizerPresets.h"
 #include "sony/transport/PlatformTransport.h"
 
+#include <QClipboard>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QGuiApplication>
+#include <QProcess>
 #include <QSettings>
 #include <QTimer>
 #ifdef Q_OS_WIN
@@ -44,6 +48,7 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
     _iconAntialiasing = settings.value("iconAntialiasing", true).toBool();
     _animationsEnabled = settings.value("animationsEnabled", true).toBool();
     _plainFont = settings.value("plainFont", false).toBool();
+    _aliases = settings.value("deviceAliases").toMap();
 #ifdef Q_OS_WIN
     // Qt 6.10 exposes color scheme, but not the Windows animation preference.
     const auto updateMotion = [this] {
@@ -76,7 +81,11 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
     connect(&_worker, &QThread::started, _backend, &DeviceBackend::start);
     connect(&_worker, &QThread::finished, _backend, &QObject::deleteLater);
     connect(_backend, &DeviceBackend::snapshotReady, this, [this](const QByteArray& data, quint64 generation) {
-        if (generation == _generation) _applySnapshot(data);
+        // The backend polls twice a second and mostly hears the same
+        // state; only a change is worth re-evaluating every binding for.
+        if (generation != _generation || data == _lastSnapshot) return;
+        _lastSnapshot = data;
+        _applySnapshot(data);
     });
     connect(_backend, &DeviceBackend::devicesReady, this, [this](const QByteArray& data) {
         _pairedDevices = QJsonDocument::fromJson(data).array().toVariantList();
@@ -168,6 +177,29 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
 
 QString DeviceCenterController::deviceName() const { return _deviceName; }
 QString DeviceCenterController::deviceAddress() const { return _deviceAddress; }
+QString DeviceCenterController::displayName() const {
+    const auto alias = deviceAlias();
+    return alias.isEmpty() ? _deviceName : alias;
+}
+
+QString DeviceCenterController::aliasFor(const QString& address) const {
+    const auto key = normalizePeripheralAddress(address);
+    return key.isEmpty() ? QString() : _aliases.value(key).toString();
+}
+
+void DeviceCenterController::setAlias(const QString& address, const QString& alias) {
+    const auto key = normalizePeripheralAddress(address);
+    if (key.isEmpty()) return;
+    const auto name = alias.simplified().left(40);
+    if (name == aliasFor(key)) return;
+    if (name.isEmpty()) _aliases.remove(key);
+    else _aliases.insert(key, name);
+    QSettings settings("SonyBridge", "SonyDeviceCenter");
+    if (_aliases.isEmpty()) settings.remove("deviceAliases");
+    else settings.setValue("deviceAliases", _aliases);
+    emit aliasesChanged();
+    emit stateChanged();
+}
 bool DeviceCenterController::isConnected() const { return _connected; }
 int DeviceCenterController::batteryLevel() const { return _batteryLevel; }
 bool DeviceCenterController::isCharging() const { return _isCharging; }
@@ -455,6 +487,43 @@ QString DeviceCenterController::t(const QString& key) const {
 
 void DeviceCenterController::openUrl(const QString& url) {
     QDesktopServices::openUrl(QUrl(url));
+}
+
+void DeviceCenterController::copyText(const QString& text) {
+    if (auto* clipboard = QGuiApplication::clipboard()) clipboard->setText(text);
+}
+
+namespace {
+#if !defined(Q_OS_WIN) && !defined(Q_OS_MACOS)
+// Desktop Bluetooth panels, in the order they are tried.
+const QList<QStringList> kLinuxBluetoothPanels{
+    {"gnome-control-center", "bluetooth"}, {"systemsettings", "kcm_bluetooth"},
+    {"cinnamon-settings", "bluetooth"}, {"blueman-manager"}, {"blueberry"},
+};
+#endif
+} // namespace
+
+bool DeviceCenterController::bluetoothSettingsAvailable() {
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+    return true;
+#else
+    return std::any_of(kLinuxBluetoothPanels.begin(), kLinuxBluetoothPanels.end(),
+                       [](const QStringList& panel) { return !QStandardPaths::findExecutable(panel.first()).isEmpty(); });
+#endif
+}
+
+bool DeviceCenterController::openBluetoothSettings() {
+#if defined(Q_OS_WIN)
+    return QDesktopServices::openUrl(QUrl("ms-settings:bluetooth"));
+#elif defined(Q_OS_MACOS)
+    return QDesktopServices::openUrl(QUrl("x-apple.systempreferences:com.apple.BluetoothSettings"));
+#else
+    for (const auto& panel : kLinuxBluetoothPanels) {
+        const auto program = QStandardPaths::findExecutable(panel.first());
+        if (!program.isEmpty() && QProcess::startDetached(program, panel.mid(1))) return true;
+    }
+    return false;
+#endif
 }
 
 } // namespace sony::devicecenter

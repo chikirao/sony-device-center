@@ -82,13 +82,41 @@ ViewPage {
                 sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
                 fillMode: Image.PreserveAspectFit
                 smooth: true
-                mipmap: true
                 source: "qrc:/" + controller.heroImagePath
-                opacity: controller.connected ? 1.0 : 0.4
+                opacity: controller.connected ? 1.0 : connectPrompt.visible ? 0.16 : 0.4
                 scale: productHover.hovered ? 1.03 : 1.0
                 Behavior on scale { NumberAnimation { duration: Theme.duration(320); easing.type: Easing.OutCubic } }
                 Behavior on opacity { NumberAnimation { duration: Theme.tSlow } }
                 HoverHandler { id: productHover }
+            }
+            // Nothing connected: the way to the system's Bluetooth settings,
+            // where the headset is connected; the app finds it from there.
+            ColumnLayout {
+                id: connectPrompt
+                objectName: "connectPrompt"
+                visible: !controller.connected && controller.bluetoothSettingsAvailable
+                // Over the faded product, inside the ring.
+                anchors.centerIn: parent
+                width: Math.min(stage.ringSize * 0.62, 280)
+                spacing: 10
+                PillButton {
+                    objectName: "connectDeviceButton"
+                    appWindow: root.appWindow
+                    Layout.alignment: Qt.AlignHCenter
+                    active: true
+                    glyphPath: appWindow.icons.bluetooth
+                    text: appWindow.tr("connect_device")
+                    onClicked: controller.openBluetoothSettings()
+                }
+                Text {
+                    textFormat: Text.PlainText
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    text: appWindow.tr("connect_device_hint")
+                    color: Theme.txt
+                    font.pixelSize: 12
+                    wrapMode: Text.Wrap
+                }
             }
         }
 

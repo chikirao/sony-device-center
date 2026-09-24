@@ -181,7 +181,13 @@ ViewPage {
                 Text {
                     Layout.fillWidth: true
                     textFormat: Text.PlainText
-                    text: devCard.modelData.name
+                    // displayName is read for its change signal: a new alias
+                    // anywhere emits it, aliasFor() alone would not rebind.
+                    text: {
+                        var _ = controller.displayName
+                        var alias = controller.aliasFor(devCard.modelData.address)
+                        return alias !== "" ? alias : devCard.modelData.name
+                    }
                     color: Theme.txt
                     font.pixelSize: 15
                     font.weight: Font.DemiBold

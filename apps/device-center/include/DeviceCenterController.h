@@ -26,6 +26,12 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(QVariantMap featureStatus READ featureStatus NOTIFY stateChanged)
     Q_PROPERTY(QString deviceName READ deviceName NOTIFY stateChanged)
     Q_PROPERTY(QString deviceAddress READ deviceAddress NOTIFY stateChanged)
+    // The user's own name for the device in use ("" when none), and what
+    // the app shows: that name, else the model name the device reports.
+    Q_PROPERTY(QString deviceAlias READ deviceAlias NOTIFY stateChanged)
+    Q_PROPERTY(QString displayName READ displayName NOTIFY stateChanged)
+    // Whether openBluetoothSettings() has something to open on this system.
+    Q_PROPERTY(bool bluetoothSettingsAvailable READ bluetoothSettingsAvailable CONSTANT)
     Q_PROPERTY(bool connected READ isConnected NOTIFY stateChanged)
     Q_PROPERTY(int batteryLevel READ batteryLevel NOTIFY stateChanged)
     Q_PROPERTY(bool isCharging READ isCharging NOTIFY stateChanged)
@@ -101,6 +107,12 @@ public:
     Q_INVOKABLE void clearError() { _lastError.clear(); emit stateChanged(); }
     [[nodiscard]] QString deviceName() const;
     [[nodiscard]] QString deviceAddress() const;
+    [[nodiscard]] QString deviceAlias() const { return aliasFor(_deviceAddress); }
+    [[nodiscard]] QString displayName() const;
+    // Local names by address, kept in QSettings and never written to the
+    // headset. An empty alias removes the entry.
+    Q_INVOKABLE QString aliasFor(const QString& address) const;
+    Q_INVOKABLE void setAlias(const QString& address, const QString& alias);
     [[nodiscard]] bool isConnected() const;
     [[nodiscard]] int batteryLevel() const;
     [[nodiscard]] bool isCharging() const;
@@ -190,6 +202,11 @@ public:
     Q_INVOKABLE void setLanguage(const QString& langCode);
     Q_INVOKABLE QString t(const QString& key) const;
     Q_INVOKABLE void openUrl(const QString& url);
+    Q_INVOKABLE void copyText(const QString& text);
+    // The system's Bluetooth settings, where a headset is paired and
+    // connected; the app picks it up from there by itself.
+    [[nodiscard]] static bool bluetoothSettingsAvailable();
+    Q_INVOKABLE bool openBluetoothSettings();
 
     Q_INVOKABLE void connectDevice(const QString& address, const QString& name = "");
     Q_INVOKABLE void disconnectDevice();
@@ -208,6 +225,7 @@ signals:
     void notificationSettingsChanged();
     void languageChanged();
     void appearanceChanged();
+    void aliasesChanged();
 
 private:
     void _applySnapshot(const QByteArray& data);
@@ -215,6 +233,7 @@ private:
     [[nodiscard]] int _ratedMinutesLeft() const;
     void _send(const QString& method, const QJsonObject& params = {});
     QList<QPair<QString, QJsonObject>> _pending;
+    QByteArray _lastSnapshot;
     std::unique_ptr<BatteryHistory> _history;
     QThread _worker;
     DeviceBackend* _backend{nullptr};
@@ -243,6 +262,7 @@ private:
     bool _adaptiveVolume{false};
     int _autoPowerOff{0};
     QVariantList _pairedDevices;
+    QVariantMap _aliases;
     QString _themeMode{"dark"};
     bool _animationsEnabled{true};
     bool _plainFont{false};

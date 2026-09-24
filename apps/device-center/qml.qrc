@@ -19,6 +19,7 @@
         <file>qml/components/DeviceHeader.qml</file>
         <file>qml/components/SectionTitle.qml</file>
         <file>qml/DotGlyphs.js</file>
+        <file>qml/Donation.js</file>
         <file alias="fonts/Manrope-Regular.ttf">../../assets/fonts/Manrope/Manrope-Regular.ttf</file>
         <file alias="fonts/Manrope-Medium.ttf">../../assets/fonts/Manrope/Manrope-Medium.ttf</file>
         <file alias="fonts/Manrope-SemiBold.ttf">../../assets/fonts/Manrope/Manrope-SemiBold.ttf</file>
@@ -27,6 +28,7 @@
         <file>qml/components/IconButton.qml</file>
         <file>qml/components/ModeRing.qml</file>
         <file>qml/components/ModeButton.qml</file>
+        <file>qml/components/QrCode.qml</file>
         <file>qml/components/AdvancedPanel.qml</file>
         <file>qml/components/WheelScroll.qml</file>
         <file>qml/pages/Overview.qml</file>

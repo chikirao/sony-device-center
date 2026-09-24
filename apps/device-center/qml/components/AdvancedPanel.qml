@@ -202,6 +202,87 @@ Item {
                 Divider {}
 
                 // Device
+                // The app's own name for the headset opens a field in place.
+                Row_ {
+                    id: aliasRow
+                    objectName: "advancedAliasRow"
+                    appWindow: panel.appWindow
+                    enabled: controller.connected && controller.deviceAddress !== ""
+                    property bool expanded: false
+                    glyph: appWindow.icons.pencil
+                    title: appWindow.tr("device_alias")
+                    value: controller.deviceAlias !== "" ? controller.deviceAlias : "—"
+                    chevronAngle: expanded ? 90 : 0
+                    onClicked: {
+                        expanded = !expanded
+                        if (expanded) {
+                            aliasField.text = controller.deviceAlias
+                            aliasField.forceActiveFocus()
+                        }
+                    }
+                    onEnabledChanged: if (!enabled) expanded = false
+                }
+                ColumnLayout {
+                    visible: aliasRow.expanded
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 40
+                    Layout.rightMargin: 6
+                    Layout.topMargin: 2
+                    Layout.bottomMargin: 8
+                    spacing: 8
+                    TextField {
+                        id: aliasField
+                        objectName: "advancedAliasField"
+                        Layout.fillWidth: true
+                        implicitHeight: 36
+                        leftPadding: 12; rightPadding: 12
+                        color: Theme.sidebarTxt
+                        placeholderText: controller.deviceName
+                        placeholderTextColor: Theme.sidebarTxtFaint
+                        font.pixelSize: 13
+                        selectByMouse: true
+                        maximumLength: 40
+                        background: Rectangle {
+                            radius: Theme.controlRadius
+                            color: Theme.sidebarSurfaceSunk
+                            border.width: 1
+                            border.color: aliasField.activeFocus ? Theme.sidebarAccent : Theme.sidebarLine
+                        }
+                        // Enter, or leaving the field, keeps what is typed; an
+                        // empty field goes back to the model name.
+                        onEditingFinished: controller.setAlias(controller.deviceAddress, text)
+                        onAccepted: aliasRow.expanded = false
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 10
+                        Text {
+                            textFormat: Text.PlainText
+                            Layout.fillWidth: true
+                            text: appWindow.tr("device_alias_hint")
+                            color: Theme.sidebarTxtDim
+                            font.pixelSize: 11
+                            wrapMode: Text.Wrap
+                        }
+                        Text {
+                            objectName: "advancedAliasReset"
+                            textFormat: Text.PlainText
+                            visible: controller.deviceAlias !== ""
+                            Layout.alignment: Qt.AlignTop
+                            text: appWindow.tr("device_alias_reset")
+                            color: Theme.sidebarTxt
+                            font.pixelSize: 11
+                            font.underline: true
+                            HoverHandler { cursorShape: Qt.PointingHandCursor }
+                            TapHandler {
+                                onTapped: {
+                                    aliasField.text = ""
+                                    controller.setAlias(controller.deviceAddress, "")
+                                }
+                            }
+                        }
+                    }
+                }
                 Row_ {
                     appWindow: panel.appWindow
                     objectName: "advancedAutoPowerOff"

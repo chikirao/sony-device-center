@@ -39,6 +39,21 @@ ApplicationWindow {
     // Page numbers by name, in the order of the page stack below.
     readonly property var pages: ({ overview: 0, equalizer: 1, features: 2, devices: 3, battery: 4, settings: 5 })
     property bool advancedOpen: false
+    // Pages are built on their first visit and kept while the window is up;
+    // hidden in the tray, none is (a hidden scene still holds its memory).
+    property var visitedPages: ({})
+    onNavIndexChanged: markVisited()
+    onVisibleChanged: if (!visible) visitedPages = ({})
+    function markVisited() {
+        if (visitedPages[navIndex]) return
+        var visited = Object.assign({}, visitedPages)
+        visited[navIndex] = true
+        visitedPages = visited
+    }
+    component PageSlot: Loader {
+        required property int page
+        active: window.visible && (window.navIndex === page || window.visitedPages[page] === true)
+    }
     readonly property bool compact: width < 760
     // Below this the page is too narrow for two cards side by side (the
     // sidebar still takes its full width down to 760).
@@ -106,7 +121,9 @@ ApplicationWindow {
         mouse:      "M12 3a6 6 0 0 1 6 6v6a6 6 0 0 1-12 0V9a6 6 0 0 1 6-6z M12 3v6",
         gamepad:    "M7.5 7.5h9a5 5 0 0 1 4.8 6.4l-1 3.4a2.2 2.2 0 0 1-3.8.7L14.5 15.5h-5l-2 2.5a2.2 2.2 0 0 1-3.8-.7l-1-3.4A5 5 0 0 1 7.5 7.5z M8 10.8v3.4 M6.3 12.5h3.4 M15.2 11.6h.01 M17.6 13.6h.01",
         noiseOff:   "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M6.4 6.4l11.2 11.2",
-        pin:        "M12 16v5.5 M8.5 3h7l-1 6.5 3 3.5h-11l3-3.5z"
+        pin:        "M12 16v5.5 M8.5 3h7l-1 6.5 3 3.5h-11l3-3.5z",
+        pencil:     "M4 20h4.2L19 9.2 14.8 5 4 15.8z M12.6 7.2l4.2 4.2",
+        copy:       "M9 9h10.5a1.5 1.5 0 0 1 1.5 1.5V20a1.5 1.5 0 0 1-1.5 1.5H10.5A1.5 1.5 0 0 1 9 20z M5.5 15H4.5A1.5 1.5 0 0 1 3 13.5V4.5A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5v1"
     })
 
     // ==========================================================
@@ -144,12 +161,12 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 currentIndex: window.navIndex
 
-                Overview { appWindow: window }
-                Equalizer { appWindow: window }
-                Features { appWindow: window }
-                DeviceSwitcher { appWindow: window }
-                Battery { appWindow: window }
-                Settings { appWindow: window }
+                PageSlot { page: window.pages.overview; sourceComponent: Component { Overview { appWindow: window } } }
+                PageSlot { page: window.pages.equalizer; sourceComponent: Component { Equalizer { appWindow: window } } }
+                PageSlot { page: window.pages.features; sourceComponent: Component { Features { appWindow: window } } }
+                PageSlot { page: window.pages.devices; sourceComponent: Component { DeviceSwitcher { appWindow: window } } }
+                PageSlot { page: window.pages.battery; sourceComponent: Component { Battery { appWindow: window } } }
+                PageSlot { page: window.pages.settings; sourceComponent: Component { Settings { appWindow: window } } }
             }
 
             // Status strip: errors and work in progress only. The connection
