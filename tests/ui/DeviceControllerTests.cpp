@@ -123,12 +123,18 @@ private slots:
         QVERIFY(window);
         // Pages load on their first visit and stay while the window is up:
         // only the Overview exists yet. Open each once for the checks below.
-        QVERIFY(window->findChild<QObject*>("overviewPage"));
+        // Qt 6.4 (Linux CI) shows the window a moment after load, and the
+        // pages wait for that.
+        QVERIFY(QTest::qWaitForWindowExposed(window));
+        QTRY_VERIFY(window->findChild<QObject*>("overviewPage"));
         QVERIFY(!window->findChild<QObject*>("equalizerPage"));
         QVERIFY(!window->findChild<QObject*>("settingsFlick"));
-        for (int page = 5; page >= 0; --page) window->setProperty("navIndex", page);
-        QVERIFY(window->findChild<QObject*>("equalizerPage"));
-        QVERIFY(window->findChild<QObject*>("settingsFlick"));
+        for (int page = 5; page >= 0; --page) {
+            window->setProperty("navIndex", page);
+            QTest::qWait(10);
+        }
+        QTRY_VERIFY(window->findChild<QObject*>("equalizerPage"));
+        QTRY_VERIFY(window->findChild<QObject*>("settingsFlick"));
         if (model == "WH-1000XM3") {
             QVERIFY(controller.isConnected());
             QVERIFY(!controller.hasAutoPowerOff());
