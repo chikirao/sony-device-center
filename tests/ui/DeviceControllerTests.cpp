@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <QPointer>
 #include "DeviceCenterController.h"
 #include "TrayController.h"
 #include "NotificationController.h"
@@ -421,6 +422,13 @@ private slots:
             QVERIFY(overviewPage);
             const bool wide = overviewPage->property("wide").toBool();
             QTRY_COMPARE(overviewSlider->isVisible(), wide);
+            // A level change must not rebuild the buttons: the slider under a
+            // dragging finger would go with them and drop the drag.
+            QPointer<QQuickItem> sliderBefore(overviewSlider);
+            controller.setAmbient(controller.ambientLevel() == 20 ? 19 : controller.ambientLevel() + 1, controller.focusOnVoice());
+            QTest::qWait(300);
+            QVERIFY(sliderBefore);
+            QCOMPARE(find(window->contentItem(), "modeButton_ambient"), ambientButton);
             controller.setAnc(true);
             QTRY_VERIFY(!overviewSlider->isVisible());
         }

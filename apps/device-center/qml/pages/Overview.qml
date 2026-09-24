@@ -19,7 +19,7 @@ ViewPage {
         { mode: "cancelling", title: appWindow.tr("noise_cancelling"), glyph: appWindow.icons.shield, show: controller.hasAnc,
           detail: appWindow.tr("mode_short_cancelling"), longDetail: appWindow.tr("nc_desc_cancelling") },
         { mode: "ambient", title: appWindow.tr("ambient_sound"), glyph: appWindow.icons.ambient, show: controller.hasAmbient,
-          detail: appWindow.tr("mode_short_ambient"), longDetail: appWindow.tr("nc_desc_ambient").arg(controller.ambientLevel) },
+          detail: appWindow.tr("mode_short_ambient"), longDetail: appWindow.tr("nc_desc_ambient") },
         { mode: "off", title: appWindow.tr("noise_control_off"), glyph: appWindow.icons.power, show: true,
           detail: appWindow.tr("nc_card_off"), longDetail: appWindow.tr("nc_desc_off") }
     ]
@@ -117,7 +117,11 @@ ViewPage {
                         tile: !root.wide
                         glyphPath: modelData.glyph
                         title: modelData.title
-                        detail: root.wide ? modelData.longDetail : modelData.detail
+                        // The level goes in here, not in the model: a model that
+                        // changed with the level rebuilt every button, and the
+                        // slider under the finger with them, on each step.
+                        detail: !root.wide ? modelData.detail
+                              : modelData.mode === "ambient" ? modelData.longDetail.arg(controller.ambientLevel) : modelData.longDetail
                         current: root.mode === modelData.mode
                         enabled: controller.connected
                         onClicked: root.apply(modelData.mode)
