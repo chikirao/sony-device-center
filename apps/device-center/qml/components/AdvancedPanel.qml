@@ -324,14 +324,17 @@ Item {
 
                 // Readout: what the link carries.
                 Rectangle {
+                    objectName: "advancedReadoutCard"
                     Layout.fillWidth: true
                     Layout.topMargin: 16
-                    implicitHeight: 72
+                    // Sized from the readouts, so the dots keep the same inset as the labels.
+                    implicitHeight: readoutRow.implicitHeight + 2 * readoutRow.anchors.margins
                     radius: Theme.cardRadius
                     color: Theme.sidebarSurfaceSunk
                     border.width: 1
                     border.color: Theme.sidebarLine
                     RowLayout {
+                        id: readoutRow
                         anchors.fill: parent
                         anchors.margins: 16
                         spacing: 16

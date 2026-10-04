@@ -392,6 +392,15 @@ private slots:
         QTRY_VERIFY(panel->mapToScene(QPointF(panel->width(), 0)).x() <= window->width() + 0.5);
         QCOMPARE(window->findChild<QObject*>("advancedCodec")->property("value").toString(),
                  controller.codec() == "Unknown" ? QString::fromUtf8("—") : controller.codec());
+        // The readout card keeps its inset below the dots as well as above the
+        // label; a fixed card height let the dots run down onto the border.
+        auto* readoutCard = window->findChild<QQuickItem*>("advancedReadoutCard");
+        auto* codecReadout = window->findChild<QQuickItem*>("advancedCodec");
+        QVERIFY(readoutCard && codecReadout);
+        const QRectF readoutContent = codecReadout->mapRectToItem(readoutCard, codecReadout->childrenRect());
+        QVERIFY2(readoutContent.top() >= 16 - 0.5 && readoutContent.bottom() <= readoutCard->height() - 16 + 0.5,
+                 qPrintable(QString("readout content spans %1..%2 in a %3 px card")
+                     .arg(readoutContent.top()).arg(readoutContent.bottom()).arg(readoutCard->height())));
         if (!output.isEmpty()) {
             QTest::qWait(500);
             QVERIFY(window->grabWindow().save(QString("%1/advanced-%2-%3-%4.png").arg(output, model, language).arg(size.width())));
