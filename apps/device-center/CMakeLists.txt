@@ -107,7 +107,8 @@ if(APPLE)
     set(MACOSX_BUNDLE_ICON_FILE "AppIcon.icns")
     set_source_files_properties("${SONY_APP_ICNS}" PROPERTIES
         MACOSX_PACKAGE_LOCATION "Resources")
-    target_sources(sony-device-center PRIVATE "${SONY_APP_ICNS}")
+    target_sources(sony-device-center PRIVATE "${SONY_APP_ICNS}" src/DockReopen.mm src/MacPanel.mm)
+    target_link_libraries(sony-device-center PRIVATE "-framework AppKit")
 
     set_target_properties(sony-device-center PROPERTIES
         MACOSX_BUNDLE ON
@@ -198,6 +199,10 @@ if(BUILD_TESTING)
         target_include_directories(sony-ui-tests PRIVATE include)
         if(WIN32)
             target_link_libraries(sony-ui-tests PRIVATE WindowsApp bthprops setupapi)
+        endif()
+        if(APPLE)
+            target_sources(sony-ui-tests PRIVATE src/MacPanel.mm include/MacPanel.h)
+            target_link_libraries(sony-ui-tests PRIVATE "-framework AppKit")
         endif()
         target_compile_definitions(sony-ui-tests PRIVATE SONY_DEVICE_CENTER_VERSION="${SonyDeviceCenter_VERSION}")
         target_link_libraries(sony-ui-tests PRIVATE Qt6::Test Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Qml Qt6::Quick Qt6::QuickControls2 sony-core)

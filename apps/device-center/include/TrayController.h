@@ -6,12 +6,12 @@
 #include <QPointer>
 #include <QRect>
 #include <QString>
+#include <QSystemTrayIcon>
 
 #include "PeripheralSource.h"
 
 class QAction;
 class QMenu;
-class QSystemTrayIcon;
 class QWindow;
 
 namespace sony::devicecenter {
@@ -46,6 +46,11 @@ public:
     // Rendered tray glyph: a ring showing charge level with the percentage
     // inside. Grey when disconnected. Exposed for tests and previews.
     static QIcon renderIcon(int level, bool charging, bool connected, int size = 64);
+    // What a tray click means, given the keyboard modifiers held during it. On
+    // macOS a Control-click is the secondary click, which the status button
+    // reports as a plain click.
+    static QSystemTrayIcon::ActivationReason effectiveReason(QSystemTrayIcon::ActivationReason reason,
+                                                             Qt::KeyboardModifiers modifiers);
     // The same ring and number with a device-class badge in the corner, for
     // the per-device icons.
     static QIcon renderDeviceIcon(int level, bool connected, PeripheralKind kind, int size = 64);

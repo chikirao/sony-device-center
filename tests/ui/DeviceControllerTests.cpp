@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <QSignalSpy>
 #include <QPointer>
 #include "DeviceCenterController.h"
 #include "TrayController.h"
@@ -9,6 +10,7 @@
 #include "UpdateChecker.h"
 #include "HubSettings.h"
 #include "HubWindow.h"
+#include "MacPanel.h"
 #include "PeripheralModel.h"
 #include "PeripheralSource.h"
 #include "../support/FakeReleaseFetcher.h"
@@ -241,6 +243,18 @@ private slots:
         if (!output.isEmpty()) {
             QTest::qWait(700);
             QVERIFY(hub.window()->grabWindow().save(QString("%1/hub-%2-%3-dark.png").arg(output, model, language)));
+        }
+        // The gear asks for the main window's Settings page. Page numbers are
+        // named in Main.qml; the hub's old literal 6 pointed past the last page
+        // and opened an empty window.
+        {
+            auto* gear = findItem(hub.window()->contentItem(), "hubSettings");
+            QVERIFY(gear);
+            QSignalSpy requested(&hub, &sony::devicecenter::HubWindow::mainWindowRequested);
+            QTest::mouseClick(hub.window(), Qt::LeftButton, Qt::NoModifier,
+                              gear->mapToScene(QPointF(gear->width() / 2, gear->height() / 2)).toPoint());
+            QTRY_COMPARE(requested.count(), 1);
+            QCOMPARE(requested.first().first().toInt(), window->property("pages").toMap().value("settings").toInt());
         }
         // Esc closes; key events only reach the card once the window holds
         // focus, which is also what a real Esc press implies.
@@ -573,6 +587,25 @@ private slots:
         controller.setLanguage(previousLanguage);
         QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join("\n")));
     }
+    void trayClickMeaning() {
+        using Tray = QSystemTrayIcon;
+        QCOMPARE(TrayController::effectiveReason(Tray::Trigger, Qt::NoModifier), Tray::Trigger);
+        QCOMPARE(TrayController::effectiveReason(Tray::Context, Qt::NoModifier), Tray::Context);
+        QCOMPARE(TrayController::effectiveReason(Tray::DoubleClick, Qt::MetaModifier), Tray::DoubleClick);
+#ifdef Q_OS_MACOS
+        // Control-click (Meta in Qt on macOS) is the secondary click.
+        QCOMPARE(TrayController::effectiveReason(Tray::Trigger, Qt::MetaModifier), Tray::Context);
+#else
+        QCOMPARE(TrayController::effectiveReason(Tray::Trigger, Qt::MetaModifier), Tray::Trigger);
+#endif
+    }
+#ifdef Q_OS_MACOS
+    void hubPanelSetterStillExists() {
+        // MacPanel relies on a private AppKit method; notice here if macOS drops it.
+        QVERIFY2(MacPanel::preventsActivationAvailable(),
+                 "NSPanel lost -_setPreventsActivation:; hub clicks will activate the app again");
+    }
+#endif
     void startupDoesNotBlockGui() {
         auto service = std::make_shared<SlowService>();
         QElapsedTimer elapsed; elapsed.start();

@@ -24,6 +24,7 @@
 #include "EqualizerLibrary.h"
 #include "BluetoothWatcher.h"
 #include "HubSettings.h"
+#include "DockReopen.h"
 #include "HubWindow.h"
 #include "PeripheralModel.h"
 #include "PeripheralSource.h"
@@ -60,6 +61,7 @@ int main(int argc, char *argv[]) {
     // the threaded render loop only advances animations while exposed, so an
     // occluded or locked desktop would grab frozen first frames.
     if (!qEnvironmentVariable("SONY_UI_SCREENSHOTS").isEmpty()) qputenv("QSG_RENDER_LOOP", "basic");
+    sony::devicecenter::DockReopen::install();
     QApplication app(argc, argv);
     sony::devicecenter::WindowsToast::registerApplication();
 
@@ -261,6 +263,11 @@ int main(int argc, char *argv[]) {
         hub.close();
         tray.showWindow();
     });
+    // A Dock click brings back the window after it was closed to the tray.
+    sony::devicecenter::DockReopen::setHandler([&tray, &hub] {
+        hub.close();
+        tray.showWindow();
+    });
     // Opening the hub is the moment a stale OS list would show; re-read it.
     QObject::connect(&hub, &sony::devicecenter::HubWindow::visibleChanged, peripheralSource, [peripheralSource](bool visible) {
         if (visible) peripheralSource->refresh();
@@ -342,5 +349,7 @@ int main(int argc, char *argv[]) {
         ticker->start(1500);
     }
 
-    return app.exec();
+    const int exitCode = app.exec();
+    sony::devicecenter::DockReopen::setHandler({});
+    return exitCode;
 }
