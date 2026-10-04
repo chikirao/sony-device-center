@@ -21,6 +21,23 @@ TEST_CASE("addressOui reads the prefix in every platform format", "[transport][d
     REQUIRE_FALSE(addressOui("AC:80:0A:12:34:567"));
 }
 
+TEST_CASE("DeviceAddress matches one device in every platform format", "[transport][discovery]")
+{
+    REQUIRE(DeviceAddress("ac-80-0a-12-34-5f").canonical() == "AC:80:0A:12:34:5F"); // macOS
+    REQUIRE(DeviceAddress("ac:80:0a:12:34:5f").canonical() == "AC:80:0A:12:34:5F"); // Windows
+    REQUIRE(DeviceAddress("AC:80:0A:12:34:5F").canonical() == "AC:80:0A:12:34:5F"); // Linux
+    REQUIRE_FALSE(DeviceAddress("").canonical());
+    REQUIRE_FALSE(DeviceAddress("AC:80:0A:12:34:5G").canonical());
+    REQUIRE_FALSE(DeviceAddress("AC.80.0A.12.34.56").canonical());
+    REQUIRE_FALSE(DeviceAddress("AC800A123456").canonical());
+
+    REQUIRE(DeviceAddress("14:3F:A6:A3:DA:E0").sameDevice("14-3f-a6-a3-da-e0"));
+    REQUIRE_FALSE(DeviceAddress("14:3F:A6:A3:DA:E0").sameDevice("14-3f-a6-a3-da-e1"));
+    // Text that is not an address only matches itself.
+    REQUIRE(DeviceAddress("simulated").sameDevice("simulated"));
+    REQUIRE_FALSE(DeviceAddress("simulated").sameDevice("SIMULATED"));
+}
+
 TEST_CASE("hasSonyOui accepts Sony audio companies only", "[transport][discovery]")
 {
     REQUIRE(hasSonyOui("ac-80-0a-12-34-56"));  // Sony Corporation

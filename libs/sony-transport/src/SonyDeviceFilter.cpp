@@ -1,4 +1,5 @@
 #include "sony/transport/SonyDeviceFilter.h"
+#include "sony/transport/DeviceAddress.h"
 #include "SonyOuiTable.h"
 
 #include <algorithm>
@@ -10,13 +11,6 @@ namespace sony::transport {
 
 namespace {
 
-int hexValue(char c) {
-    if (c >= '0' && c <= '9') return c - '0';
-    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-    return -1;
-}
-
 constexpr std::array<std::string_view, 7> kSonyNameTokens = {
     "WH-", "WF-", "WI-", "MDR-", "LINKBUDS", "ULT WEAR", "SONY",
 };
@@ -24,21 +18,13 @@ constexpr std::array<std::string_view, 7> kSonyNameTokens = {
 } // namespace
 
 std::optional<std::uint32_t> addressOui(std::string_view address) {
-    // Six octets of two hex digits, with a separator after each of the first five.
-    constexpr std::size_t kAddressLength = 17;
-    constexpr std::size_t kOuiLength = 8;
-    if (address.size() != kAddressLength) return std::nullopt;
-
+    const auto canonical = DeviceAddress(address).canonical();
+    if (!canonical) return std::nullopt;
+    // "AC:80:0A:12:34:56": the OUI is the first three octets.
     std::uint32_t oui = 0;
-    for (std::size_t i = 0; i < address.size(); ++i) {
-        const char c = address[i];
-        if (i % 3 == 2) {
-            if (c != ':' && c != '-') return std::nullopt;
-            continue;
-        }
-        const int digit = hexValue(c);
-        if (digit < 0) return std::nullopt;
-        if (i < kOuiLength) oui = (oui << 4) | static_cast<std::uint32_t>(digit);
+    for (const char c : canonical->substr(0, 8)) {
+        if (c == ':') continue;
+        oui = (oui << 4) | static_cast<std::uint32_t>(std::isdigit(static_cast<unsigned char>(c)) ? c - '0' : c - 'A' + 10);
     }
     return oui;
 }

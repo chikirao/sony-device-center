@@ -1,6 +1,5 @@
 #include "sony/core/JsonProtocol.h"
 #include "sony/protocol/EqualizerPresets.h"
-#include <cctype>
 namespace sony::core {
 using Json = JsonProtocol::Json;
 namespace {
@@ -63,14 +62,11 @@ Json JsonProtocol::execute(const Json& request, IDeviceService& service) {
             for (const auto& d : service.discoverDevices())
                 data.push_back({{"name", d.name}, {"address", d.address}, {"paired", optional(d.paired)}, {"systemConnected", optional(d.connected)}});
         } else if (method == "connect") {
-            auto address = params.at("address").get<std::string>();
-            if (address.size() != 17) throw std::invalid_argument("Expected a Bluetooth address in AA:BB:CC:DD:EE:FF format");
-            for (size_t i = 0; i < address.size(); ++i) {
-                if (i % 3 == 2 ? address[i] != ':' : !std::isxdigit(static_cast<unsigned char>(address[i])))
-                    throw std::invalid_argument("Invalid Bluetooth address");
-                address[i] = static_cast<char>(std::toupper(static_cast<unsigned char>(address[i])));
-            }
-            service.connect(transport::DeviceAddress(address), params.value("name", std::string{}));
+            // Accept the platforms' formats (macOS lists aa-bb-cc-dd-ee-ff), so an address
+            // taken from "devices" can be passed back unchanged.
+            const auto address = transport::DeviceAddress(params.at("address").get<std::string>()).canonical();
+            if (!address) throw std::invalid_argument("Expected a Bluetooth address in AA:BB:CC:DD:EE:FF format");
+            service.connect(transport::DeviceAddress(*address), params.value("name", std::string{}));
             data = snapshot(service);
         } else if (method == "disconnect") { service.disconnect(); data = snapshot(service); }
         else {
