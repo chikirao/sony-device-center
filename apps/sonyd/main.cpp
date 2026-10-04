@@ -112,9 +112,14 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    while (!g_shutdown.load()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+    // Connection attempts run on the IPC server's thread. Keep the main thread's
+    // run loop serviced meanwhile, so macOS can deliver Bluetooth callbacks.
+    transport::runWithPlatformEventLoop([] {
+        while (!g_shutdown.load()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        return 0;
+    });
 
     std::cout << "\n[sonyd] Shutdown signal received. Closing IPC server...\n";
     server->stop();
