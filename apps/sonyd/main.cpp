@@ -66,6 +66,11 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if (!deviceAddr.empty() && !DeviceAddress(deviceAddr).canonical()) {
+        std::cerr << "[sonyd] Invalid Bluetooth address '" << deviceAddr << "'; expected AA:BB:CC:DD:EE:FF\n";
+        return 1;
+    }
+
     if (verbose) {
         Logger::setLogLevel(LogLevel::Debug);
         Logger::setDeveloperMode(true);

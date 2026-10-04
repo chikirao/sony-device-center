@@ -63,6 +63,62 @@ TEST_CASE("Lifecycle prefers connected candidates and honors explicit selection"
         CHECK(transport->attempts.size() == 1);
     }
 }
+namespace {
+// macOS discovery lists "14-3f-a6-a3-da-e0"; people type "14:3F:A6:A3:DA:E0".
+struct TypedAddressFixture {
+    std::shared_ptr<ReplyTransport> transport = std::make_shared<ReplyTransport>();
+    std::shared_ptr<FakeDeviceDiscovery> discovery = [] {
+        auto d = std::make_shared<FakeDeviceDiscovery>();
+        d->setDevices({{"WH-1000XM4", DeviceAddress("14-3f-a6-a3-da-e0"), true, true}});
+        return d;
+    }();
+    DeviceService service{transport, discovery};
+
+    void expectResolved() {
+        REQUIRE(service.isConnected());
+        // The discovered name selects the XM4 profile instead of the empty fallback.
+        CHECK(service.activeDevice()->name() == "WH-1000XM4");
+        CHECK(JsonProtocol::snapshot(service)["capabilities"]["anc"] == true);
+        // The discovered form, so the GUI's device list still matches the active device.
+        CHECK(service.selectedAddress() == "14-3f-a6-a3-da-e0");
+        CHECK(transport->attempts == std::vector<std::string>{"14-3f-a6-a3-da-e0"});
+    }
+};
+} // namespace
+TEST_CASE("A typed address resolves the discovered device whatever its format", "[core][recovery]") {
+    TypedAddressFixture f;
+    SECTION("sonyd -d starts auto-connect with a typed address") {
+        f.service.startAutoConnect("14:3F:A6:A3:DA:E0"); f.service.tick();
+        f.expectResolved();
+    }
+    SECTION("connect without a name") {
+        f.service.connect(DeviceAddress("14:3F:A6:A3:DA:E0"), "");
+        f.expectResolved();
+    }
+}
+TEST_CASE("JSON connect accepts a listed address and rejects malformed ones", "[core][json]") {
+    TypedAddressFixture f;
+    SECTION("the address the devices list returned") {
+        const auto devices = JsonProtocol::execute({{"version",1},{"id",1},{"method","devices"}}, f.service);
+        const auto listed = devices["data"][0]["address"].get<std::string>();
+        const auto reply = JsonProtocol::execute({{"version",1},{"id",2},{"method","connect"},
+            {"params",{{"address",listed},{"name",""}}}}, f.service);
+        CHECK(reply["ok"] == true);
+        f.expectResolved();
+    }
+    SECTION("a malformed address") {
+        const auto reply = JsonProtocol::execute({{"version",1},{"id",3},{"method","connect"},
+            {"params",{{"address","14.3f.a6.a3.da.e0"}}}}, f.service);
+        CHECK(reply["error"]["code"] == "InvalidRequest");
+        CHECK(f.transport->attempts.empty());
+    }
+}
+TEST_CASE("An explicit connect name is kept", "[core][recovery]") {
+    TypedAddressFixture f;
+    f.service.connect(DeviceAddress("14:3F:A6:A3:DA:E0"), "WH-1000XM4 (desk)");
+    REQUIRE(f.service.isConnected());
+    CHECK(f.service.activeDevice()->name() == "WH-1000XM4 (desk)");
+}
 TEST_CASE("Retry delay doubles and is capped at thirty seconds", "[core][recovery]") {
     auto now = DeviceService::Clock::time_point{};
     auto transport = std::make_shared<ReplyTransport>();

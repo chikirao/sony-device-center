@@ -5,6 +5,15 @@
 
 namespace sony::core {
 
+namespace {
+// A typed address (sonyd -d, sonyctl connect) can differ from the discovered form in
+// case and separator. The discovered entry carries the name that selects the profile.
+std::vector<DiscoveredDevice>::const_iterator findDevice(
+    const std::vector<DiscoveredDevice>& devices, const transport::DeviceAddress& address) {
+    return std::find_if(devices.begin(), devices.end(), [&](const auto& d) { return address.sameDevice(d.address); });
+}
+} // namespace
+
 DeviceService::DeviceService(
     std::shared_ptr<transport::ITransport> transport,
     std::shared_ptr<transport::IDeviceDiscovery> discovery, Now now)
@@ -39,8 +48,20 @@ std::vector<DiscoveredDevice> DeviceService::discoverDevices() {
 
 void DeviceService::connect(const transport::DeviceAddress& address, std::string_view name) {
     std::lock_guard lock(_mutex);
-    _target = address.str(); _automatic = true; _retrySeconds = 1;
-    try { _connect(address, name); }
+    // Use the discovered entry for this address when there is one: its address is the
+    // form the UI lists, and its name selects the profile when the caller gave none.
+    DiscoveredDevice selected{.address = address.str(), .name = std::string(name)};
+    try {
+        const auto devices = discoverDevices();
+        if (const auto found = findDevice(devices, address); found != devices.end()) {
+            selected.address = found->address;
+            if (selected.name.empty()) selected.name = found->name;
+        }
+    } catch (const std::exception&) {
+        // Discovery is only a lookup here; connect with what the caller gave.
+    }
+    _target = selected.address; _automatic = true; _retrySeconds = 1;
+    try { _connect(transport::DeviceAddress(selected.address), selected.name); }
     catch (const std::exception& ex) {
         _wasConnected = false;
         if (_device) _device->disconnect();
@@ -133,7 +154,7 @@ void DeviceService::tick() {
     try {
         auto candidates = discoverDevices();
         if (!_target.empty()) {
-            auto found = std::find_if(candidates.begin(), candidates.end(), [this](const auto& d) { return d.address == _target; });
+            const auto found = findDevice(candidates, transport::DeviceAddress(_target));
             DiscoveredDevice selected{.address = _target};
             if (found != candidates.end()) selected = *found;
             candidates = {selected};
