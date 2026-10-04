@@ -173,29 +173,33 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Fallback or Direct mode
-    if (direct) std::cerr << "Using a direct Bluetooth session (--direct).\n";
-    else std::cerr << "Notice: sonyd daemon is not running at " << socketPath << "\n"
-              << "Starting direct session...\n";
+    // The direct session runs the device on a worker while the main thread's run
+    // loop stays serviced, so macOS can deliver the Bluetooth callbacks.
+    return transport::runWithPlatformEventLoop([&]() -> int {
+        // Fallback or Direct mode
+        if (direct) std::cerr << "Using a direct Bluetooth session (--direct).\n";
+        else std::cerr << "Notice: sonyd daemon is not running at " << socketPath << "\n"
+                  << "Starting direct session...\n";
 
-    std::shared_ptr<ITransport> transport = transport::createPlatformTransport();
-    std::shared_ptr<IDeviceDiscovery> discovery = transport::createPlatformDiscovery();
-    DeviceService service(transport, discovery);
+        std::shared_ptr<ITransport> transport = transport::createPlatformTransport();
+        std::shared_ptr<IDeviceDiscovery> discovery = transport::createPlatformDiscovery();
+        DeviceService service(transport, discovery);
 
-    const auto method = legacy ? std::string{} : typed.request.value("method", std::string{});
-    const bool needsDevice = legacy ? legacyCommand.type != IpcCommandType::Devices
-                                    : method != "devices" && method != "connect";
-    if (needsDevice) {
-        auto devs = service.discoverDevices();
-        if (!devs.empty()) {
-            try {
-                service.connect(DeviceAddress(devs.front().address), devs.front().name);
-            } catch (const std::exception& ex) {
-                std::cerr << "Notice: initial connection to " << devs.front().name << " deferred: " << ex.what() << "\n";
+        const auto method = legacy ? std::string{} : typed.request.value("method", std::string{});
+        const bool needsDevice = legacy ? legacyCommand.type != IpcCommandType::Devices
+                                        : method != "devices" && method != "connect";
+        if (needsDevice) {
+            auto devs = service.discoverDevices();
+            if (!devs.empty()) {
+                try {
+                    service.connect(DeviceAddress(devs.front().address), devs.front().name);
+                } catch (const std::exception& ex) {
+                    std::cerr << "Notice: initial connection to " << devs.front().name << " deferred: " << ex.what() << "\n";
+                }
             }
         }
-    }
 
-    if (legacy) return emitLegacy(IpcProtocol::execute(legacyCommand, service));
-    return emitTyped(JsonProtocol::execute(typed.request, service));
+        if (legacy) return emitLegacy(IpcProtocol::execute(legacyCommand, service));
+        return emitTyped(JsonProtocol::execute(typed.request, service));
+    });
 }

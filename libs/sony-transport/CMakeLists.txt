@@ -9,6 +9,7 @@ add_library(sony-transport
     src/TransportBluetoothConnector.cpp
     src/Logger.cpp
     src/PlatformTransport.cpp
+    src/PlatformEventLoop.cpp
     src/SonyDeviceFilter.cpp
 )
 
