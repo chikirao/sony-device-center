@@ -12,6 +12,7 @@
 set -euo pipefail
 
 dmg=$1; shift
+here=$(cd "$(dirname "$0")" && pwd)
 mount=$(mktemp -d)
 app_log=$(mktemp)
 trap 'hdiutil detach "$mount" -quiet || true; rmdir "$mount" 2>/dev/null || true; rm -f "$app_log"' EXIT
@@ -46,11 +47,11 @@ done
 
 codesign --verify --deep --strict "$app" || fail "signature does not verify"
 
-# The binaries must find their libraries on a Mac that has no Qt installed.
-# Nothing in the bundle may reference the build machine's Qt prefix.
-if otool -L "$app/Contents/MacOS/sony-device-center" | grep -E '/(opt/homebrew|usr/local|Users/runner)/' ; then
-    fail "main binary links Qt from the build machine, macdeployqt did not run"
-fi
+# The binaries must find their libraries on a Mac that has no Qt installed,
+# and must not find the build machine's on a Mac that has: one rpath into
+# /opt/homebrew is enough for dyld to load a second QtCore beside the bundled
+# one. Every Mach-O file is checked, not just the main binary.
+"$here/check-bundle-paths.sh" "$app" >&2 || fail "the bundle loads libraries from outside itself (listed above)"
 
 "$app/Contents/MacOS/sonyctl" --help >/dev/null || fail "sonyctl does not run"
 
