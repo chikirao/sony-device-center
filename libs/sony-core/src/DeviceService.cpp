@@ -47,6 +47,9 @@ std::vector<DiscoveredDevice> DeviceService::discoverDevices() {
 }
 
 void DeviceService::connect(const transport::DeviceAddress& address, std::string_view name) {
+    // A connect queued behind a shutdown request would start after abort() and
+    // run its whole course.
+    if (_shutdownRequested) throw SonyException(SonyErrorCode::Disconnected, "Shutting down");
     std::lock_guard lock(_mutex);
     // Use the discovered entry for this address when there is one: its address is the
     // form the UI lists, and its name selects the profile when the caller gave none.
@@ -117,6 +120,11 @@ void DeviceService::startAutoConnect(std::string address) {
     _target = std::move(address); _automatic = true; _retrySeconds = 1;
     _nextAttempt = _now(); _connectionState = "searching";
 }
+void DeviceService::requestShutdown() noexcept {
+    _shutdownRequested = true;
+    if (_transport) _transport->abort();
+}
+
 void DeviceService::wake() {
     std::lock_guard lock(_mutex);
     if (!_automatic || isConnected()) return;
@@ -130,6 +138,7 @@ std::string DeviceService::connectionState() const {
 std::string DeviceService::selectedAddress() const { std::lock_guard lock(_mutex); return _selected; }
 std::string DeviceService::lastError() const { std::lock_guard lock(_mutex); return _lastError; }
 void DeviceService::tick() {
+    if (_shutdownRequested) return;
     std::lock_guard lock(_mutex);
     if (isConnected()) {
         if (_now() >= _nextSettings) {
@@ -161,6 +170,7 @@ void DeviceService::tick() {
         }
         _connectionState = "searching";
         for (const auto& candidate : candidates) {
+            if (_shutdownRequested) return;
             try { _connect(transport::DeviceAddress(candidate.address), candidate.name); return; }
             catch (const std::exception& ex) { _lastError = ex.what(); if (_device) _device->disconnect(); }
         }

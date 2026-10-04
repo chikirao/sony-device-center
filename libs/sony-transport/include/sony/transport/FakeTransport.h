@@ -22,6 +22,8 @@ public:
     // --- ITransport overrides ---
     void connect(const DeviceAddress& address) override;
     void disconnect() noexcept override;
+    // receive() never blocks here; dropping the link makes the next one fail.
+    void abort() noexcept override { disconnect(); }
     [[nodiscard]] bool isConnected() const noexcept override;
     size_t send(std::span<const std::byte> data) override;
     size_t receive(std::span<std::byte> buffer) override;

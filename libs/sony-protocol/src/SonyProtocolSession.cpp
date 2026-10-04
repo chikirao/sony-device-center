@@ -47,6 +47,11 @@ void SonyProtocolSession::start() {
 }
 
 void SonyProtocolSession::disconnect() noexcept {
+    // End a receive() the reader is blocked in first, so joining it does not wait
+    // out the transport's receive timeout.
+    if (_transport) {
+        _transport->abort();
+    }
     _stopReader();
     if (_transport) {
         _transport->disconnect();

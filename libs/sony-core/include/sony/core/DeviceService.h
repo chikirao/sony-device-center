@@ -2,6 +2,7 @@
 
 #include "IDeviceService.h"
 #include "sony/transport/IDeviceDiscovery.h"
+#include <atomic>
 #include <mutex>
 #include <chrono>
 #include <functional>
@@ -21,6 +22,7 @@ public:
     void tick() override;
     void startAutoConnect(std::string address = {}) override;
     void wake() override;
+    void requestShutdown() noexcept override;
     std::string connectionState() const override;
     std::string selectedAddress() const override;
     std::string lastError() const override;
@@ -37,6 +39,8 @@ private:
     std::shared_ptr<transport::IDeviceDiscovery> _discovery;
     std::unique_ptr<SonyDevice> _device;
     mutable std::recursive_mutex _mutex;
+    // Read without _mutex: the attempt being cancelled holds it.
+    std::atomic<bool> _shutdownRequested{false};
     Now _now;
     bool _automatic{false};
     bool _wasConnected{false};

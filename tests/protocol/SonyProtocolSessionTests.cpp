@@ -38,6 +38,28 @@ void queueFrame(FakeTransport& transport, const SonyFrame& frame) {
     transport.queueIncoming(FrameCodec::encode(frame));
 }
 
+// receive() blocks like a Bluetooth read with nothing to read, until aborted.
+class BlockingReceiveTransport : public FakeTransport {
+public:
+    size_t receive(std::span<std::byte>) override {
+        std::unique_lock lock(_blockMutex);
+        _blockCv.wait_for(lock, std::chrono::milliseconds(2500), [this] { return _aborted; });
+        throw SonyException(_aborted ? SonyErrorCode::Disconnected : SonyErrorCode::Timeout, "nothing to read");
+    }
+    void abort() noexcept override {
+        {
+            std::lock_guard lock(_blockMutex);
+            _aborted = true;
+        }
+        _blockCv.notify_all();
+        FakeTransport::abort();
+    }
+private:
+    std::mutex _blockMutex;
+    std::condition_variable _blockCv;
+    bool _aborted{false};
+};
+
 } // namespace
 
 TEST_CASE("SonyProtocolSession: ACK before response completes successfully", "[protocol][session]")
@@ -362,4 +384,16 @@ TEST_CASE("SonyProtocolSession: supports transport ownership models", "[protocol
         session.disconnect();
         REQUIRE_FALSE(session.isConnected());
     }
+}
+
+TEST_CASE("SonyProtocolSession: disconnect does not wait out a blocked receive", "[protocol][session]")
+{
+    BlockingReceiveTransport fake;
+    SonyProtocolSession session(&fake);
+    session.connect("11:22:33:44:55:66");
+    std::this_thread::sleep_for(std::chrono::milliseconds(50)); // the reader is in receive()
+    const auto start = std::chrono::steady_clock::now();
+    session.disconnect();
+    CHECK(std::chrono::steady_clock::now() - start < std::chrono::milliseconds(500));
+    CHECK_FALSE(session.isConnected());
 }

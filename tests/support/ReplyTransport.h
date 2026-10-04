@@ -8,6 +8,8 @@ class ReplyTransport : public sony::transport::FakeTransport {
 public:
     std::vector<std::string> attempts;
     std::string failAddress;
+    // The headset stops answering, as just after it is switched off.
+    std::atomic<bool> silent{false};
     void connect(const sony::transport::DeviceAddress& address) override {
         attempts.push_back(address.str());
         if (address.str() == failAddress) throw sony::SonyException(sony::SonyErrorCode::TransportFailure, "Device is off");
@@ -15,6 +17,7 @@ public:
     }
     size_t send(std::span<const std::byte> data) override {
         const auto count = FakeTransport::send(data);
+        if (silent) return count;
         std::vector<uint8_t> bytes;
         for (auto b : data) bytes.push_back(static_cast<uint8_t>(b));
         auto frame = sony::protocol::FrameCodec::decode(bytes);

@@ -27,6 +27,11 @@ public:
     // drop the retry backoff so the next tick tries at once. No-op while
     // connected or when auto-connect is off.
     virtual void wake() {}
+    // Called from any thread before shutdown, without waiting for the service:
+    // makes a connection attempt or headset request in progress fail promptly
+    // and starts no new one. Quitting must not wait out a headset that is off,
+    // out of range, or switched off a moment ago.
+    virtual void requestShutdown() noexcept {}
     virtual std::string connectionState() const { return isConnected() ? "connected" : "disconnected"; }
     virtual std::string selectedAddress() const { return {}; }
     virtual std::string lastError() const { return {}; }

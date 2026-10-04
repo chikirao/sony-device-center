@@ -64,12 +64,36 @@ enum class OpenDelivery {
 
 @interface TestSonyDevice : NSObject
 @property BOOL failOpen;
+@property BOOL linkDown;            // baseband not connected, as for a headset that is off
+@property BOOL pageFails;           // the headset does not answer the page
+@property BOOL pageHangs;           // no answer before the attempt is cancelled
+@property BOOL pageFindsLinkUp;     // macOS reconnected meanwhile: "connection exists"
+// Not retained, like IOBluetooth's reference to a page target (undocumented).
+@property(assign) id pageTarget;
+@property int openConnectionCalls;  // synchronous baseband opens
+@property int linkOpenRequests;     // asynchronous baseband opens
 @property OpenDelivery delivery;
 @property(retain) TestRFCOMMChannel *channel;
 @property(retain) id lastDelegate;
 @end
 @implementation TestSonyDevice
-- (BOOL)isConnected { return YES; }
+- (BOOL)isConnected { return !self.linkDown; }
+// The synchronous baseband open blocks for the whole page timeout; connect must not use it.
+- (IOReturn)openConnection {
+    ++self.openConnectionCalls;
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    return kIOReturnSuccess;
+}
+- (IOReturn)openConnection:(id)target {
+    ++self.linkOpenRequests;
+    self.pageTarget = target;
+    if (self.pageHangs) return kIOReturnSuccess;
+    if (!self.pageFails) self.linkDown = NO;
+    const IOReturn status = self.pageFails ? kIOReturnTimeout
+                          : self.pageFindsLinkUp ? kIOReturnExclusiveAccess : kIOReturnSuccess;
+    [target connectionComplete:(IOBluetoothDevice *)self status:status];
+    return kIOReturnSuccess;
+}
 - (id)getServiceRecordForUUID:(id)uuid { return self; }
 - (IOReturn)getRFCOMMChannelID:(BluetoothRFCOMMChannelID *)channelID {
     *channelID = 9;
@@ -166,6 +190,64 @@ TEST_CASE("macOS connect waits for channel establishment and propagates failure"
     }
 }
 
+TEST_CASE("macOS connect brings a down link up without blocking and can be cancelled", "[transport][macos]") {
+    @autoreleasepool {
+        FakeBluetoothDevice fake;
+        testDevice.linkDown = YES;
+        MacOSBluetoothConnector connector;
+        // As when the app quits while paging a headset that was switched off.
+        auto expectPromptCancel = [&] {
+            std::thread canceller([&] {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                connector.abort();
+            });
+            const auto start = std::chrono::steady_clock::now();
+            CHECK_THROWS_WITH(connector.connect("80:99:E7:00:00:01"),
+                              Catch::Matchers::ContainsSubstring("cancelled"));
+            CHECK(std::chrono::steady_clock::now() - start < std::chrono::seconds(2));
+            canceller.join();
+            CHECK_FALSE(connector.isConnected());
+        };
+        SECTION("the link is opened asynchronously, not with the blocking call") {
+            const auto start = std::chrono::steady_clock::now();
+            connector.connect("80:99:E7:00:00:01");
+            CHECK(connector.isConnected());
+            CHECK(testDevice.linkOpenRequests == 1);
+            CHECK(testDevice.openConnectionCalls == 0);
+            CHECK(std::chrono::steady_clock::now() - start < std::chrono::seconds(1));
+        }
+        SECTION("a headset that does not answer the page is reported as such") {
+            testDevice.pageFails = YES;
+            CHECK_THROWS_WITH(connector.connect("80:99:E7:00:00:01"),
+                              Catch::Matchers::ContainsSubstring("did not answer"));
+            CHECK(testDevice.channel == nil); // no RFCOMM open without a link
+        }
+        SECTION("a link that came up meanwhile is used despite an error status") {
+            testDevice.pageFindsLinkUp = YES;
+            connector.connect("80:99:E7:00:00:01");
+            CHECK(connector.isConnected());
+        }
+        SECTION("abort ends a pending page, and its late completion is harmless") {
+            testDevice.pageHangs = YES;
+            expectPromptCancel();
+            connector.disconnect();
+            // Let the main queue release the connector's reference to the delegate.
+            for (int i = 0; i < 5; ++i) CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.02, false);
+            // The page ends later; its target must still exist and must not reach
+            // the connector.
+            [testDevice.pageTarget connectionComplete:(IOBluetoothDevice *)testDevice status:kIOReturnTimeout];
+            CHECK_FALSE(connector.isConnected());
+        }
+        SECTION("abort ends a pending RFCOMM open") {
+            testDevice.linkDown = NO;
+            testDevice.delivery = OpenDelivery::Never;
+            expectPromptCancel();
+            CHECK(testDevice.linkOpenRequests == 0); // the link was already up
+        }
+        connector.disconnect();
+    }
+}
+
 TEST_CASE("macOS connect blocks without spinning until another thread completes the open", "[transport][macos]") {
     @autoreleasepool {
         FakeBluetoothDevice fake;
@@ -242,6 +324,25 @@ TEST_CASE("macOS callbacks after teardown never reach the connector", "[transpor
         [delegate rfcommChannelOpenComplete:(IOBluetoothRFCOMMChannel *)testDevice.channel status:kIOReturnSuccess];
         CHECK(connector.receivedBytes.empty());
         CHECK_FALSE(connector.isConnected());
+    }
+}
+
+TEST_CASE("macOS abort ends an open connection and wakes a blocked receiver", "[transport][macos][lifecycle]") {
+    @autoreleasepool {
+        FakeBluetoothDevice fake;
+        MacOSBluetoothConnector connector;
+        connector.connect("80:99:E7:00:00:01");
+        std::thread aborter([&] {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            connector.abort();
+        });
+        const auto start = std::chrono::steady_clock::now();
+        char buf[8];
+        CHECK_THROWS_AS(connector.recv(buf, sizeof buf), RecoverableException);
+        CHECK(std::chrono::steady_clock::now() - start < std::chrono::milliseconds(1000));
+        CHECK_FALSE(connector.isConnected());
+        aborter.join();
+        connector.disconnect();
     }
 }
 

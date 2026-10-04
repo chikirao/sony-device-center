@@ -105,6 +105,9 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
     _worker.start();
 }
 DeviceCenterController::~DeviceCenterController() {
+    // The worker may be in the middle of a connection attempt to a headset that
+    // was switched off; end it first, or quitting freezes until it times out.
+    _backend->requestShutdown();
     QMetaObject::invokeMethod(_backend, &DeviceBackend::shutdown, Qt::BlockingQueuedConnection);
     _worker.quit(); _worker.wait();
 }

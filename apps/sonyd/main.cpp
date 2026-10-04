@@ -127,6 +127,8 @@ int main(int argc, char* argv[]) {
     });
 
     std::cout << "\n[sonyd] Shutdown signal received. Closing IPC server...\n";
+    // The server's thread may be mid connection attempt; end that first.
+    service->requestShutdown();
     server->stop();
     service->disconnect();
     std::cout << "[sonyd] Daemon terminated cleanly.\n";

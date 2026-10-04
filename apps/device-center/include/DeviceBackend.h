@@ -19,6 +19,10 @@ public:
     // The OS saw a Bluetooth link come up: retry the connection now.
     void wake();
     void shutdown();
+    // The one member another thread may call: makes a connection attempt in
+    // progress on the worker fail promptly, so the shutdown() queued after it
+    // runs without waiting for a headset that is off or out of range.
+    void requestShutdown() noexcept;
 signals:
     void snapshotReady(QByteArray data, quint64 generation);
     void devicesReady(QByteArray data);
@@ -31,6 +35,8 @@ private:
     void publish();
     void subscribe();
     std::shared_ptr<core::IDeviceService> _service;
+    // _service for requestShutdown(), published once it exists.
+    std::atomic<core::IDeviceService*> _serviceForShutdown{nullptr};
     core::IpcClient _ipc;
     bool _usingIpc{false}, _stopped{false}, _incompatible{false};
     QTimer* _timer{nullptr};

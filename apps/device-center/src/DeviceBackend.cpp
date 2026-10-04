@@ -3,8 +3,15 @@
 #include "sony/transport/PlatformTransport.h"
 #include <QMetaObject>
 namespace sony::devicecenter {
-DeviceBackend::DeviceBackend(std::shared_ptr<core::IDeviceService> service) : _service(std::move(service)) {}
+DeviceBackend::DeviceBackend(std::shared_ptr<core::IDeviceService> service)
+    : _service(std::move(service)), _serviceForShutdown(_service.get()) {}
 DeviceBackend::~DeviceBackend() { shutdown(); }
+void DeviceBackend::requestShutdown() noexcept {
+    if (auto* service = _serviceForShutdown.load()) service->requestShutdown();
+    // With sonyd, the worker may instead be waiting for the daemon, which answers
+    // only between its own connection attempts.
+    _ipc.abort();
+}
 void DeviceBackend::shutdown() {
     _stopped = true;
     if (_timer) _timer->stop();
@@ -19,6 +26,7 @@ void DeviceBackend::start() {
             _usingIpc = _ipc.isDaemonRunning();
             if (!_usingIpc) {
                 _service = std::make_shared<core::DeviceService>(transport::createPlatformTransport(), transport::createPlatformDiscovery());
+                _serviceForShutdown = _service.get();
                 _service->startAutoConnect();
             }
         }
