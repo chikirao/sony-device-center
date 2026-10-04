@@ -10,6 +10,7 @@
 #include <QGuiApplication>
 #include <QPolygonF>
 #include <QAbstractItemModel>
+#include <QCursor>
 #include <QMenu>
 #include <QPainter>
 #include <QPixmap>
@@ -37,22 +38,49 @@ TrayController::TrayController(DeviceCenterController& controller, QObject* pare
 
     _tray = new QSystemTrayIcon(this);
     _buildMenu();
+#ifndef Q_OS_MACOS
     _tray->setContextMenu(_menu);
+#else
+    // Not attached on macOS: with a menu on the status item, Qt reports the click
+    // when the menu starts tracking and reads that moment's event as a mouse event,
+    // which current macOS rejects with an exception that aborts the app. Without
+    // one, the click arrives as the button's mouse-down, and a right click pops
+    // the menu up below.
+#endif
     _update();
     _tray->show();
 
     connect(_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
         // Left click opens the hub, double click the main window (the first
         // click of a double click has already opened the hub by then, so it
-        // is sent away again); the context menu is Qt's own.
+        // is sent away again); the context menu is Qt's own, except on macOS.
+        reason = effectiveReason(reason, QGuiApplication::queryKeyboardModifiers());
         if (reason == QSystemTrayIcon::Trigger) {
             if (_settings && _settings->trayClickAction() == "window") toggleWindow();
             else emit hubToggleRequested(_tray->geometry());
         } else if (reason == QSystemTrayIcon::DoubleClick) { emit hubDismissRequested(); showWindow(); }
+#ifdef Q_OS_MACOS
+        else if (reason == QSystemTrayIcon::Context) {
+            emit hubDismissRequested();
+            const QRect icon = _tray->geometry();
+            _menu->popup(icon.isValid() ? icon.bottomLeft() : QCursor::pos());
+        }
+#endif
     });
     connect(&_controller, &DeviceCenterController::stateChanged, this, &TrayController::_update);
     connect(&_controller, &DeviceCenterController::capabilitiesChanged, this, &TrayController::_update);
     connect(&_controller, &DeviceCenterController::languageChanged, this, &TrayController::_update);
+}
+
+QSystemTrayIcon::ActivationReason TrayController::effectiveReason(QSystemTrayIcon::ActivationReason reason,
+                                                                  Qt::KeyboardModifiers modifiers) {
+#ifdef Q_OS_MACOS
+    // Qt maps the Control key to Meta on macOS.
+    if (reason == QSystemTrayIcon::Trigger && (modifiers & Qt::MetaModifier)) return QSystemTrayIcon::Context;
+#else
+    Q_UNUSED(modifiers);
+#endif
+    return reason;
 }
 
 TrayController::~TrayController() {

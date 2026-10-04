@@ -1,4 +1,5 @@
 #include "HubWindow.h"
+#include "MacPanel.h"
 
 #include <QCursor>
 #include <QDebug>
@@ -38,6 +39,8 @@ HubWindow::HubWindow(QQmlEngine& engine, QObject* mainWindow, QObject* parent) :
         return;
     }
     _window->QObject::setParent(this);
+    // Opened from the menu bar while another app is in front, it must still show.
+    MacPanel::makeNonActivating(_window);
     connect(_window, SIGNAL(mainWindowRequested(int)), this, SIGNAL(mainWindowRequested(int)));
     connect(_window, &QWindow::visibleChanged, this, [this](bool visible) {
         if (!visible) { _sinceHidden.start(); _hiddenOnce = true; }

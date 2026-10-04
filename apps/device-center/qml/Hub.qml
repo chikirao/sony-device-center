@@ -206,7 +206,7 @@ Window {
                 radius: Theme.controlRadius
                 color: settingsHover.hovered ? hub.hoverColor : "transparent"
                 HoverHandler { id: settingsHover; cursorShape: Qt.PointingHandCursor }
-                TapHandler { onTapped: hub.mainWindowRequested(6) }
+                TapHandler { onTapped: hub.mainWindowRequested(hub.appWindow.pages.settings) }
                 Glyph { appWindow: hub.appWindow; anchors.centerIn: parent; path: appWindow.icons.settings; size: 17; weight: 1.6
                         color: settingsHover.hovered ? Theme.txt : Theme.txtDim }
             }
@@ -259,7 +259,7 @@ Window {
             onTapped: function(point) {
                 if (quickControls.visible && quickControls.contains(quickControls.mapFromItem(row, point.position))) return
                 if (pin.visible && pin.contains(pin.mapFromItem(row, point.position))) return
-                hub.mainWindowRequested(row.active ? 0 : 4)
+                hub.mainWindowRequested(row.active ? hub.appWindow.pages.overview : hub.appWindow.pages.devices)
             }
         }
 
