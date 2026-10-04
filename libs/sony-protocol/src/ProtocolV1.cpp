@@ -217,11 +217,13 @@ void ProtocolV1::setEqualizerPreset(int preset) {
 }
 
 void ProtocolV1::setEqualizerCustom(int clearBass, const std::array<int, 5>& bands) {
-    // SET custom: 58 01 A0 06 <clearBass+10> <b1..b5 +10>
+    // V1 custom-band write: 58 01 FF 06 <clearBass+10> <b1..b5 +10>. Writing the
+    // Manual id 0xA0 here is ACKed but leaves the previous EQ applied (WH-1000XM4);
+    // a fresh GET still reports the accepted result as Manual (0xA0).
     std::vector<uint8_t> payload = {
         0x58,
         kEqInquired,
-        0xa0,
+        0xff,
         0x06,
         clampEqValue(clearBass)
     };
