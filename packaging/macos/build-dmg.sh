@@ -72,6 +72,39 @@ for style in Fusion Imagine Material Universal FluentWinUI3 macOS iOS Windows; d
            "$app/Contents/Resources/qml/QtQuick/Controls/${style}"
 done
 
+# macdeployqt rewrites the links it follows but not the build machine's search
+# paths: CMake's build rpath on the main binary (/opt/homebrew/opt/qt/lib), the
+# Cellar rpaths of Homebrew's libjasper, libdbus and libjpeg, and the Homebrew
+# install names of libbrotlicommon and the frameworks from split Qt kegs. On a
+# Mac with Homebrew Qt, dyld then also found @rpath/QtCore.framework there and
+# loaded both copies. check-bundle-paths.sh lists what points outside the
+# bundle: rpaths go, install names become bundle-relative, and anything else (a
+# real link to the build machine) fails the second run.
+echo "==> Keeping library lookups inside the bundle"
+while IFS=$'\t' read -r binary cmd path; do
+    case $cmd in
+        LC_RPATH)    install_name_tool -delete_rpath "$path" "$app/$binary" ;;
+        LC_ID_DYLIB) install_name_tool -id "@executable_path/../${binary#Contents/}" "$app/$binary" ;;
+        *)           continue ;;
+    esac
+    # The edit voids the file's signature. The signing below reaches
+    # Frameworks, PlugIns and MacOS but not QML plugins under Resources, and
+    # arm64 will not load a library whose signature does not match.
+    case $binary in
+        Contents/Resources/*) codesign --force --sign - "$app/$binary" ;;
+    esac
+done < <("$here/check-bundle-paths.sh" "$app")
+# Qt plugins look for @rpath/QtCore.framework through the main binary's rpaths.
+# Added after the deletions, which free the header space it needs.
+main="$app/Contents/MacOS/sony-device-center"
+if ! otool -l "$main" | awk '$1 == "path" && $2 == "@executable_path/../Frameworks" { found = 1 } END { exit !found }'; then
+    install_name_tool -add_rpath @executable_path/../Frameworks "$main"
+fi
+"$here/check-bundle-paths.sh" "$app" >&2 || {
+    echo "the bundle still links libraries outside itself (listed above)" >&2
+    exit 1
+}
+
 echo "==> Signing"
 if [ -n "${SONY_CODESIGN_IDENTITY:-}" ]; then
     codesign --force --deep --options runtime --timestamp \
