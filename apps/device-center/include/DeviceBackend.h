@@ -2,6 +2,7 @@
 #include <QObject>
 #include <QTimer>
 #include <atomic>
+#include <optional>
 #include "sony/core/IDeviceService.h"
 #include "sony/core/IpcClient.h"
 #include "sony/core/JsonProtocol.h"
@@ -34,6 +35,9 @@ private:
     void poll();
     void publish();
     void subscribe();
+    // Reads the paired list. A refresh the user did not ask for only logs a failure:
+    // its error would replace a more useful one on screen.
+    void refreshDevices(bool reportErrors);
     std::shared_ptr<core::IDeviceService> _service;
     // _service for requestShutdown(), published once it exists.
     std::atomic<core::IDeviceService*> _serviceForShutdown{nullptr};
@@ -44,5 +48,7 @@ private:
     core::SonyDevice* _subscribed{nullptr};
     protocol::DeviceEventDispatcher::SubscriptionId _subscription{0};
     std::atomic<bool> _notificationPending{false};
+    // Connected state in the last snapshot, to notice it change.
+    std::optional<bool> _lastConnected;
 };
 }

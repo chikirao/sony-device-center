@@ -1,6 +1,7 @@
 #include "DeviceBackend.h"
 #include "sony/core/DeviceService.h"
 #include "sony/transport/PlatformTransport.h"
+#include <QDebug>
 #include <QMetaObject>
 namespace sony::devicecenter {
 DeviceBackend::DeviceBackend(std::shared_ptr<core::IDeviceService> service)
@@ -57,7 +58,16 @@ DeviceBackend::Json DeviceBackend::request(const std::string& method, const Json
     }
     return response.at("data");
 }
-void DeviceBackend::publish() { emit snapshotReady(QByteArray::fromStdString(request("snapshot").dump()), _generation); }
+void DeviceBackend::publish() {
+    const auto snapshot = request("snapshot");
+    emit snapshotReady(QByteArray::fromStdString(snapshot.dump()), _generation);
+    // The paired list carries the OS's view of which sets are connected, and on
+    // macOS no link events refresh it: re-read it when our own connection comes
+    // or goes, which is when that view has just changed.
+    const bool connected = snapshot.value("connected", false);
+    if (_lastConnected && *_lastConnected != connected) refreshDevices(false);
+    _lastConnected = connected;
+}
 void DeviceBackend::subscribe() {
     if (!_service) return;
     auto* device = _service->activeDevice();
@@ -101,8 +111,12 @@ void DeviceBackend::wake() {
     poll();
     discover();
 }
-void DeviceBackend::discover() {
+void DeviceBackend::discover() { refreshDevices(true); }
+void DeviceBackend::refreshDevices(bool reportErrors) {
     try { emit devicesReady(QByteArray::fromStdString(request("devices").dump())); }
-    catch (const std::exception& ex) { emit error(QString::fromUtf8(ex.what()), _generation); }
+    catch (const std::exception& ex) {
+        if (reportErrors) emit error(QString::fromUtf8(ex.what()), _generation);
+        else qWarning("Refreshing the paired devices failed: %s", ex.what());
+    }
 }
 }

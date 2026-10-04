@@ -79,6 +79,21 @@ public:
     core::SonyDevice* activeDevice() noexcept override { return nullptr; }
     protocol::DeviceStateSnapshot snapshot() const override { return std::make_shared<const protocol::DeviceState>(); }
 };
+// A set whose link the app holds, and whose OS-level "connected" flag the
+// paired list reports; both can drop, as when the headset is switched off.
+class LinkDropService : public core::IDeviceService {
+public:
+    std::atomic<bool> linked{true}, osConnected{true}, discoveryFails{false};
+    std::vector<core::DiscoveredDevice> discoverDevices() override {
+        if (discoveryFails) throw std::runtime_error("discovery unavailable");
+        return {{.address = "14:3F:A6:A3:DA:E0", .name = "WH-1000XM4", .paired = true, .connected = osConnected.load()}};
+    }
+    void connect(const transport::DeviceAddress&, std::string_view) override {}
+    void disconnect() noexcept override {}
+    bool isConnected() const noexcept override { return linked; }
+    core::SonyDevice* activeDevice() noexcept override { return nullptr; }
+    protocol::DeviceStateSnapshot snapshot() const override { return std::make_shared<const protocol::DeviceState>(); }
+};
 class DeviceControllerTests : public QObject {
     Q_OBJECT
 private slots:
@@ -645,6 +660,30 @@ private slots:
         QCOMPARE(controller.batteryLevel(), -1);
         QCOMPARE(controller.noiseControlMode(), QString("unknown"));
         QCOMPARE(controller.codec(), QString("Unknown"));
+    }
+    void pairedListFollowsTheConnection() {
+        // The hub's "Connected" comes from the paired list; with no OS link
+        // events (macOS) it must be re-read when the app's own link drops.
+        auto service = std::make_shared<LinkDropService>();
+        DeviceCenterController controller(nullptr, service);
+        auto systemConnected = [&] {
+            const auto devices = controller.pairedDevices();
+            return devices.size() == 1 && devices.first().toMap().value("systemConnected").toBool();
+        };
+        QTRY_VERIFY_WITH_TIMEOUT(systemConnected(), 3000);
+        service->osConnected = false;
+        service->linked = false;
+        QTRY_VERIFY_WITH_TIMEOUT(!systemConnected(), 3000);
+    }
+    void automaticDeviceRefreshKeepsTheErrorShown() {
+        // A refresh the user did not ask for must not replace the error on screen.
+        auto service = std::make_shared<LinkDropService>();
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(controller.pairedDevices().size() == 1, 3000);
+        service->discoveryFails = true;
+        service->linked = false;
+        QTest::qWait(1500); // several polls after the link dropped
+        QVERIFY2(!controller.lastError().contains("discovery unavailable"), qPrintable(controller.lastError()));
     }
     void quitDoesNotWaitForAConnectionAttempt() {
         // Cmd+Q while the worker pages a headset that was switched off.

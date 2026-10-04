@@ -268,9 +268,13 @@ int main(int argc, char *argv[]) {
         hub.close();
         tray.showWindow();
     });
-    // Opening the hub is the moment a stale OS list would show; re-read it.
-    QObject::connect(&hub, &sony::devicecenter::HubWindow::visibleChanged, peripheralSource, [peripheralSource](bool visible) {
-        if (visible) peripheralSource->refresh();
+    // Opening the hub is the moment a stale OS list would show; re-read it, and
+    // the paired list whose "connected" flags the rows show (on macOS nothing
+    // else refreshes those).
+    QObject::connect(&hub, &sony::devicecenter::HubWindow::visibleChanged, peripheralSource, [peripheralSource, &controller](bool visible) {
+        if (!visible) return;
+        peripheralSource->refresh();
+        controller.refreshDiscoveredDevices();
     });
 
     // SONY_UI_SCREENSHOTS=<dir>: walk every page, save a capture of each and
