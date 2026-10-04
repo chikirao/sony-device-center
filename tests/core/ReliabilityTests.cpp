@@ -5,7 +5,10 @@
 #include "sony/core/IpcClient.h"
 #include "../support/PrivateSocket.h"
 #include "../support/ReplyTransport.h"
+#include <condition_variable>
 #include <future>
+#include <mutex>
+#include <thread>
 #include <fstream>
 #ifndef _WIN32
 #include <sys/socket.h>
@@ -118,6 +121,76 @@ TEST_CASE("An explicit connect name is kept", "[core][recovery]") {
     f.service.connect(DeviceAddress("14:3F:A6:A3:DA:E0"), "WH-1000XM4 (desk)");
     REQUIRE(f.service.isConnected());
     CHECK(f.service.activeDevice()->name() == "WH-1000XM4 (desk)");
+}
+namespace {
+// connect() hangs like paging a headset that is off, until abort().
+class HangingTransport : public FakeTransport {
+public:
+    std::atomic<int> attempts{0};
+    void connect(const DeviceAddress&) override {
+        std::unique_lock lock(_mutex);
+        ++attempts; _entered = true; _cv.notify_all();
+        _cv.wait_for(lock, std::chrono::seconds(10), [this] { return _cancelled; });
+        throw SonyException(SonyErrorCode::TransportFailure, "The connection attempt was cancelled.");
+    }
+    void abort() noexcept override {
+        std::lock_guard lock(_mutex); _cancelled = true; _cv.notify_all();
+    }
+    void waitUntilConnecting() {
+        std::unique_lock lock(_mutex);
+        _cv.wait_for(lock, std::chrono::seconds(5), [this] { return _entered; });
+    }
+private:
+    std::mutex _mutex;
+    std::condition_variable _cv;
+    bool _entered{false}, _cancelled{false};
+};
+} // namespace
+TEST_CASE("Shutdown ends a connection attempt in progress and starts no other", "[core][recovery]") {
+    auto transport = std::make_shared<HangingTransport>();
+    auto discovery = std::make_shared<FakeDeviceDiscovery>();
+    discovery->setDevices({{"WH-1000XM4",DeviceAddress("11:22:33:44:55:66"),true,true},
+        {"WH-1000XM4",DeviceAddress("22:22:33:44:55:66"),true,true}});
+    DeviceService service(transport, discovery);
+    service.startAutoConnect();
+    std::thread worker([&] { service.tick(); });
+    transport->waitUntilConnecting();
+    // From another thread, while tick() holds the service lock.
+    const auto start = std::chrono::steady_clock::now();
+    service.requestShutdown();
+    worker.join();
+    CHECK(std::chrono::steady_clock::now() - start < std::chrono::seconds(2));
+    CHECK(transport->attempts == 1); // the second candidate is not tried
+    service.tick();
+    CHECK(transport->attempts == 1); // and no later tick starts another
+}
+TEST_CASE("Shutdown ends a headset request that is waiting for an answer", "[core][recovery]") {
+    // Cmd+Q right after switching the headset off, before the link loss is noticed.
+    auto now = DeviceService::Clock::time_point{};
+    auto transport = std::make_shared<ReplyTransport>();
+    auto discovery = std::make_shared<FakeDeviceDiscovery>();
+    DeviceService service(transport, discovery, [&] { return now; });
+    service.connect(DeviceAddress("11:22:33:44:55:66"), "WH-1000XM4");
+    REQUIRE(service.isConnected());
+    transport->silent = true;
+    now += std::chrono::seconds(10); // due for a settings refresh
+    const auto sentBefore = transport->sentCount();
+    std::thread worker([&] { service.tick(); });
+    // Only once the refresh request is out is there something to abort.
+    for (int i = 0; i < 400 && transport->sentCount() == sentBefore; ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    CHECK(transport->sentCount() > sentBefore);
+    const auto start = std::chrono::steady_clock::now();
+    service.requestShutdown();
+    worker.join();
+    CHECK(std::chrono::steady_clock::now() - start < std::chrono::milliseconds(500));
+}
+TEST_CASE("Connect after a shutdown request fails without an attempt", "[core][recovery]") {
+    auto transport = std::make_shared<ReplyTransport>();
+    DeviceService service(transport);
+    service.requestShutdown();
+    CHECK_THROWS(service.connect(DeviceAddress("11:22:33:44:55:66"), "WH-1000XM4"));
+    CHECK(transport->attempts.empty());
 }
 TEST_CASE("Retry delay doubles and is capped at thirty seconds", "[core][recovery]") {
     auto now = DeviceService::Clock::time_point{};
@@ -277,5 +350,28 @@ TEST_CASE("IPC refuses insecure paths and recovers an owned stale socket", "[cor
         IpcServer server(service,socket.path); REQUIRE_NOTHROW(server.start());
         CHECK(IpcClient(socket.path).sendCommand("devices").success);
     }
+}
+TEST_CASE("An aborted IPC request returns at once, and later ones fail", "[core][ipc]") {
+    // A daemon stand-in that accepts connections and never answers, like sonyd
+    // busy in a connection attempt.
+    PrivateSocket socket;
+    const int listener = ::socket(AF_UNIX, SOCK_STREAM, 0);
+    sockaddr_un address{}; address.sun_family = AF_UNIX;
+    std::strcpy(address.sun_path, socket.path.c_str());
+    REQUIRE(::bind(listener, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == 0);
+    REQUIRE(::listen(listener, 4) == 0);
+    IpcClient client(socket.path);
+    std::thread aborter([&] {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        client.abort();
+    });
+    const auto start = std::chrono::steady_clock::now();
+    CHECK_THROWS(client.request(R"({"version":1,"id":1,"method":"snapshot"})", std::chrono::seconds(10)));
+    CHECK(std::chrono::steady_clock::now() - start < std::chrono::seconds(2));
+    aborter.join();
+    const auto again = std::chrono::steady_clock::now();
+    CHECK_THROWS(client.request(R"({"version":1,"id":2,"method":"snapshot"})", std::chrono::seconds(10)));
+    CHECK(std::chrono::steady_clock::now() - again < std::chrono::milliseconds(500));
+    ::close(listener);
 }
 #endif

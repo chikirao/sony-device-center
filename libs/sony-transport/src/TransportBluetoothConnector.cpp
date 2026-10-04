@@ -70,6 +70,12 @@ void TransportBluetoothConnector::disconnect() noexcept {
     }
 }
 
+void TransportBluetoothConnector::abort() noexcept {
+    if (_transport) {
+        _transport->abort();
+    }
+}
+
 bool TransportBluetoothConnector::isConnected() noexcept {
     return _transport && _transport->isConnected();
 }

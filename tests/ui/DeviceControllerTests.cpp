@@ -62,6 +62,23 @@ public:
     core::SonyDevice* activeDevice() noexcept override { return nullptr; }
     protocol::DeviceStateSnapshot snapshot() const override { return std::make_shared<const protocol::DeviceState>(); }
 };
+// tick() hangs like a connection attempt to a headset that is off, until
+// shutdown is requested.
+class HangingService : public core::IDeviceService {
+public:
+    std::atomic<bool> inTick{false}, shutdown{false};
+    void tick() override {
+        inTick = true;
+        for (int i = 0; i < 1000 && !shutdown; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    void requestShutdown() noexcept override { shutdown = true; }
+    std::vector<core::DiscoveredDevice> discoverDevices() override { return {}; }
+    void connect(const transport::DeviceAddress&, std::string_view) override {}
+    void disconnect() noexcept override {}
+    bool isConnected() const noexcept override { return false; }
+    core::SonyDevice* activeDevice() noexcept override { return nullptr; }
+    protocol::DeviceStateSnapshot snapshot() const override { return std::make_shared<const protocol::DeviceState>(); }
+};
 class DeviceControllerTests : public QObject {
     Q_OBJECT
 private slots:
@@ -628,6 +645,18 @@ private slots:
         QCOMPARE(controller.batteryLevel(), -1);
         QCOMPARE(controller.noiseControlMode(), QString("unknown"));
         QCOMPARE(controller.codec(), QString("Unknown"));
+    }
+    void quitDoesNotWaitForAConnectionAttempt() {
+        // Cmd+Q while the worker pages a headset that was switched off.
+        auto service = std::make_shared<HangingService>();
+        QElapsedTimer elapsed;
+        {
+            DeviceCenterController controller(nullptr, service);
+            QTRY_VERIFY_WITH_TIMEOUT(service->inTick.load(), 3000);
+            elapsed.start();
+        }
+        QVERIFY2(elapsed.elapsed() < 1000, qPrintable(QString("quit took %1 ms").arg(elapsed.elapsed())));
+        QVERIFY(service->shutdown.load());
     }
     void earbudsExposePerSideAndCaseBattery() {
         auto simulated = core::createSimulatedDevice("WF-1000XM5");

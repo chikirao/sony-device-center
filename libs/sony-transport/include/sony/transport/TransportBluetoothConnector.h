@@ -22,6 +22,7 @@ public:
     int recv(char* buf, size_t length) override;
     void connect(const std::string& addrStr) override;
     void disconnect() noexcept override;
+    void abort() noexcept override;
     bool isConnected() noexcept override;
     std::vector<BluetoothDevice> getConnectedDevices() override;
     SonyProtocolVersion getProtocolVersion() noexcept override;

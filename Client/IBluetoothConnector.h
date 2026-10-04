@@ -47,7 +47,13 @@ public:
 	
 	//This function should not block.
 	virtual void disconnect() noexcept = 0;
-	
+
+	//Makes a connect() or recv() blocked on another thread fail promptly, so a shutdown
+	//does not wait for them. The connection is unusable afterwards; the owner still calls
+	//disconnect(). Must not block.
+	//!!! Thread-safety: This function must be thread safe. !!!
+	virtual void abort() noexcept {}
+
 	//Cost directive: This function must be as cheap as possible.
 	//!!! Thread-safety: This function must be thread safe. !!!
 	virtual bool isConnected() noexcept = 0;

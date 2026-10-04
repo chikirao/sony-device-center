@@ -21,12 +21,15 @@ public:
     virtual int send(char* buf, size_t length) noexcept(false);
     virtual int recv(char* buf, size_t length) noexcept(false);
     virtual void disconnect() noexcept;
+    virtual void abort() noexcept;
     virtual bool isConnected() noexcept;
     virtual void closeConnection();
     virtual SonyProtocolVersion getProtocolVersion() noexcept;
 
-    // Called by the RFCOMM delegate, usually on the main thread's run loop. They only
+    // Called from IOBluetooth callbacks (usually on the main thread's run loop), and
+    // linkOpenComplete() also on the worker when a page cannot be started. They only
     // record state and wake waiters; they never close the channel or join the worker.
+    void linkOpenComplete(IOReturn status) noexcept;
     void channelOpenComplete(IOReturn status) noexcept;
     void channelData(const void* data, size_t length);
     void channelClosed() noexcept;
@@ -52,7 +55,13 @@ private:
     std::condition_variable stateConditionVariable;
     OpenState openState = OpenState::Idle;
     IOReturn openStatus = kIOReturnSuccess;
-    std::chrono::milliseconds openTimeout{std::chrono::seconds(10)};
+    // Baseband link opened asynchronously before the RFCOMM channel, when it was down.
+    bool linkPending = false;
+    IOReturn linkStatus = kIOReturnSuccess;
+    // For the whole attempt: bringing a down link up (a page can take ~5 s), then the
+    // RFCOMM channel.
+    std::chrono::milliseconds openTimeout{std::chrono::seconds(12)};
+    std::atomic<unsigned> cancelEpoch{0};
     void *workerRunLoop = nullptr;
 
     // This file is built without ARC. The connector owns one reference to each native

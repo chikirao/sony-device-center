@@ -7,6 +7,28 @@
 #endif
 namespace sony::core {
 IpcClient::IpcClient(std::string path) : _socketPath(std::move(path)) {}
+// Publishes the socket of a request in progress to abort(); declared after the
+// socket, so it is withdrawn before the socket closes and its number is reused.
+struct IpcClient::ActiveRequest {
+    IpcClient& client;
+    ActiveRequest(IpcClient& c, int fd) : client(c) {
+        std::lock_guard lock(client._activeMutex);
+        if (client._aborted) throw std::runtime_error("IPC request aborted");
+        client._activeFd = fd;
+    }
+    ~ActiveRequest() {
+        std::lock_guard lock(client._activeMutex);
+        client._activeFd = -1;
+    }
+};
+void IpcClient::abort() noexcept {
+    std::lock_guard lock(_activeMutex);
+    _aborted = true;
+#ifndef _WIN32
+    // Ends the poll() the request waits in: the socket reads as closed.
+    if (_activeFd >= 0) ::shutdown(_activeFd, SHUT_RDWR);
+#endif
+}
 const std::string& IpcClient::socketPath() const noexcept { return _socketPath; }
 #ifndef _WIN32
 namespace {
@@ -57,6 +79,7 @@ std::string IpcClient::request(std::string_view line, std::chrono::milliseconds 
         throw std::runtime_error("Invalid or oversized IPC request");
     unixsocket::Fd fd(::socket(AF_UNIX, SOCK_STREAM, 0));
     if (fd.value < 0) throw std::runtime_error("Cannot create IPC socket");
+    ActiveRequest active(*this, fd.value);
     auto deadline = Clock::now() + timeout;
     connectTo(fd.value, _socketPath, deadline);
     std::string data(line); data += '\n'; size_t sent = 0;
