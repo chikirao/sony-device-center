@@ -91,6 +91,7 @@ Files in `packaging/macos/`:
 | :--- | :--- |
 | `build-dmg.sh` | The pipeline. Everything above in ~80 lines. |
 | `verify-dmg.sh` | Mounts a DMG and asserts Qt, QML modules, daemon, CLI, signature. CI gate. |
+| `check-bundle-paths.sh` | Lists every rpath, link or install name in the bundle that points outside it (e.g. `/opt/homebrew`). Both scripts above fail on it. |
 | `dmgbuild.py` | Window geometry and icon positions for dmgbuild. |
 | `gragen.py` | Paints `dmg-background.png` / `@2x` from the app's palette. Standard library only. |
 | `Info.plist.in`, `AppIcon.icns` | Bundle metadata and icon, used by CMake. |
