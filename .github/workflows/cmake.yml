@@ -29,10 +29,11 @@ jobs:
             artifact_name: sony-device-center-linux-x64
             install_deps: |
               sudo apt-get update
+              # gdb: QtTest prints a crashing test's stack trace through it.
               sudo apt-get install -y libbluetooth-dev libglew-dev libglfw3-dev libdbus-1-dev qt6-base-dev qt6-declarative-dev libgl1-mesa-dev \
                 qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-templates \
                 qml6-module-qtquick-layouts qml6-module-qtquick-shapes qml6-module-qtquick-window \
-                qml6-module-qtqml-workerscript
+                qml6-module-qtqml-workerscript gdb
             cmake_args: ""
           - os: windows-latest
             artifact_name: sony-device-center-win-x64
