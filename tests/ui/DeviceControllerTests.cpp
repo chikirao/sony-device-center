@@ -14,6 +14,7 @@
 #include "PeripheralModel.h"
 #include "PeripheralSource.h"
 #include "../support/FakeReleaseFetcher.h"
+#include "../support/ScratchSettings.h"
 #include <QTemporaryDir>
 #include <QImage>
 #include <QQmlApplicationEngine>
@@ -24,7 +25,6 @@
 #include <functional>
 #include <QQuickStyle>
 #include <QDir>
-#include <QSettings>
 #include <QClipboard>
 #include <QRawFont>
 #include "I18nManager.h"
@@ -98,6 +98,7 @@ class DeviceControllerTests : public QObject {
     Q_OBJECT
 private slots:
     void initTestCase() { QQuickStyle::setStyle("Basic"); QStandardPaths::setTestModeEnabled(true); }
+    void init() { QVERIFY(_settings.reset()); }
     void extractedPagesLoad_data() {
         QTest::addColumn<QString>("model");
         QTest::addColumn<QString>("language");
@@ -119,7 +120,6 @@ private slots:
         service->connect(transport::DeviceAddress(simulated.address), simulated.name);
         DeviceCenterController controller(nullptr, service);
         QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
-        const auto previousLanguage = controller.currentLanguage();
         controller.setLanguage(language);
         QQmlApplicationEngine engine;
         QStringList warnings;
@@ -151,7 +151,9 @@ private slots:
         engine.rootContext()->setContextProperty("trayAvailable", true);
         engine.rootContext()->setContextProperty("startHidden", false);
         engine.load(QUrl("qrc:/qml/Main.qml"));
-        controller.setLanguage(previousLanguage);
+        // A live language switch in both directions: English for the checks
+        // below, the row's language again after them.
+        controller.setLanguage("en");
         QVERIFY2(!engine.rootObjects().isEmpty(), qPrintable(warnings.join("\n")));
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
         QVERIFY(window);
@@ -210,8 +212,6 @@ private slots:
         }
         controller.setLanguage(language);
         window->resize(size);
-        const auto previousTheme = controller.themeMode();
-        const auto previousAnimations = controller.animationsEnabled();
         controller.setThemeMode("light");
         QTest::qWait(20);
         QCOMPARE(window->color(), QColor("#EDEDED"));
@@ -258,15 +258,14 @@ private slots:
         }
         hub.close();
         QTRY_VERIFY(!hub.isVisible());
-        const bool previousSmoothing = controller.iconAntialiasing();
         controller.setIconAntialiasing(false);
-        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("iconAntialiasing").toBool(), false);
-        controller.setIconAntialiasing(previousSmoothing);
+        QCOMPARE(AppSettings().value("iconAntialiasing").toBool(), false);
+        controller.setIconAntialiasing(true);
         controller.setThemeMode("dark");
         QTest::qWait(20);
         QCOMPARE(window->color(), QColor("#0C0C0C"));
         controller.setAnimationsEnabled(false);
-        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("animationsEnabled").toBool(), false);
+        QCOMPARE(AppSettings().value("animationsEnabled").toBool(), false);
         controller.setThemeMode("invalid");
         QCOMPARE(controller.themeMode(), QString("dark"));
         // Hub behaviour, with motion off so nothing here waits on a slide.
@@ -361,7 +360,7 @@ private slots:
         QCOMPARE(mainRequests.last().first().toInt(), 0);
         hub.close();
         QTRY_VERIFY(!hub.isVisible());
-        controller.setAnimationsEnabled(previousAnimations);
+        controller.setAnimationsEnabled(true);
         for (int page = 0; page < 6; ++page) {
             QVERIFY(window->setProperty("navIndex", page));
             const auto screenshotDirectory = qEnvironmentVariable("SONY_UI_SCREENSHOTS");
@@ -535,23 +534,21 @@ private slots:
             QVERIFY(nameDots);
             const auto address = controller.deviceAddress();
             QVERIFY(!address.isEmpty());
-            const auto previousAlias = controller.aliasFor(address);
             controller.setAlias(address, "Desk set");
             QTRY_COMPARE(nameDots->property("text").toString(), QString("Desk set"));
             const int row = peripherals.indexOf(address);
             QVERIFY(row >= 0);
             QCOMPARE(peripherals.get(row).value("name").toString(), QString("Desk set"));
             QCOMPARE(peripherals.get(row).value("modelName").toString(), controller.deviceName());
-            controller.setAlias(address, previousAlias);
+            controller.setAlias(address, "");
             QTRY_COMPARE(nameDots->property("text").toString(), controller.displayName());
         }
         // The regular-font option swaps every dot display for the body
         // face, persists, and switches back.
-        const bool previousPlainFont = controller.plainFont();
         auto* nameDots = window->findChild<QQuickItem*>("deviceNameDots");
         QVERIFY(nameDots);
         controller.setPlainFont(true);
-        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("plainFont").toBool(), true);
+        QCOMPARE(AppSettings().value("plainFont").toBool(), true);
         QTRY_VERIFY(nameDots->property("plain").toBool());
         QVERIFY(nameDots->implicitHeight() > 0);
         QCOMPARE(window->findChild<QObject*>("plainFontSwitch")->property("checked").toBool(), true);
@@ -565,7 +562,6 @@ private slots:
         }
         controller.setPlainFont(false);
         QTRY_VERIFY(!nameDots->property("plain").toBool());
-        controller.setPlainFont(previousPlainFont);
         // The About card follows the checker: idle, then the release with
         // both actions once the (canned) reply is in.
         auto* updateStatus = window->findChild<QObject*>("updateStatus");
@@ -624,8 +620,6 @@ private slots:
         window->show();
         QTRY_VERIFY(window->findChild<QObject*>("overviewPage"));
         QVERIFY(!window->findChild<QObject*>("settingsFlick"));
-        controller.setThemeMode(previousTheme);
-        controller.setLanguage(previousLanguage);
         QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join("\n")));
     }
     void trayClickMeaning() {
@@ -743,8 +737,6 @@ private slots:
         auto simulated = core::createSimulatedDevice();
         auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
         service->connect(transport::DeviceAddress(simulated.address), simulated.name);
-        // The level is a persisted user setting; put it back afterwards.
-        const auto previousLevel = QSettings("SonyBridge", "SonyDeviceCenter").value("ambientLevel", 10);
         DeviceCenterController controller(nullptr, service);
         QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
         QCOMPARE(controller.noiseControlMode(), QString("cancelling"));
@@ -759,9 +751,7 @@ private slots:
         QCOMPARE(controller.noiseControlMode(), QString("ambient"));
         QCOMPARE(controller.ambientLevel(), 14);
         // Persisted, so an app restart starts from it too.
-        QSettings settings("SonyBridge", "SonyDeviceCenter");
-        QCOMPARE(settings.value("ambientLevel").toInt(), 14);
-        settings.setValue("ambientLevel", previousLevel);
+        QCOMPARE(AppSettings().value("ambientLevel").toInt(), 14);
     }
     void translationsStayInsideTheBundledFont() {
         // A character Manrope lacks sends Qt through the system's fallback
@@ -782,7 +772,6 @@ private slots:
         // Aliases key on the address in any spelling, survive a restart and
         // go away when cleared; the device's own name is untouched.
         const QString address = "AA:BB:CC:DD:EE:01";
-        const auto previous = QSettings("SonyBridge", "SonyDeviceCenter").value("deviceAliases");
         {
             DeviceCenterController controller(nullptr, std::make_shared<SlowService>());
             QSignalSpy changed(&controller, &DeviceCenterController::aliasesChanged);
@@ -803,9 +792,7 @@ private slots:
             controller.setAlias(address, "");
             QCOMPARE(controller.aliasFor(address), QString());
         }
-        QSettings settings("SonyBridge", "SonyDeviceCenter");
-        if (previous.isValid()) settings.setValue("deviceAliases", previous);
-        else QVERIFY(!settings.contains("deviceAliases"));
+        QVERIFY(!AppSettings().contains("deviceAliases"));
     }
     void trayIconReflectsBatteryAndConnection() {
         // Rendering is pure: no tray needed, so it runs headless too.
@@ -1007,8 +994,6 @@ private slots:
         DeviceCenterController controller(nullptr, service);
         TrayController tray(controller);
         NotificationController notifications(controller, tray);
-        const bool previous = controller.notifyUpdates();
-        const bool previousCheck = controller.checkUpdatesOnStart();
 
         auto* fetcher = new test::FakeReleaseFetcher;
         fetcher->body = test::FakeReleaseFetcher::release("v9.9.9");
@@ -1016,7 +1001,7 @@ private slots:
         connect(&updates, &UpdateChecker::updateAvailable, &notifications, &NotificationController::announceUpdate);
 
         controller.setNotifyUpdates(false);
-        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("notifyUpdates").toBool(), false);
+        QCOMPARE(AppSettings().value("notifyUpdates").toBool(), false);
         updates.check();
         QTRY_COMPARE(updates.state(), QString("available"));
         QVERIFY2(notifications.messageCount() == 0, "switched off: the card shows it, no toast");
@@ -1033,9 +1018,7 @@ private slots:
         QVERIFY(notifications.lastMessage().contains(controller.t("notify_update_body")));
 
         controller.setCheckUpdatesOnStart(false);
-        QCOMPARE(QSettings("SonyBridge", "SonyDeviceCenter").value("checkUpdatesOnStart").toBool(), false);
-        controller.setCheckUpdatesOnStart(previousCheck);
-        controller.setNotifyUpdates(previous);
+        QCOMPARE(AppSettings().value("checkUpdatesOnStart").toBool(), false);
     }
     void batteryLogFollowsTheSimulatedDevice() {
         QTemporaryDir dir;
@@ -1084,14 +1067,11 @@ private slots:
     void durationsAreLocalised() {
         auto service = std::make_shared<SlowService>();
         DeviceCenterController controller(nullptr, service);
-        // The language is a persisted user setting; put it back afterwards.
-        const auto previous = controller.currentLanguage();
         controller.setLanguage("en");
         QCOMPARE(controller.formatDuration(320), QString("5 h 20 min"));
         QCOMPARE(controller.formatDuration(45), QString("45 min"));
         controller.setLanguage("ru");
         QCOMPARE(controller.formatDuration(320), QString::fromUtf8("5 ч 20 мин"));
-        controller.setLanguage(previous);
         QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 2000);
     }
     void failedActionPreservesConfirmedValue() {
@@ -1145,8 +1125,6 @@ private slots:
         DeviceCenterController controller(nullptr, service);
         TrayController tray(controller);
         const QString group = "hotkeys-test";
-        auto wipe = [&] { QSettings settings("SonyBridge", "SonyDeviceCenter"); settings.beginGroup(group); settings.remove(""); };
-        wipe();
         {
             HotkeyManager hotkeys(controller, tray, nullptr, group);
             const auto bindings = hotkeys.bindings();
@@ -1191,15 +1169,12 @@ private slots:
             QVERIFY(hotkeys.shortcut(HotkeyManager::Action::ShowWindow).isEmpty());
             QCOMPARE(hotkeys.bindings()[0].toMap()["display"].toString(), HotkeyManager::displayText("Ctrl+Alt+N"));
         }
-        wipe();
     }
     void hotkeysRouteActionsToController() {
         auto simulated = core::createSimulatedDevice();
         auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
         service->connect(transport::DeviceAddress(simulated.address), simulated.name);
-        const auto previousLevel = QSettings("SonyBridge", "SonyDeviceCenter").value("ambientLevel", 10);
         DeviceCenterController controller(nullptr, service);
-        const bool previousNotify = controller.notifyHotkeys();
         controller.setNotifyHotkeys(true);
         TrayController tray(controller);
         HotkeyManager hotkeys(controller, tray, nullptr, "hotkeys-test");
@@ -1249,7 +1224,6 @@ private slots:
                            HotkeyManager::kNativeIdBase + static_cast<int>(Action::ShowWindow), 0);
         QTest::qWait(100);
         QCOMPARE(shown.count(), 2);
-        QSettings settings("SonyBridge", "SonyDeviceCenter"); settings.beginGroup("hotkeys-test"); settings.remove("");
 #endif
 
         // Feedback follows the notification toggle.
@@ -1257,9 +1231,6 @@ private slots:
         const auto before = hotkeys.lastFeedback();
         hotkeys.trigger(Action::NoiseControlOff); settle();
         QCOMPARE(hotkeys.lastFeedback(), before);
-
-        controller.setNotifyHotkeys(previousNotify);
-        QSettings("SonyBridge", "SonyDeviceCenter").setValue("ambientLevel", previousLevel);
     }
     void equalizerLibraryStoresAppliesAndImports() {
         auto simulated = core::createSimulatedDevice();
@@ -1385,6 +1356,9 @@ private slots:
         controller.reset();
         QCoreApplication::processEvents();
     }
+
+private:
+    test::ScratchSettings _settings;
 };
 // A full (widgets) application: the tray icon renderer paints with fonts.
 QTEST_MAIN(DeviceControllerTests)

@@ -1,4 +1,5 @@
 #include "HubSettings.h"
+#include "AppSettings.h"
 #include "PeripheralSource.h"
 
 #include <algorithm>
@@ -6,7 +7,7 @@
 namespace sony::devicecenter {
 
 HubSettings::HubSettings(const QString& iniPath, QObject* parent) : QObject(parent) {
-    _store = iniPath.isEmpty() ? std::make_unique<QSettings>("SonyBridge", "SonyDeviceCenter")
+    _store = iniPath.isEmpty() ? std::make_unique<AppSettings>()
                                : std::make_unique<QSettings>(iniPath, QSettings::IniFormat);
     _store->beginGroup("hub");
     _showSystemDevices = _store->value("showSystemDevices", true).toBool();
