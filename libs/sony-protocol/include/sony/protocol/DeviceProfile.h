@@ -45,9 +45,13 @@ struct DeviceCapabilities
     bool dsee = false;
 
     bool speakToChat = false;
+    bool speakToChatConfig = false;  // sensitivity and timeout
     bool adaptiveVolume = false;
 
     bool autoPowerOff = false;
+    // Only Off and When taken off (indexes 0 and 5), no timed choices: the
+    // WH-1000XM4's Automatic Power Off.
+    bool autoPowerOffWhenTakenOffOnly = false;
 
     bool firmwareInfo = false;
     bool codecInfo = false;

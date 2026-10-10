@@ -497,13 +497,22 @@ verify on hardware → fixture → `IProtocol` + `DeviceState` +
 - [x] **V1 (XM4): Speak-to-Chat.** Smart Talking Mode (`0xf6 0x05`) is
   enabled for the WH-1000XM4 profile after verification on firmware 3.0.1;
   enabling it writes the Standard (~30 s) timeout configuration first.
+- [~] **V1 (XM4): Speak-to-Chat sensitivity, timeout and voice passthrough.**
+  On the Speak-to-Chat card in Audio Features, and `sonyctl stc
+  get|sensitivity|timeout|passthrough`. SET (`0xfc 0x05`) is the write that
+  enable has always sent; GET (`0xfa 0x05` → `0xfb 0x05 0x00 00 00 01` at the
+  defaults) is ✅ captured on an XM4, and a Short timeout written by `sonyctl`
+  ✅ shows in Headphones Connect, and back. Voice passthrough is the third
+  byte. The `0xfd` notification updates the app at once; the
+  `0xf9 0x05` on/off notification still needs a hardware sighting.
 - [~] **V1 (XM4): DSEE and Auto Power-Off contributor test.** DSEE on/off was
   confirmed through the GUI on firmware 3.0.1, although the CLI failed to
-  connect and produced no literal TX/RX dump. Auto Power-Off did not work, so
-  its XM4 profile flag is disabled again while the Gadgetbridge-based code is
-  retained as an unverified implementation hint. The same build aligns the
-  six APO labels with the documented code table; a fresh XM5 readback is still
-  required before that label change moves to the main PR.
+  connect and produced no literal TX/RX dump. Auto Power-Off is ✅ verified on
+  an XM4: it has only Sony's two choices, off when taken off (`10 00`) and
+  never (`11 00`), both captured and written back as Sound Connect shows. The
+  timed choices the contributor build offered are other models', which is
+  why it "did not work"; the app now offers the XM4 just its two. A fresh XM5
+  readback is still required for the six-label table.
 - [ ] **V1 (XM4): investigate Noise Control Off.** The contributor reported
   that ANC and Ambient work but Off does not in the combined build. This path
   is unchanged from `main`; establish whether it reproduces in the installed

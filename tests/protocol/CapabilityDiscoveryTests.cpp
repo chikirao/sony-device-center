@@ -5,6 +5,7 @@
 #include "sony/transport/FakeTransport.h"
 
 #include <filesystem>
+#include <fstream>
 
 using namespace sony::protocol;
 using namespace sony::transport;
@@ -90,7 +91,8 @@ TEST_CASE("CapabilityDiscovery: discoverAsync runs non-blocking", "[protocol][ca
     REQUIRE(caps.equalizer == true);
     REQUIRE(caps.dsee == true);
     REQUIRE(caps.speakToChat == true);
-    REQUIRE(caps.autoPowerOff == false);
+    REQUIRE(caps.autoPowerOff == true);
+    REQUIRE(caps.autoPowerOffWhenTakenOffOnly == true);
     REQUIRE(fake.sentCount() == 0);
 }
 
@@ -104,6 +106,7 @@ TEST_CASE("CapabilityCache: persistence to file", "[protocol][capabilities]")
         caps.battery = true;
         caps.equalizer = true;
         caps.dsee = true;
+        caps.speakToChatConfig = true;
 
         cache.put("WH-1000XM5@2.0.1", caps);
         REQUIRE(cache.saveToFile(tempPath));
@@ -118,7 +121,27 @@ TEST_CASE("CapabilityCache: persistence to file", "[protocol][capabilities]")
         REQUIRE(retrieved->equalizer == true);
         REQUIRE(retrieved->dsee == true);
         REQUIRE(retrieved->speakToChat == false);
+        REQUIRE(retrieved->speakToChatConfig == true);
     }
+
+    std::filesystem::remove(tempPath);
+}
+
+TEST_CASE("CapabilityCache: reads entries written before Speak-to-Chat settings", "[protocol][capabilities]")
+{
+    auto tempPath = std::filesystem::temp_directory_path() / "test_sony_caps_cache_v15.txt";
+    {
+        std::ofstream file(tempPath);
+        file << "WH-1000XM4@3.0.1=1,0,1,1,1,1,1,1,1,0,0,1,1,1,1\n";
+    }
+
+    CapabilityCache cache;
+    REQUIRE(cache.loadFromFile(tempPath));
+    auto retrieved = cache.get("WH-1000XM4@3.0.1");
+    REQUIRE(retrieved.has_value());
+    REQUIRE(retrieved->speakToChat == true);
+    REQUIRE(retrieved->multipoint == true);
+    REQUIRE(retrieved->speakToChatConfig == false);
 
     std::filesystem::remove(tempPath);
 }

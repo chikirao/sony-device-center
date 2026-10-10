@@ -18,7 +18,7 @@ This document tracks hardware-level verification and protocol capability support
 | Device | Protocol | Connection | Battery | ANC | Ambient | EQ | DSEE | Firmware | Codec | Speak-to-Chat | Auto Power-Off | Tested Firmware | Tester |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **WH-1000XM3** | V1 | RFCOMM | Verified | Verified | Verified | N/A (V1) | N/A (V1) | Unknown | SBC, AAC, LDAC, aptX | N/A | N/A | 4.5.2 | Community |
-| **WH-1000XM4** | V1 | RFCOMM | Verified | Verified | Verified | Verified | Verified (GUI on/off; dump unavailable) | Verified | AAC verified | Verified (on/off; Standard ~30s) | Disabled (contributor test unsuccessful) | 3.0.1 | Community (Windows) |
+| **WH-1000XM4** | V1 | RFCOMM | Verified | Verified | Verified | Verified | Verified (GUI on/off; dump unavailable) | Verified | AAC verified | Verified (on/off; Standard ~30s); sensitivity/timeout Verified (readback; writes confirmed in Headphones Connect) | Verified (when taken off / never) | 3.0.1 | Community (Windows) |
 | **WH-1000XM5** | V2 | RFCOMM | Verified | Verified | Verified | Verified | Verified | Verified | SBC, AAC, LDAC | Verified | Verified | 2.3.1 | Core Dev |
 | **WH-1000XM6** | V2 | RFCOMM | Expected | Expected | Expected | Expected | Expected | Expected | Expected | Expected | Expected | — | Unreleased |
 | **WF-1000XM4** | V2 | RFCOMM | Expected (Dual+Case) | Expected | Expected | Expected | Expected | Expected | SBC, AAC, LDAC | Expected | Expected | — | Awaiting HW |
@@ -41,15 +41,17 @@ This document tracks hardware-level verification and protocol capability support
 - DSEE (`0xe6 0x02` → `0xe7 0x02 0x00 <on>`) was confirmed working on and off
   through the GUI on XM4 firmware 3.0.1. The contributor's `sonyctl -v` run
   could not connect, so a literal TX/RX capture is still unavailable.
-- Auto power-off (`0xf6 0x04` → `0xf7 0x04 0x01 <code0> <code1>`) remains an
-  implementation hint from Gadgetbridge. It did not work in the contributor
-  build and is disabled in the XM4 profile until a successful capture shows
-  the real firmware 3.0.1 exchange.
+- Auto power-off: GET `0xf6 0x04` → RET `0xf7 0x04 0x01 <code0> <code1>`, SET
+  `0xf8 0x04 0x01 <code0> <code1>`. The XM4 has only two choices, as in Sony's
+  app: off when taken off `10 00` and never `11 00` (both captured; writes
+  confirmed in Sound Connect). The timed codes (`00 00` 5 min, `01 01` 30 min,
+  `02 02` 1 h, `03 03` 3 h) are other models'; offering them is why the
+  contributor build "did not work".
 - The Noise Control **Off** transition was also reported unsuccessful in the
   combined contributor build. That V1 command path is unchanged from `main`;
   compare against the installed build and capture TX/RX before changing its
   established `0x68 0x02` layout.
-- Speak-to-Chat is Smart Talking Mode: GET `0xf6 0x05` → RET `0xf7 0x05 <kind> <onOff>`, SET enable `0xf8 0x05 0x01 <0|1>`. Enable is **not** inverted. Config SET `0xfc 0x05 0x00 <sensitivity> <focus> <timeout>` is required on enable; without it an XM4 session never times out. `kind 0x02` is an active talking session, not off. Timeout bytes match Headphones Connect: `0x00` ~15s, `0x01` Standard ~30s (what we write today), `0x02` ~1 min, `0x03` do not close. Sensitivity/timeout UI is a nice-to-have.
+- Speak-to-Chat is Smart Talking Mode: GET `0xf6 0x05` → RET `0xf7 0x05 <kind> <onOff>`, SET enable `0xf8 0x05 0x01 <0|1>`. Enable is **not** inverted. Config SET `0xfc 0x05 0x00 <sensitivity> <focus> <timeout>` is required on enable; without it an XM4 session never times out. `kind 0x02` is an active talking session, not off. Timeout bytes match Headphones Connect: `0x00` ~15s, `0x01` Standard ~30s (the default), `0x02` ~1 min, `0x03` do not close; sensitivity `0x00` Auto, `0x01` High, `0x02` Low. Config GET `0xfa 0x05` → RET `0xfb 0x05 0x00 <sensitivity> <focus> <timeout>` (Gadgetbridge layout; an XM4 at the defaults answered `fb 05 00 00 00 01`, captured with `sonyctl --direct -v stc get`). After `stc timeout short` and `stc on`, Headphones Connect showed Speak-to-Chat on with the Short close time, and changes made in either app showed up in the other. `<focus>` is Headphones Connect's Voice passthrough (Gadgetbridge: focus on voice). The headset announces every settings change with NTFY `0xfd 0x05 0x00 <sensitivity> <focus> <timeout>` (captured), which the app applies at once; NTFY `0xf9 0x05 0x01 <onOff>` is parsed for the switch, per Gadgetbridge, but not yet seen on hardware. A change to one field, and every enable, writes back the headset's current config with only the asked-for field changed: the app's copy when this connection has read or been told it, otherwise a fresh read. If that read fails the command fails, so a choice made on the phone is never reset to defaults.
 
 ### Protocol V2 (e.g. WH-1000XM5, WF-1000XM4/M5, LinkBuds, ULT WEAR)
 - Extended variable-length payload structures.

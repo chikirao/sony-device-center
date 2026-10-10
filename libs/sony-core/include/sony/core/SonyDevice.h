@@ -48,6 +48,11 @@ public:
     void refreshEqualizer();
     void refreshDsee();
     int readAutoPowerOff();
+    protocol::SpeakToChatConfig readSpeakToChatConfig();
+    // What the headset holds now: the state when this connection has read or
+    // been told it, otherwise a fresh read. Throws rather than guessing, so a
+    // write never replaces settings it was not asked to change.
+    protocol::SpeakToChatConfig currentSpeakToChatConfig();
     void refreshSettingsStep();
 
     // Control operations
@@ -59,6 +64,7 @@ public:
     void setDsee(bool enabled);
     void setAutoPowerOff(int index);
     void setSpeakToChat(bool enabled);
+    void setSpeakToChatConfig(const protocol::SpeakToChatConfig& config);
     void setAdaptiveVolume(bool enabled);
     // Asks the headset to switch off. The link drops shortly after.
     void powerOff();

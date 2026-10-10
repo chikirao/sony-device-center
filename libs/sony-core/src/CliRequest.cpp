@@ -75,8 +75,28 @@ CliRequest cliRequestFor(const std::vector<std::string>& tokens) {
         const bool enabled = arg(1) == "auto" ? true : onOff(tokens, 1, "dsee");
         return {envelope("dsee", {{"enabled", enabled}}), ""};
     }
-    if (verb == "stc" || verb == "speak-to-chat" || verb == "speaktochat")
+    if (verb == "stc" || verb == "speak-to-chat" || verb == "speaktochat") {
+        // Names in wire-code order.
+        static const std::vector<std::string> sensitivities{"auto", "high", "low"};
+        static const std::vector<std::string> timeouts{"short", "standard", "long", "never"};
+        const auto pick = [&](const std::vector<std::string>& names, const char* what) {
+            const auto it = std::find(names.begin(), names.end(), arg(2));
+            if (it == names.end()) {
+                std::string list;
+                for (const auto& name : names) list += (list.empty() ? "" : "|") + name;
+                throw std::invalid_argument(std::string("stc ") + what + " expects " + list);
+            }
+            return static_cast<int>(it - names.begin());
+        };
+        if (arg(1) == "get") return {envelope("speakToChatConfigGet"), "speakToChatConfig"};
+        if (arg(1) == "sensitivity")
+            return {envelope("speakToChatConfig", {{"sensitivity", pick(sensitivities, "sensitivity")}}), ""};
+        if (arg(1) == "timeout")
+            return {envelope("speakToChatConfig", {{"timeout", pick(timeouts, "timeout")}}), ""};
+        if (arg(1) == "passthrough")
+            return {envelope("speakToChatConfig", {{"voicePassthrough", onOff(tokens, 2, "stc passthrough")}}), ""};
         return {envelope("speakToChat", {{"enabled", onOff(tokens, 1, "speak-to-chat")}}), ""};
+    }
     if (verb == "adaptive" || verb == "adaptive-volume")
         return {envelope("adaptiveVolume", {{"enabled", onOff(tokens, 1, "adaptive volume")}}), ""};
     if (verb == "apo" || verb == "autopoweroff") {

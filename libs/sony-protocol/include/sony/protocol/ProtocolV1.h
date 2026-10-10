@@ -40,7 +40,12 @@ public:
     void setAutoPowerOff(int index) override;
 
     bool getSpeakToChat() override;
+    // Only the switch. Enabling without a config written first leaves a
+    // talking session that never closes, so write the headset's current one
+    // with setSpeakToChatConfig before enabling (SonyDevice does).
     void setSpeakToChat(bool enabled) override;
+    SpeakToChatConfig getSpeakToChatConfig() override;
+    void setSpeakToChatConfig(const SpeakToChatConfig& config) override;
 
     bool getAdaptiveVolume() override;
     void setAdaptiveVolume(bool enabled) override;

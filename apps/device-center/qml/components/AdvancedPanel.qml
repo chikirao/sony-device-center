@@ -291,8 +291,7 @@ Item {
                     title: appWindow.tr("auto_power_off")
                     value: panel.lacks(controller.hasAutoPowerOff) ? appWindow.tr("not_supported")
                          : !panel.known("autoPowerOff") ? "—"
-                         : [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_30min"),
-                            appWindow.tr("apo_1h"), appWindow.tr("apo_3h"), appWindow.tr("apo_when_taken_off")][controller.autoPowerOff] || "—"
+                         : (appWindow.autoPowerOffChoices[appWindow.autoPowerOffChoice(controller.autoPowerOff)] || { label: "—" }).label
                     onClicked: panel.go(appWindow.pages.features)
                 }
                 Row_ {

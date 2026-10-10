@@ -169,6 +169,9 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     _clearBass = eq.value("clearBass").toInt(); _equalizerBands = eq.value("bands").toArray().toVariantList();
     _dsee = s.value("dsee").toBool(); _speakToChat = s.value("speakToChat").toBool();
     _adaptiveVolume = s.value("adaptiveVolume").toBool(); _autoPowerOff = s.value("autoPowerOff").toInt();
+    const auto stc = s.value("speakToChatConfig").toObject();
+    _speakToChatSensitivity = stc.value("sensitivity").toInt(0); _speakToChatTimeout = stc.value("timeout").toInt(1);
+    _speakToChatVoicePassthrough = stc.value("voicePassthrough").toBool();
     _codec = _connected && valid("codec") ? s.value("codec").toString("Unknown") : "Unknown";
     // The log follows the selected device and only writes on actual changes.
     // Early snapshots carry no address yet; the log keeps its device rather
@@ -262,6 +265,9 @@ int DeviceCenterController::clearBass() const { return _clearBass; }
 QVariantList DeviceCenterController::equalizerBands() const { return _equalizerBands; }
 bool DeviceCenterController::dsee() const { return _dsee; }
 bool DeviceCenterController::speakToChat() const { return _speakToChat; }
+int DeviceCenterController::speakToChatSensitivity() const { return _speakToChatSensitivity; }
+int DeviceCenterController::speakToChatTimeout() const { return _speakToChatTimeout; }
+bool DeviceCenterController::speakToChatVoicePassthrough() const { return _speakToChatVoicePassthrough; }
 bool DeviceCenterController::adaptiveVolume() const { return _adaptiveVolume; }
 int DeviceCenterController::autoPowerOff() const { return _autoPowerOff; }
 
@@ -303,9 +309,13 @@ bool DeviceCenterController::hasDsee() const { return _capabilities.value("dsee"
 
 bool DeviceCenterController::hasSpeakToChat() const { return _capabilities.value("speakToChat").toBool(); }
 
+bool DeviceCenterController::hasSpeakToChatConfig() const { return _capabilities.value("speakToChatConfig").toBool(); }
+
 bool DeviceCenterController::hasAdaptiveVolume() const { return _capabilities.value("adaptiveVolume").toBool(); }
 
 bool DeviceCenterController::hasAutoPowerOff() const { return _capabilities.value("autoPowerOff").toBool(); }
+
+bool DeviceCenterController::hasAutoPowerOffWhenTakenOffOnly() const { return _capabilities.value("autoPowerOffWhenTakenOffOnly").toBool(); }
 
 QVariantList DeviceCenterController::pairedDevices() const { return _pairedDevices; }
 
@@ -323,6 +333,9 @@ void DeviceCenterController::setEqualizerCustom(int bass, const QVariantList& ba
 }
 void DeviceCenterController::setDsee(bool enabled) { _send("dsee", {{"enabled",enabled}}); }
 void DeviceCenterController::setSpeakToChat(bool enabled) { _send("speakToChat", {{"enabled",enabled}}); }
+void DeviceCenterController::setSpeakToChatSensitivity(int sensitivity) { _send("speakToChatConfig", {{"sensitivity",sensitivity}}); }
+void DeviceCenterController::setSpeakToChatTimeout(int timeout) { _send("speakToChatConfig", {{"timeout",timeout}}); }
+void DeviceCenterController::setSpeakToChatVoicePassthrough(bool enabled) { _send("speakToChatConfig", {{"voicePassthrough",enabled}}); }
 void DeviceCenterController::setAdaptiveVolume(bool enabled) { _send("adaptiveVolume", {{"enabled",enabled}}); }
 void DeviceCenterController::setAutoPowerOff(int index) { _send("autoPowerOff", {{"index",index}}); }
 void DeviceCenterController::powerOff() { _send("powerOff"); }

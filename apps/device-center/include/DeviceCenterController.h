@@ -58,6 +58,11 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(QVariantList equalizerBands READ equalizerBands NOTIFY stateChanged)
     Q_PROPERTY(bool dsee READ dsee NOTIFY stateChanged)
     Q_PROPERTY(bool speakToChat READ speakToChat NOTIFY stateChanged)
+    // Wire codes: sensitivity 0 Auto, 1 High, 2 Low; timeout 0 Short,
+    // 1 Standard, 2 Long, 3 never ends on its own.
+    Q_PROPERTY(int speakToChatSensitivity READ speakToChatSensitivity NOTIFY stateChanged)
+    Q_PROPERTY(int speakToChatTimeout READ speakToChatTimeout NOTIFY stateChanged)
+    Q_PROPERTY(bool speakToChatVoicePassthrough READ speakToChatVoicePassthrough NOTIFY stateChanged)
     Q_PROPERTY(bool adaptiveVolume READ adaptiveVolume NOTIFY stateChanged)
     Q_PROPERTY(int autoPowerOff READ autoPowerOff NOTIFY stateChanged)
     Q_PROPERTY(QString heroImagePath READ heroImagePath NOTIFY stateChanged)
@@ -68,8 +73,11 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(bool hasClearBass READ hasClearBass NOTIFY capabilitiesChanged)
     Q_PROPERTY(bool hasDsee READ hasDsee NOTIFY capabilitiesChanged)
     Q_PROPERTY(bool hasSpeakToChat READ hasSpeakToChat NOTIFY capabilitiesChanged)
+    Q_PROPERTY(bool hasSpeakToChatConfig READ hasSpeakToChatConfig NOTIFY capabilitiesChanged)
     Q_PROPERTY(bool hasAdaptiveVolume READ hasAdaptiveVolume NOTIFY capabilitiesChanged)
     Q_PROPERTY(bool hasAutoPowerOff READ hasAutoPowerOff NOTIFY capabilitiesChanged)
+    // Only off-when-taken-off and never, as on the WH-1000XM4.
+    Q_PROPERTY(bool hasAutoPowerOffWhenTakenOffOnly READ hasAutoPowerOffWhenTakenOffOnly NOTIFY capabilitiesChanged)
 
     Q_PROPERTY(QVariantList pairedDevices READ pairedDevices NOTIFY pairedDevicesChanged)
 
@@ -139,6 +147,9 @@ public:
     [[nodiscard]] QVariantList equalizerBands() const;
     [[nodiscard]] bool dsee() const;
     [[nodiscard]] bool speakToChat() const;
+    [[nodiscard]] int speakToChatSensitivity() const;
+    [[nodiscard]] int speakToChatTimeout() const;
+    [[nodiscard]] bool speakToChatVoicePassthrough() const;
     [[nodiscard]] bool adaptiveVolume() const;
     [[nodiscard]] int autoPowerOff() const;
     [[nodiscard]] QString heroImagePath() const;
@@ -149,8 +160,10 @@ public:
     [[nodiscard]] bool hasClearBass() const;
     [[nodiscard]] bool hasDsee() const;
     [[nodiscard]] bool hasSpeakToChat() const;
+    [[nodiscard]] bool hasSpeakToChatConfig() const;
     [[nodiscard]] bool hasAdaptiveVolume() const;
     [[nodiscard]] bool hasAutoPowerOff() const;
+    [[nodiscard]] bool hasAutoPowerOffWhenTakenOffOnly() const;
 
     [[nodiscard]] QVariantList pairedDevices() const;
 
@@ -166,6 +179,9 @@ public:
     Q_INVOKABLE void setEqualizerCustom(int clearBass, const QVariantList& bands);
     Q_INVOKABLE void setDsee(bool enabled);
     Q_INVOKABLE void setSpeakToChat(bool enabled);
+    Q_INVOKABLE void setSpeakToChatSensitivity(int sensitivity);
+    Q_INVOKABLE void setSpeakToChatTimeout(int timeout);
+    Q_INVOKABLE void setSpeakToChatVoicePassthrough(bool enabled);
     Q_INVOKABLE void setAdaptiveVolume(bool enabled);
     Q_INVOKABLE void setAutoPowerOff(int index);
     Q_INVOKABLE void powerOff();
@@ -259,6 +275,9 @@ private:
     QVariantList _equalizerBands{0, 0, 0, 0, 0};
     bool _dsee{false};
     bool _speakToChat{false};
+    int _speakToChatSensitivity{0};
+    int _speakToChatTimeout{1};
+    bool _speakToChatVoicePassthrough{false};
     bool _adaptiveVolume{false};
     int _autoPowerOff{0};
     QVariantList _pairedDevices;

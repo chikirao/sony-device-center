@@ -308,7 +308,89 @@ TEST_CASE("ProtocolV1: reads and writes Speak-to-Chat via Smart Talking Mode", "
         REQUIRE_THROWS_AS(v1.getSpeakToChat(), SonyException);
     }
 
-    SECTION("SET enable writes Standard timeout then the non-inverted on bit")
+    SECTION("SET writes the non-inverted switch alone")
+    {
+        // The config that has to precede an enable is SonyDevice's to send.
+        ReplyingFakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        fake.queueReply({ SonyFrame{ .type = DataType::Ack, .sequence = 0 } });
+        v1.setSpeakToChat(true);
+        fake.queueReply({ SonyFrame{ .type = DataType::Ack, .sequence = 1 } });
+        v1.setSpeakToChat(false);
+        REQUIRE(dataRequestPayloads(fake) == std::vector<std::vector<uint8_t>>{
+            {0xf8, 0x05, 0x01, 0x01},
+            {0xf8, 0x05, 0x01, 0x00},
+        });
+    }
+}
+
+TEST_CASE("ProtocolV1: reads and writes Speak-to-Chat sensitivity and timeout", "[protocol][v1]")
+{
+    // GET fa 05 -> RET fb 05 00 <sensitivity> <voicePassthrough> <timeout>;
+    // SET fc 05 00 <sensitivity> <voicePassthrough> <timeout>.
+
+    SECTION("GET decodes sensitivity, voice passthrough and timeout")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        queueReply(fake, {0xfb, 0x05, 0x00, 0x02, 0x01, 0x03});
+        const auto config = v1.getSpeakToChatConfig();
+        REQUIRE(firstRequestPayload(fake) == std::vector<uint8_t>{0xfa, 0x05});
+        CHECK(config.sensitivity == 2);
+        CHECK(config.voicePassthrough == true);
+        CHECK(config.timeout == 3);
+    }
+
+    SECTION("GET decodes the reply captured from a WH-1000XM4")
+    {
+        // sonyctl --direct -v stc get, 2026-10-09: TX fa 05, RX fb 05 00 00 00 01.
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        queueReply(fake, {0xfb, 0x05, 0x00, 0x00, 0x00, 0x01});
+        const auto config = v1.getSpeakToChatConfig();
+        CHECK(config.sensitivity == 0);
+        CHECK(config.voicePassthrough == false);
+        CHECK(config.timeout == 1);
+    }
+
+    SECTION("GET rejects a truncated reply and codes it does not know")
+    {
+        // Each reply arrives, so the throw is the validation, not a timeout.
+        ReplyingFakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        // The headset alternates its sequence bit; a repeat is dropped as a duplicate.
+        uint8_t sequence = 0;
+        const auto rejects = [&](std::vector<uint8_t> reply) {
+            fake.queueReply({
+                SonyFrame{ .type = DataType::Ack, .sequence = 0 },
+                SonyFrame{ .type = DataType::DataMdr, .sequence = sequence, .payload = std::move(reply) }
+            });
+            sequence ^= 1;
+            try {
+                v1.getSpeakToChatConfig();
+                FAIL("accepted");
+            } catch (const SonyException& ex) {
+                CHECK(ex.code() == SonyErrorCode::InvalidResponse);
+            }
+        };
+        rejects({0xfb, 0x05, 0x00, 0x00, 0x00});
+        rejects({0xfb, 0x05, 0x00, 0x03, 0x00, 0x01});
+        rejects({0xfb, 0x05, 0x00, 0x00, 0x00, 0x04});
+    }
+
+    SECTION("SET writes the config literal")
     {
         ReplyingFakeTransport fake;
         SonyProtocolSession session(&fake);
@@ -316,17 +398,21 @@ TEST_CASE("ProtocolV1: reads and writes Speak-to-Chat via Smart Talking Mode", "
         ProtocolV1 v1(session);
 
         fake.queueReply({ SonyFrame{ .type = DataType::Ack, .sequence = 0 } });
-        fake.queueReply({ SonyFrame{ .type = DataType::Ack, .sequence = 1 } });
-        v1.setSpeakToChat(true);
-        REQUIRE(dataRequestPayloads(fake) == std::vector<std::vector<uint8_t>>{
-            {0xfc, 0x05, 0x00, 0x00, 0x00, 0x01},
-            {0xf8, 0x05, 0x01, 0x01},
-        });
+        v1.setSpeakToChatConfig({ .sensitivity = 1, .voicePassthrough = true, .timeout = 2 });
+        REQUIRE(dataRequestPayloads(fake) == std::vector<std::vector<uint8_t>>{{0xfc, 0x05, 0x00, 0x01, 0x01, 0x02}});
+    }
 
-        fake.queueReply({ SonyFrame{ .type = DataType::Ack, .sequence = 2 } });
-        v1.setSpeakToChat(false);
-        REQUIRE(dataRequestPayloads(fake).back() == std::vector<uint8_t>{0xf8, 0x05, 0x01, 0x00});
-        REQUIRE(dataRequestPayloads(fake).size() == 3);
+    SECTION("SET refuses codes outside the table without sending")
+    {
+        FakeTransport fake;
+        SonyProtocolSession session(&fake);
+        session.connect("11:22:33:44:55:66");
+        ProtocolV1 v1(session);
+
+        REQUIRE_THROWS_AS(v1.setSpeakToChatConfig({ .sensitivity = 3 }), std::invalid_argument);
+        REQUIRE_THROWS_AS(v1.setSpeakToChatConfig({ .timeout = 4 }), std::invalid_argument);
+        REQUIRE_THROWS_AS(v1.setSpeakToChatConfig({ .timeout = -1 }), std::invalid_argument);
+        REQUIRE(fake.sentCount() == 0);
     }
 }
 
@@ -393,6 +479,23 @@ TEST_CASE("ProtocolV1: reads and writes Auto Power-Off with V1 packet literals",
             queueReply(fake, {0xf7, 0x04, 0x01, first, second});
             REQUIRE(v1.getAutoPowerOff() == static_cast<int>(index));
             REQUIRE(firstRequestPayload(fake) == std::vector<uint8_t>{0xf6, 0x04});
+        }
+    }
+
+    SECTION("GET decodes the replies captured from a WH-1000XM4")
+    {
+        // sonyctl --direct -v --json apo get, 2026-10-10, with Sony's app set
+        // to "Do not turn off" and then "Off when headphones are removed".
+        for (const auto& [reply, index] : std::vector<std::pair<std::vector<uint8_t>, int>>{
+                 {{0xf7, 0x04, 0x01, 0x11, 0x00}, 0}, {{0xf7, 0x04, 0x01, 0x10, 0x00}, 5}}) {
+            FakeTransport fake;
+            SonyProtocolSession session(&fake);
+            session.connect("11:22:33:44:55:66");
+            ProtocolV1 v1(session);
+
+            queueReply(fake, reply);
+            CHECK(v1.getAutoPowerOff() == index);
+            CHECK(firstRequestPayload(fake) == std::vector<uint8_t>{0xf6, 0x04});
         }
     }
 

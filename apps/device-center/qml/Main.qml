@@ -72,6 +72,17 @@ ApplicationWindow {
         var value = tr(key)
         return value === key ? state : value
     }
+    // Auto power-off as the model offers it, in display order: the protocol
+    // index and its label. The XM4 has only two choices; others all six.
+    readonly property var autoPowerOffChoices: controller.hasAutoPowerOffWhenTakenOffOnly
+        ? [{ index: 5, label: tr("apo_when_taken_off") }, { index: 0, label: tr("apo_never") }]
+        : [{ index: 0, label: tr("apo_off") }, { index: 1, label: tr("apo_5min") }, { index: 2, label: tr("apo_30min") },
+           { index: 3, label: tr("apo_1h") }, { index: 4, label: tr("apo_3h") }, { index: 5, label: tr("apo_when_taken_off") }]
+    function autoPowerOffChoice(index) {
+        for (var i = 0; i < autoPowerOffChoices.length; ++i)
+            if (autoPowerOffChoices[i].index === index) return i
+        return -1
+    }
     function trPreset(id) {
         var key = "eq_preset_" + id
         var value = tr(key)
