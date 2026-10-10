@@ -13,6 +13,8 @@
         <file>qml/components/PillButton.qml</file>
         <file>qml/components/NeoSwitch.qml</file>
         <file>qml/components/NeoSlider.qml</file>
+        <file>qml/components/NeoCombo.qml</file>
+        <file>qml/components/Placeholder.qml</file>
         <file>qml/components/BandSlider.qml</file>
         <file>qml/components/ViewPage.qml</file>
         <file>qml/components/DotText.qml</file>

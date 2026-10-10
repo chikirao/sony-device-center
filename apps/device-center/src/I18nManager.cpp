@@ -290,6 +290,16 @@ void I18nManager::_initTranslations() {
     en["device_alias"]                    = "Name in this app";
     en["device_alias_hint"]               = "Only this app shows it; the headphones keep their own name.";
     en["device_alias_reset"]              = "Reset";
+    en["stc_sensitivity"]                 = "Sensitivity";
+    en["stc_sensitivity_auto"]            = "Auto";
+    en["stc_sensitivity_high"]            = "High";
+    en["stc_sensitivity_low"]             = "Low";
+    en["stc_timeout_short"]               = "Short (~15 s)";
+    en["stc_timeout_standard"]            = "Standard (~30 s)";
+    en["stc_timeout_long"]                = "Long (~1 min)";
+    en["stc_voice_passthrough"]           = "Voice passthrough";
+    en["stc_timeout"]                     = "Ends after silence";
+    en["stc_timeout_never"]               = "Don't end automatically";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -538,6 +548,16 @@ void I18nManager::_initTranslations() {
     pt["device_alias"]                    = "Nome neste app";
     pt["device_alias_hint"]               = "Só este app o mostra; os fones mantêm o próprio nome.";
     pt["device_alias_reset"]              = "Redefinir";
+    pt["stc_sensitivity"]                 = "Sensibilidade";
+    pt["stc_sensitivity_auto"]            = "Automática";
+    pt["stc_sensitivity_high"]            = "Alta";
+    pt["stc_sensitivity_low"]             = "Baixa";
+    pt["stc_timeout_short"]               = "Curto (~15 s)";
+    pt["stc_timeout_standard"]            = "Padrão (~30 s)";
+    pt["stc_timeout_long"]                = "Longo (~1 min)";
+    pt["stc_voice_passthrough"]           = "Passagem de voz";
+    pt["stc_timeout"]                     = "Termina após silêncio";
+    pt["stc_timeout_never"]               = "Não terminar automaticamente";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -786,6 +806,16 @@ void I18nManager::_initTranslations() {
     es["device_alias"]                    = "Nombre en esta app";
     es["device_alias_hint"]               = "Solo esta app lo muestra; los auriculares conservan su propio nombre.";
     es["device_alias_reset"]              = "Restablecer";
+    es["stc_sensitivity"]                 = "Sensibilidad";
+    es["stc_sensitivity_auto"]            = "Automática";
+    es["stc_sensitivity_high"]            = "Alta";
+    es["stc_sensitivity_low"]             = "Baja";
+    es["stc_timeout_short"]               = "Corto (~15 s)";
+    es["stc_timeout_standard"]            = "Estándar (~30 s)";
+    es["stc_timeout_long"]                = "Largo (~1 min)";
+    es["stc_voice_passthrough"]           = "Paso de voz";
+    es["stc_timeout"]                     = "Termina tras silencio";
+    es["stc_timeout_never"]               = "No terminar automáticamente";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -1034,6 +1064,16 @@ void I18nManager::_initTranslations() {
     de["device_alias"]                    = "Name in dieser App";
     de["device_alias_hint"]               = "Nur diese App zeigt ihn an; die Kopfhörer behalten ihren eigenen Namen.";
     de["device_alias_reset"]              = "Zurücksetzen";
+    de["stc_sensitivity"]                 = "Empfindlichkeit";
+    de["stc_sensitivity_auto"]            = "Automatisch";
+    de["stc_sensitivity_high"]            = "Hoch";
+    de["stc_sensitivity_low"]             = "Niedrig";
+    de["stc_timeout_short"]               = "Kurz (~15 s)";
+    de["stc_timeout_standard"]            = "Standard (~30 s)";
+    de["stc_timeout_long"]                = "Lang (~1 Min.)";
+    de["stc_voice_passthrough"]           = "Sprachdurchlass";
+    de["stc_timeout"]                     = "Endet nach Stille";
+    de["stc_timeout_never"]               = "Nicht automatisch beenden";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1282,6 +1322,16 @@ void I18nManager::_initTranslations() {
     fr["device_alias"]                    = "Nom dans cette app";
     fr["device_alias_hint"]               = "Seule cette app l'affiche ; le casque garde son propre nom.";
     fr["device_alias_reset"]              = "Réinitialiser";
+    fr["stc_sensitivity"]                 = "Sensibilité";
+    fr["stc_sensitivity_auto"]            = "Automatique";
+    fr["stc_sensitivity_high"]            = "Élevée";
+    fr["stc_sensitivity_low"]             = "Faible";
+    fr["stc_timeout_short"]               = "Court (~15 s)";
+    fr["stc_timeout_standard"]            = "Standard (~30 s)";
+    fr["stc_timeout_long"]                = "Long (~1 min)";
+    fr["stc_voice_passthrough"]           = "Transmission de la voix";
+    fr["stc_timeout"]                     = "Se termine après un silence";
+    fr["stc_timeout_never"]               = "Ne pas terminer automatiquement";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1530,6 +1580,16 @@ void I18nManager::_initTranslations() {
     ja["device_alias"]                    = "このアプリでの名前";
     ja["device_alias_hint"]               = "このアプリ内だけの名前です。ヘッドホン本体の名前は変わりません。";
     ja["device_alias_reset"]              = "リセット";
+    ja["stc_sensitivity"]                 = "感度";
+    ja["stc_sensitivity_auto"]            = "自動";
+    ja["stc_sensitivity_high"]            = "高";
+    ja["stc_sensitivity_low"]             = "低";
+    ja["stc_timeout_short"]               = "短め (約15秒)";
+    ja["stc_timeout_standard"]            = "標準 (約30秒)";
+    ja["stc_timeout_long"]                = "長め (約1分)";
+    ja["stc_voice_passthrough"]           = "音声パススルー";
+    ja["stc_timeout"]                     = "無音後に終了";
+    ja["stc_timeout_never"]               = "自動で終了しない";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1778,6 +1838,16 @@ void I18nManager::_initTranslations() {
     ru["device_alias"]                    = "Имя в приложении";
     ru["device_alias_hint"]               = "Видно только в этом приложении; у самих наушников имя не меняется.";
     ru["device_alias_reset"]              = "Сбросить";
+    ru["stc_sensitivity"]                 = "Чувствительность";
+    ru["stc_sensitivity_auto"]            = "Авто";
+    ru["stc_sensitivity_high"]            = "Высокая";
+    ru["stc_sensitivity_low"]             = "Низкая";
+    ru["stc_timeout_short"]               = "Короткое (~15 с)";
+    ru["stc_timeout_standard"]            = "Стандартное (~30 с)";
+    ru["stc_timeout_long"]                = "Долгое (~1 мин)";
+    ru["stc_voice_passthrough"]           = "Пропуск голоса";
+    ru["stc_timeout"]                     = "Выключается после тишины";
+    ru["stc_timeout_never"]               = "Не выключать автоматически";
 }
 
 } // namespace sony::devicecenter
