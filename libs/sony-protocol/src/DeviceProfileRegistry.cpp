@@ -44,9 +44,10 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
         // hardware (firmware 3.0.1) over the legacy V1 opcodes. Speak-to-Chat is
         // Smart Talking Mode (F6 05), not the V2 subtype 0x0c, with its
         // sensitivity and timeout behind FA/FC 05. DSEE was also
-        // confirmed through the GUI on this firmware. Auto Power-Off did not
-        // work in the contributor build, so its provisional profile flag stays
-        // disabled until a successful TX/RX capture establishes the V1 layout.
+        // confirmed through the GUI on this firmware. Auto Power-Off (F6/F8 04)
+        // has only two choices on the XM4, as in Sony's app: off when taken
+        // off (10 00) and never (11 00), both captured. The timed codes are
+        // other models'.
         DeviceProfile{
             .model = SonyModel::WH1000XM4,
             .protocol = SonyProtocolVersion::V1,
@@ -62,7 +63,8 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .speakToChat = true,
                 .speakToChatConfig = true,
                 .adaptiveVolume = false,
-                .autoPowerOff = false,
+                .autoPowerOff = true,
+                .autoPowerOffWhenTakenOffOnly = true,
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = true,

@@ -1,5 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
+#include "sony/core/CliRequest.h"
 #include "sony/core/DeviceService.h"
+#include "sony/core/IpcProtocol.h"
+#include "sony/core/JsonProtocol.h"
 #include "sony/core/SimulatedDevice.h"
 #include "sony/protocol/FrameCodec.h"
 #include <chrono>
@@ -159,4 +162,52 @@ TEST_CASE("V1 Speak-to-Chat notifications are ignored on a V2 headset", "[core][
     const auto state = service.snapshot();
     CHECK(state->speakToChatConfig.timeout == 1);
     CHECK(state->features.at("speakToChatConfig").availability == "unsupported");
+}
+
+namespace {
+// Auto power-off writes (f8 04) the host sent after the first `from` frames.
+size_t autoPowerOffWrites(const SimulatedDeviceTransport& transport, size_t from) {
+    size_t writes = 0;
+    const auto frames = transport.sentFrames();
+    for (size_t i = from; i < frames.size(); ++i) {
+        const auto frame = FrameCodec::decode(frames[i]);
+        if (frame.type == DataType::DataMdr && frame.payload.size() >= 2 && frame.payload[0] == 0xf8 && frame.payload[1] == 0x04)
+            ++writes;
+    }
+    return writes;
+}
+}
+
+TEST_CASE("A WH-1000XM4 is only offered the auto power-off choices it has", "[core][simulated]") {
+    auto simulated = createSimulatedDevice("WH-1000XM4", "00:11:22:33:44:55");
+    DeviceService service(simulated.transport, simulated.discovery);
+    service.startAutoConnect(simulated.address);
+    service.tick();
+    REQUIRE(service.isConnected());
+    auto* device = service.activeDevice();
+    REQUIRE(device);
+    REQUIRE(device->capabilities().autoPowerOffWhenTakenOffOnly);
+    const auto run = [&](std::initializer_list<const char*> words) {
+        const auto request = cliRequestFor(std::vector<std::string>(words.begin(), words.end()));
+        return cliSelect(JsonProtocol::execute(request.request, service), request.select);
+    };
+
+    // Its two: when taken off (5) and never (0).
+    device->setAutoPowerOff(5);
+    CHECK(device->readAutoPowerOff() == 5);
+    REQUIRE(run({"apo", "0"})["ok"] == true);
+    CHECK(device->readAutoPowerOff() == 0);
+
+    // A timed choice is refused on every path, before anything is sent.
+    const auto before = simulated.transport->sentCount();
+    CHECK_THROWS_AS(device->setAutoPowerOff(1), SonyException);
+    CHECK(run({"apo", "3"})["error"]["code"] == "Unsupported");
+    CHECK_FALSE(IpcProtocol::execute(IpcProtocol::parseCommand("apo 2"), service).success);
+    CHECK(autoPowerOffWrites(*simulated.transport, before) == 0);
+
+    // "apo get" reads, and writes nothing.
+    const auto read = run({"apo", "get"});
+    REQUIRE(read["ok"] == true);
+    CHECK(read["data"] == 0);
+    CHECK(autoPowerOffWrites(*simulated.transport, before) == 0);
 }
