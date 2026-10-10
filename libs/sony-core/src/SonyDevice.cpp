@@ -1,8 +1,11 @@
 #include "sony/core/SonyDevice.h"
+
 #include "sony/protocol/DeviceProfileRegistry.h"
 #include "sony/protocol/ProtocolV1.h"
 #include "sony/protocol/ProtocolV2.h"
 #include "sony/transport/Logger.h"
+
+#include <stdexcept>
 
 namespace sony::core {
 
@@ -358,6 +361,12 @@ void SonyDevice::powerOff() {
 
 void SonyDevice::setAutoPowerOff(int index) {
     if (!_protocol) return;
+    // Every path (app, JSON, the legacy text commands) comes through here, so
+    // a choice the model does not have is refused here rather than sent.
+    if (!_capabilities.autoPowerOff)
+        throw SonyException(SonyErrorCode::Unsupported, "Auto Power Off is not supported by this device");
+    if (index < 0 || index > 5)
+        throw std::invalid_argument("Auto Power Off index must be 0 to 5");
     _protocol->setAutoPowerOff(index);
     {
         std::lock_guard lock(_stateMutex);
