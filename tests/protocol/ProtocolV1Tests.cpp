@@ -482,6 +482,23 @@ TEST_CASE("ProtocolV1: reads and writes Auto Power-Off with V1 packet literals",
         }
     }
 
+    SECTION("GET decodes the replies captured from a WH-1000XM4")
+    {
+        // sonyctl --direct -v --json apo get, 2026-10-10, with Sony's app set
+        // to "Do not turn off" and then "Off when headphones are removed".
+        for (const auto& [reply, index] : std::vector<std::pair<std::vector<uint8_t>, int>>{
+                 {{0xf7, 0x04, 0x01, 0x11, 0x00}, 0}, {{0xf7, 0x04, 0x01, 0x10, 0x00}, 5}}) {
+            FakeTransport fake;
+            SonyProtocolSession session(&fake);
+            session.connect("11:22:33:44:55:66");
+            ProtocolV1 v1(session);
+
+            queueReply(fake, reply);
+            CHECK(v1.getAutoPowerOff() == index);
+            CHECK(firstRequestPayload(fake) == std::vector<uint8_t>{0xf6, 0x04});
+        }
+    }
+
     SECTION("GET rejects a truncated response")
     {
         FakeTransport fake;

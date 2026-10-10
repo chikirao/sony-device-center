@@ -300,6 +300,7 @@ void I18nManager::_initTranslations() {
     en["stc_voice_passthrough"]           = "Voice passthrough";
     en["stc_timeout"]                     = "Ends after silence";
     en["stc_timeout_never"]               = "Don't end automatically";
+    en["apo_never"]                       = "Never";
 
     // Português (pt_BR)
     auto& pt = _strings["pt_BR"];
@@ -558,6 +559,7 @@ void I18nManager::_initTranslations() {
     pt["stc_voice_passthrough"]           = "Passagem de voz";
     pt["stc_timeout"]                     = "Termina após silêncio";
     pt["stc_timeout_never"]               = "Não terminar automaticamente";
+    pt["apo_never"]                       = "Nunca";
 
     // Español (es)
     auto& es = _strings["es"];
@@ -816,6 +818,7 @@ void I18nManager::_initTranslations() {
     es["stc_voice_passthrough"]           = "Paso de voz";
     es["stc_timeout"]                     = "Termina tras silencio";
     es["stc_timeout_never"]               = "No terminar automáticamente";
+    es["apo_never"]                       = "Nunca";
 
     // Deutsch (de)
     auto& de = _strings["de"];
@@ -1074,6 +1077,7 @@ void I18nManager::_initTranslations() {
     de["stc_voice_passthrough"]           = "Sprachdurchlass";
     de["stc_timeout"]                     = "Endet nach Stille";
     de["stc_timeout_never"]               = "Nicht automatisch beenden";
+    de["apo_never"]                       = "Nie";
 
     // Français (fr)
     auto& fr = _strings["fr"];
@@ -1332,6 +1336,7 @@ void I18nManager::_initTranslations() {
     fr["stc_voice_passthrough"]           = "Transmission de la voix";
     fr["stc_timeout"]                     = "Se termine après un silence";
     fr["stc_timeout_never"]               = "Ne pas terminer automatiquement";
+    fr["apo_never"]                       = "Jamais";
 
     // 日本語 (ja)
     auto& ja = _strings["ja"];
@@ -1590,6 +1595,7 @@ void I18nManager::_initTranslations() {
     ja["stc_voice_passthrough"]           = "音声パススルー";
     ja["stc_timeout"]                     = "無音後に終了";
     ja["stc_timeout_never"]               = "自動で終了しない";
+    ja["apo_never"]                       = "オフにしない";
 
     // Русский (ru)
     auto& ru = _strings["ru"];
@@ -1848,6 +1854,7 @@ void I18nManager::_initTranslations() {
     ru["stc_voice_passthrough"]           = "Пропуск голоса";
     ru["stc_timeout"]                     = "Выключается после тишины";
     ru["stc_timeout_never"]               = "Не выключать автоматически";
+    ru["apo_never"]                       = "Никогда";
 }
 
 } // namespace sony::devicecenter

@@ -76,6 +76,8 @@ class DeviceCenterController : public QObject {
     Q_PROPERTY(bool hasSpeakToChatConfig READ hasSpeakToChatConfig NOTIFY capabilitiesChanged)
     Q_PROPERTY(bool hasAdaptiveVolume READ hasAdaptiveVolume NOTIFY capabilitiesChanged)
     Q_PROPERTY(bool hasAutoPowerOff READ hasAutoPowerOff NOTIFY capabilitiesChanged)
+    // Only off-when-taken-off and never, as on the WH-1000XM4.
+    Q_PROPERTY(bool hasAutoPowerOffWhenTakenOffOnly READ hasAutoPowerOffWhenTakenOffOnly NOTIFY capabilitiesChanged)
 
     Q_PROPERTY(QVariantList pairedDevices READ pairedDevices NOTIFY pairedDevicesChanged)
 
@@ -161,6 +163,7 @@ public:
     [[nodiscard]] bool hasSpeakToChatConfig() const;
     [[nodiscard]] bool hasAdaptiveVolume() const;
     [[nodiscard]] bool hasAutoPowerOff() const;
+    [[nodiscard]] bool hasAutoPowerOffWhenTakenOffOnly() const;
 
     [[nodiscard]] QVariantList pairedDevices() const;
 
