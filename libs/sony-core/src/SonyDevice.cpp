@@ -56,7 +56,8 @@ void SonyDevice::connect(const transport::DeviceAddress& address, std::string_vi
         for (const auto& [name, supported] : std::initializer_list<std::pair<std::string, bool>>{
             {"battery",c.battery},{"noiseControl",c.noiseCancelling || c.ambientSound},
             {"equalizer",c.equalizer},{"dsee",c.dsee},{"codec",c.codecInfo},{"firmware",c.firmwareInfo},
-            {"speakToChat",c.speakToChat},{"adaptiveVolume",c.adaptiveVolume},{"autoPowerOff",c.autoPowerOff}})
+            {"speakToChat",c.speakToChat},{"speakToChatConfig",c.speakToChatConfig},
+            {"adaptiveVolume",c.adaptiveVolume},{"autoPowerOff",c.autoPowerOff}})
             _state.features[name].availability = supported ? "unknown" : "unsupported";
     }
     _transport->connect(address);
@@ -150,10 +151,14 @@ void SonyDevice::_onNotification(const protocol::SonyFrame& frame) {
     std::string feature;
     {
         std::lock_guard lock(_stateMutex);
+        const auto opcode = frame.payload.empty() ? 0 : frame.payload[0];
+        // Speak-to-Chat's f9/fd 05 layouts are V1's; other generations use
+        // those opcodes for their own settings.
+        if ((opcode == 0xf9 || opcode == 0xfd) && _version != SonyProtocolVersion::V1) return;
         if (!_dispatcher.parseNotificationPayload(frame.payload, _state, false)) return;
-        const auto opcode = frame.payload[0];
         feature = (opcode == 0x23 || opcode == 0x25) ? "battery" :
-            (opcode == 0x67 || opcode == 0x69) ? "noiseControl" : "equalizer";
+            (opcode == 0x67 || opcode == 0x69) ? "noiseControl" :
+            opcode == 0xf9 ? "speakToChat" : opcode == 0xfd ? "speakToChatConfig" : "equalizer";
         _markSuccess(feature);
         updated = std::make_shared<const protocol::DeviceState>(_state);
     }
@@ -257,6 +262,29 @@ int SonyDevice::readAutoPowerOff() {
     return value;
 }
 
+protocol::SpeakToChatConfig SonyDevice::readSpeakToChatConfig() {
+    if (!_protocol || !isConnected())
+        throw SonyException(SonyErrorCode::Disconnected, "Headphones are disconnected");
+    if (!_capabilities.speakToChatConfig)
+        throw SonyException(SonyErrorCode::Unsupported, "Speak-to-Chat settings are not supported by this device");
+    const auto value = _protocol->getSpeakToChatConfig();
+    {
+        std::lock_guard lock(_stateMutex);
+        _state.speakToChatConfig = value;
+        _markSuccess("speakToChatConfig");
+    }
+    return value;
+}
+
+protocol::SpeakToChatConfig SonyDevice::currentSpeakToChatConfig() {
+    {
+        std::lock_guard lock(_stateMutex);
+        const auto it = _state.features.find("speakToChatConfig");
+        if (it != _state.features.end() && it->second.availability == "valid") return _state.speakToChatConfig;
+    }
+    return readSpeakToChatConfig();
+}
+
 void SonyDevice::setNoiseControl(const protocol::NoiseControlState& nc) {
     if (!_protocol) return;
     _protocol->setNoiseControl(nc);
@@ -341,11 +369,25 @@ void SonyDevice::setAutoPowerOff(int index) {
 
 void SonyDevice::setSpeakToChat(bool enabled) {
     if (!_protocol) return;
+    // V1: the config goes first, or a talking session never closes. It is
+    // the headset's own, so a choice made on the phone survives.
+    if (enabled && _capabilities.speakToChatConfig) _protocol->setSpeakToChatConfig(currentSpeakToChatConfig());
     _protocol->setSpeakToChat(enabled);
     {
         std::lock_guard lock(_stateMutex);
         _state.speakToChat = enabled;
         _markSuccess("speakToChat");
+    }
+    _dispatcher.dispatch(protocol::DeviceStateChanged{snapshot()});
+}
+
+void SonyDevice::setSpeakToChatConfig(const protocol::SpeakToChatConfig& config) {
+    if (!_protocol) return;
+    _protocol->setSpeakToChatConfig(config);
+    {
+        std::lock_guard lock(_stateMutex);
+        _state.speakToChatConfig = config;
+        _markSuccess("speakToChatConfig");
     }
     _dispatcher.dispatch(protocol::DeviceStateChanged{snapshot()});
 }
@@ -397,6 +439,8 @@ void SonyDevice::refreshSettingsStep() {
             std::lock_guard lock(_stateMutex); _state.adaptiveVolume = value; _markSuccess(feature);
         } else if (step == 7 && _capabilities.autoPowerOff) {
             feature = "autoPowerOff"; readAutoPowerOff();
+        } else if (step == 8 && _capabilities.speakToChatConfig) {
+            feature = "speakToChatConfig"; readSpeakToChatConfig();
         }
     } catch (const SonyException& ex) { if (!feature.empty()) _markError(feature, ex); }
     _dispatcher.dispatch(protocol::DeviceStateChanged{snapshot()});

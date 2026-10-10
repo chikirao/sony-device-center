@@ -3,6 +3,7 @@
 #include "sony/transport/FakeTransport.h"
 
 #include <array>
+#include <set>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -26,6 +27,12 @@ public:
     // Changes the simulated charge and pushes the unsolicited battery
     // notification a real headset would send.
     void setBattery(int level, bool charging);
+    // Changes the V1 Speak-to-Chat settings the way Headphones Connect on
+    // another connected device would, with the NTFY the XM4 then sends.
+    void setSpeakToChatConfig(int sensitivity, bool voicePassthrough, int timeout);
+    // Requests with this opcode are still ACKed but get no reply, like a
+    // headset that misses one: the host's read times out.
+    void setUnanswered(uint8_t opcode, bool unanswered);
 
 private:
     void handle(const std::vector<uint8_t>& request);
@@ -49,7 +56,9 @@ private:
     bool _dsee{true};
     std::array<uint8_t, 2> _autoPowerOff{0x11, 0x00};
     bool _speakToChat{false};
+    std::array<uint8_t, 3> _speakToChatConfig{0x00, 0x00, 0x01};  // Auto, no passthrough, Standard
     bool _adaptiveVolume{false};
+    std::set<uint8_t> _unanswered;
 };
 
 // One simulated headset plus a discovery that lists only it, ready to hand to

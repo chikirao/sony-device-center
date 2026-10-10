@@ -28,7 +28,8 @@ Json JsonProtocol::snapshot(IDeviceService& service) {
         {"lastError", service.lastError()}, {"protocol", dev ? std::string(protocol::to_string(dev->protocolVersion())) : "unknown"},
         {"capabilities", {{"anc", c.noiseCancelling}, {"ambient", c.ambientSound}, {"focusOnVoice", c.focusOnVoice},
             {"equalizer", c.equalizer}, {"clearBass", c.clearBass}, {"dsee", c.dsee}, {"battery", c.battery},
-            {"speakToChat", c.speakToChat}, {"adaptiveVolume", c.adaptiveVolume}, {"autoPowerOff", c.autoPowerOff}}},
+            {"speakToChat", c.speakToChat}, {"speakToChatConfig", c.speakToChatConfig},
+            {"adaptiveVolume", c.adaptiveVolume}, {"autoPowerOff", c.autoPowerOff}}},
         {"features", features},
         {"battery", {{"main", optional(s->battery.main)}, {"left", optional(s->battery.left)}, {"right", optional(s->battery.right)},
             {"case", optional(s->battery.caseBattery)}, {"charging", s->battery.charging}}},
@@ -37,7 +38,10 @@ Json JsonProtocol::snapshot(IDeviceService& service) {
             {"ambientLevel", s->noiseControl.ambientLevel}, {"focusOnVoice", s->noiseControl.focusOnVoice}}},
         {"equalizer", {{"preset", s->equalizer.preset}, {"presetName", protocol::equalizerPresetName(s->equalizer.preset)},
             {"clearBass", s->equalizer.clearBass}, {"bands", s->equalizer.bands}}},
-        {"dsee", s->dsee}, {"speakToChat", s->speakToChat}, {"adaptiveVolume", s->adaptiveVolume},
+        {"dsee", s->dsee}, {"speakToChat", s->speakToChat},
+        {"speakToChatConfig", {{"sensitivity", s->speakToChatConfig.sensitivity},
+            {"voicePassthrough", s->speakToChatConfig.voicePassthrough}, {"timeout", s->speakToChatConfig.timeout}}},
+        {"adaptiveVolume", s->adaptiveVolume},
         {"autoPowerOff", s->autoPowerOff}, {"codec", s->codec.empty() ? "Unknown" : s->codec},
         {"firmware", s->firmware.empty() ? "Unknown" : s->firmware}
     };
@@ -90,6 +94,17 @@ Json JsonProtocol::execute(const Json& request, IDeviceService& service) {
                 dev->setEqualizerCustom(integer(params, "clearBass", -10, 10), bands);
             } else if (method == "dsee") { supported(c.dsee); dev->setDsee(params.at("enabled").get<bool>()); }
             else if (method == "speakToChat") { supported(c.speakToChat); dev->setSpeakToChat(params.at("enabled").get<bool>()); }
+            else if (method == "speakToChatConfigGet") { supported(c.speakToChatConfig); dev->readSpeakToChatConfig(); }
+            else if (method == "speakToChatConfig") {
+                // Each field alone changes just that one; the rest stays as the
+                // headset has it.
+                supported(c.speakToChatConfig);
+                auto config = dev->currentSpeakToChatConfig();
+                if (params.contains("sensitivity")) config.sensitivity = integer(params, "sensitivity", 0, 2);
+                if (params.contains("voicePassthrough")) config.voicePassthrough = params.at("voicePassthrough").get<bool>();
+                if (params.contains("timeout")) config.timeout = integer(params, "timeout", 0, 3);
+                dev->setSpeakToChatConfig(config);
+            }
             else if (method == "adaptiveVolume") { supported(c.adaptiveVolume); dev->setAdaptiveVolume(params.at("enabled").get<bool>()); }
             else if (method == "autoPowerOffGet") { supported(c.autoPowerOff); dev->readAutoPowerOff(); }
             else if (method == "autoPowerOff") { supported(c.autoPowerOff); dev->setAutoPowerOff(integer(params, "index", 0, 5)); }

@@ -4,13 +4,15 @@
 #include <algorithm>
 #include <chrono>
 #include <iterator>
+#include <stdexcept>
 
 // Byte layouts below match Client/CommandSerializer.cpp (the legacy client,
 // exercised on WH-1000XM3 hardware for years) and Gadgetbridge's
 // SonyProtocolImplV1. The established battery/noise/EQ/metadata GETs and
-// Speak-to-Chat were replayed against a WH-1000XM4 on firmware 3.0.1. DSEE
-// and Auto Power-Off below are deliberately marked as expected from
-// Gadgetbridge until the contributor test build produces literal captures.
+// Speak-to-Chat were replayed against a WH-1000XM4 on firmware 3.0.1, and
+// the Speak-to-Chat settings readback against another XM4. DSEE and Auto
+// Power-Off below are deliberately marked as expected from Gadgetbridge until
+// the contributor test build produces literal captures.
 //
 // CRITICAL: opcode 0x22 is POWER OFF on this generation. The only place that
 // may emit it is powerOff() below; ProtocolV1Tests pins that for every query.
@@ -28,10 +30,11 @@ constexpr uint8_t kSpeakToChatInquired = 0x05;  // SMART_TALKING_MODE (not V2's 
 constexpr uint8_t kSpeakToChatParamOnOff = 0x01;
 constexpr uint8_t kSpeakToChatParamConfig = 0x00;  // FC: sensitivity / focus / timeout
 constexpr uint8_t kSpeakToChatSessionActive = 0x02;  // payload[2] while ducked
+constexpr uint8_t kSpeakToChatConfigGet = 0xfa;
+constexpr uint8_t kSpeakToChatConfigRet = 0xfb;
 constexpr uint8_t kSpeakToChatConfigSet = 0xfc;
-constexpr uint8_t kSpeakToChatSensitivityAuto = 0x00;
-constexpr uint8_t kSpeakToChatVoiceFocusOff = 0x00;
-constexpr uint8_t kSpeakToChatTimeoutStandard = 0x01;  // ~30s; 0x03 is "do not close"
+constexpr int kSpeakToChatSensitivityMax = 2;  // Auto, High, Low
+constexpr int kSpeakToChatTimeoutMax = 3;      // Short, Standard, Long, never
 constexpr uint8_t kDseeInquired = 0x02;
 constexpr uint8_t kAutoPowerOffInquired = 0x04;
 constexpr uint8_t kAutoPowerOffParameter = 0x01;
@@ -311,23 +314,8 @@ bool ProtocolV1::getSpeakToChat() {
 }
 
 void ProtocolV1::setSpeakToChat(bool enabled) {
-    // Enable without a timeout writes a session that never closes (Headphones
-    // Connect's "do not close automatically", byte 0x03). Official app always
-    // sends config (FC) with enable (F8). Config first so the timer exists
-    // before the feature arms. Auto sensitivity, no voice-focus, Standard ~30s.
-    if (enabled) {
-        _session.send(SonyFrame{
-            .type = DataType::DataMdr,
-            .payload = {
-                kSpeakToChatConfigSet,
-                kSpeakToChatInquired,
-                kSpeakToChatParamConfig,
-                kSpeakToChatSensitivityAuto,
-                kSpeakToChatVoiceFocusOff,
-                kSpeakToChatTimeoutStandard
-            }
-        });
-    }
+    // SET f8 05 01 <onOff>. Only the switch: see the header for the config
+    // that has to go first when enabling.
     std::vector<uint8_t> payload = {
         0xf8,
         kSpeakToChatInquired,
@@ -335,6 +323,47 @@ void ProtocolV1::setSpeakToChat(bool enabled) {
         static_cast<uint8_t>(enabled ? 0x01 : 0x00)
     };
     _session.send(SonyFrame{ .type = DataType::DataMdr, .payload = std::move(payload) });
+}
+
+SpeakToChatConfig ProtocolV1::getSpeakToChatConfig() {
+    // GET fa 05 -> RET fb 05 00 <sensitivity> <voicePassthrough> <timeout>, the
+    // layout of Gadgetbridge's SPEAK_TO_CHAT_CONFIG_GET. A WH-1000XM4 left at
+    // the defaults answers fb 05 00 00 00 01.
+    auto resp = _session.sendAndAwaitResponse(
+        SonyFrame{ .type = DataType::DataMdr, .payload = {kSpeakToChatConfigGet, kSpeakToChatInquired} },
+        kSpeakToChatConfigRet,
+        kSpeakToChatInquired,
+        kTimeout
+    );
+    if (resp.payload.size() < 6 || resp.payload[1] != kSpeakToChatInquired)
+        throw SonyException(SonyErrorCode::InvalidResponse, "Incomplete Speak-to-Chat settings response");
+    if (resp.payload[3] > kSpeakToChatSensitivityMax || resp.payload[5] > kSpeakToChatTimeoutMax)
+        throw SonyException(SonyErrorCode::InvalidResponse, "Unknown Speak-to-Chat setting");
+    return {
+        .sensitivity = resp.payload[3],
+        .voicePassthrough = resp.payload[4] != 0,
+        .timeout = resp.payload[5]
+    };
+}
+
+void ProtocolV1::setSpeakToChatConfig(const SpeakToChatConfig& config) {
+    // SET fc 05 00 <sensitivity> <voicePassthrough> <timeout>. The headset
+    // keeps it while Speak-to-Chat is off, and answers with NTFY fd 05.
+    if (config.sensitivity < 0 || config.sensitivity > kSpeakToChatSensitivityMax)
+        throw std::invalid_argument("Speak-to-Chat sensitivity must be 0 to 2");
+    if (config.timeout < 0 || config.timeout > kSpeakToChatTimeoutMax)
+        throw std::invalid_argument("Speak-to-Chat timeout must be 0 to 3");
+    _session.send(SonyFrame{
+        .type = DataType::DataMdr,
+        .payload = {
+            kSpeakToChatConfigSet,
+            kSpeakToChatInquired,
+            kSpeakToChatParamConfig,
+            static_cast<uint8_t>(config.sensitivity),
+            static_cast<uint8_t>(config.voicePassthrough ? 0x01 : 0x00),
+            static_cast<uint8_t>(config.timeout)
+        }
+    });
 }
 
 bool ProtocolV1::getAdaptiveVolume() {

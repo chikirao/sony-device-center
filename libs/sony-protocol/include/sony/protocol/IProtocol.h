@@ -39,6 +39,8 @@ public:
 
     virtual bool getSpeakToChat() = 0;
     virtual void setSpeakToChat(bool enabled) = 0;
+    virtual SpeakToChatConfig getSpeakToChatConfig() = 0;
+    virtual void setSpeakToChatConfig(const SpeakToChatConfig& config) = 0;
 
     virtual bool getAdaptiveVolume() = 0;
     virtual void setAdaptiveVolume(bool enabled) = 0;
