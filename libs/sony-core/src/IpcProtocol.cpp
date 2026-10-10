@@ -2,6 +2,7 @@
 #include "sony/core/JsonProtocol.h"
 #include "sony/protocol/EqualizerPresets.h"
 #include <algorithm>
+#include <cctype>
 #include <sstream>
 
 namespace sony::core {
@@ -82,7 +83,12 @@ IpcCommand IpcProtocol::parseCommand(std::string_view line) {
         }
     } else if (verb == "dsee") {
         cmd.type = IpcCommandType::Dsee;
-    } else if (verb == "autopoweroff" || verb == "apo") {
+    } else if ((verb == "autopoweroff" || verb == "apo") && tokens.size() == 2
+               && !tokens[1].empty() && std::all_of(tokens[1].begin(), tokens[1].end(),
+                                                     [](unsigned char c) { return std::isdigit(c) != 0; })) {
+        // Only "apo <index>". "apo get", a bare "apo" and anything else are
+        // the typed request's to read or refuse: here they used to fall back
+        // to index 0 and switch auto power-off off.
         cmd.type = IpcCommandType::AutoPowerOff;
     } else if (verb == "power" && tokens.size() > 1 && toLower(tokens[1]) == "off") {
         cmd.type = IpcCommandType::PowerOff;
@@ -326,12 +332,9 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
         }
 
         case IpcCommandType::AutoPowerOff: {
-            int idx = 0;
-            if (!cmd.args.empty()) {
-                try {
-                    idx = std::clamp(std::stoi(cmd.args[0]), 0, 5);
-                } catch (...) {}
-            }
+            // parseCommand only accepts digits; SonyDevice refuses an index
+            // the model does not offer.
+            const int idx = cmd.args.size() == 1 && cmd.args[0].size() <= 2 ? std::stoi(cmd.args[0]) : -1;
             dev->setAutoPowerOff(idx);
             resp.success = true;
             resp.message = "Auto power off set to index " + std::to_string(idx);

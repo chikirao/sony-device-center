@@ -76,10 +76,12 @@ JsonProtocol::Json errorReply(const char* code, const std::string& message) {
 }
 
 // A structured reply rendered for a human, for the commands the legacy
-// line parser does not know.
-int emitText(const JsonProtocol::Json& response) {
+// line parser does not know. A read ("apo get", "stc get") prints what it
+// read; a change prints OK.
+int emitText(const JsonProtocol::Json& response, const std::string& select) {
     if (response.value("ok", false)) {
-        std::cout << "OK\n";
+        if (select.empty()) std::cout << "OK\n";
+        else std::cout << cliSelect(response, select).value("data", JsonProtocol::Json{}).dump() << "\n";
         return 0;
     }
     std::cerr << "Error: " << response.value("error", JsonProtocol::Json::object()).value("message", "unknown error") << "\n";
@@ -157,7 +159,7 @@ int main(int argc, char* argv[]) {
         }
     }
     auto emitTyped = [&](const JsonProtocol::Json& response) {
-        return json ? emitJson(cliSelect(response, typed.select)) : emitText(response);
+        return json ? emitJson(cliSelect(response, typed.select)) : emitText(response, typed.select);
     };
 
     IpcClient daemon(socketPath);

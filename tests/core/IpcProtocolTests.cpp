@@ -141,6 +141,10 @@ TEST_CASE("IpcProtocol parses CLI command strings", "[core][ipc]") {
 
         auto cmdApo = IpcProtocol::parseCommand("autopoweroff 3");
         CHECK(cmdApo.type == IpcCommandType::AutoPowerOff);
+        // Anything but an index is the typed request's: "apo get" reads, and
+        // must never fall back to writing index 0 (off).
+        for (const char* line : {"apo get", "apo", "apo off", "apo -1", "apo 3 4"})
+            CHECK(IpcProtocol::parseCommand(line).type == IpcCommandType::Unknown);
     }
 }
 
