@@ -177,6 +177,7 @@ private slots:
             QVERIFY(!autoPowerOff->property("enabled").toBool());
         } else if (model == "WH-1000XM4") {
             QVERIFY(controller.isConnected());
+            QVERIFY(controller.hasSpeakToChatConfig());
             QVERIFY(!controller.hasAutoPowerOff());
             auto* autoPowerOff = window->findChild<QObject*>("autoPowerOffCombo");
             QVERIFY(autoPowerOff);
@@ -200,8 +201,28 @@ private slots:
                 QCOMPARE(item->opacity() < 1.0, !has);
             };
             greyed("dseeCard", controller.hasDsee());
-            greyed("speakToChatTile", controller.hasSpeakToChat());
+            greyed("speakToChatCard", controller.hasSpeakToChat());
             greyed("adaptiveVolumeTile", controller.hasAdaptiveVolume());
+            // Speak-to-Chat without its settings (XM5, earbuds) locks just those.
+            auto* speakToChat = find(window->contentItem(), "speakToChatCard");
+            QVERIFY(speakToChat);
+            QCOMPARE(speakToChat->property("settingsLocked").toBool(), !controller.hasSpeakToChatConfig());
+            // Its rows end where the header switch does; the dropdowns are 240
+            // wide, or down to 150 in a narrow card.
+            const auto rightEdge = [&](const char* name) {
+                auto* item = find(window->contentItem(), name);
+                return item ? item->mapToItem(speakToChat, QPointF(item->width(), 0)).x() : -1.0;
+            };
+            for (const char* name : {"stcSensitivityCombo", "stcTimeoutCombo", "stcVoicePassthroughSwitch"})
+                QCOMPARE(rightEdge(name), rightEdge("speakToChatSwitch"));
+            const auto pickerWidth = find(window->contentItem(), "stcSensitivityCombo")->width();
+            QVERIFY(pickerWidth >= 150 && pickerWidth <= 240);
+            QCOMPARE(find(window->contentItem(), "stcTimeoutCombo")->width(), pickerWidth);
+            for (const char* name : {"stcSensitivityCombo", "stcTimeoutCombo", "stcVoicePassthroughSwitch"}) {
+                auto* picker = find(window->contentItem(), name);
+                QVERIFY2(picker, name);
+                QCOMPARE(picker->isEnabled(), controller.hasSpeakToChatConfig());
+            }
             greyed("autoPowerOffCard", controller.hasAutoPowerOff());
             auto* combo = find(window->contentItem(), "autoPowerOffCombo");
             QVERIFY(combo);
@@ -1192,6 +1213,116 @@ private slots:
             QCOMPARE(hotkeys.bindings()[0].toMap()["display"].toString(), HotkeyManager::displayText("Ctrl+Alt+N"));
         }
         wipe();
+    }
+    void speakToChatSettingsReachTheHeadset() {
+        auto simulated = core::createSimulatedDevice("WH-1000XM4");
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        service->connect(transport::DeviceAddress(simulated.address), simulated.name);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        auto settle = [&] { QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000); QVERIFY2(controller.lastError().isEmpty(), qPrintable(controller.lastError())); };
+        QVERIFY(controller.hasSpeakToChatConfig());
+
+        controller.setSpeakToChatTimeout(3); settle();
+        QCOMPARE(controller.speakToChatTimeout(), 3);
+        controller.setSpeakToChatSensitivity(1); settle();
+        QCOMPARE(controller.speakToChatSensitivity(), 1);
+        QVERIFY2(controller.speakToChatTimeout() == 3, "a sensitivity change keeps the timeout");
+        QCOMPARE(controller.featureStatus().value("speakToChatConfig").toMap().value("availability").toString(), QString("valid"));
+
+        // What the headset now holds, read back past the app's own state.
+        auto* device = service->activeDevice();
+        QVERIFY(device);
+        const auto config = device->readSpeakToChatConfig();
+        QCOMPARE(config.sensitivity, 1);
+        QCOMPARE(config.timeout, 3);
+
+        controller.setSpeakToChatVoicePassthrough(true); settle();
+        QVERIFY(controller.speakToChatVoicePassthrough());
+
+        // Changed on the phone: the headset's notification lands well inside
+        // one 4.5 s polling round.
+        simulated.transport->setSpeakToChatConfig(2, false, 0);
+        QTRY_COMPARE_WITH_TIMEOUT(controller.speakToChatSensitivity(), 2, 1000);
+        QCOMPARE(controller.speakToChatTimeout(), 0);
+        QVERIFY(!controller.speakToChatVoicePassthrough());
+    }
+    void speakToChatCardFollowsTheHeadset() {
+        // The card's phase follows what the headset has reported, not a
+        // clock: the on/off read comes first in the settings cycle, the
+        // settings a few steps later. The card keeps its height throughout.
+        auto simulated = core::createSimulatedDevice("WH-1000XM4");
+        auto service = std::make_shared<core::DeviceService>(simulated.transport, simulated.discovery);
+        DeviceCenterController controller(nullptr, service);
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QQmlApplicationEngine engine;
+        TrayController tray(controller);
+        HotkeyManager hotkeys(controller, tray, nullptr, "hotkeys-test");
+        QTemporaryDir libraryDir;
+        EqualizerLibrary eqLibrary(controller, libraryDir.path());
+        UpdateChecker updates(SONY_DEVICE_CENTER_VERSION, new test::FakeReleaseFetcher);
+        FakePeripheralSource peripheralSource;
+        PeripheralModel peripherals(controller, peripheralSource);
+        QTemporaryDir hubSettingsDir;
+        HubSettings hubSettings(hubSettingsDir.path() + "/hub.ini");
+        engine.rootContext()->setContextProperty("controller", &controller);
+        engine.rootContext()->setContextProperty("hotkeys", &hotkeys);
+        engine.rootContext()->setContextProperty("eqLibrary", &eqLibrary);
+        engine.rootContext()->setContextProperty("updates", &updates);
+        engine.rootContext()->setContextProperty("peripherals", &peripherals);
+        engine.rootContext()->setContextProperty("hubSettings", &hubSettings);
+        engine.rootContext()->setContextProperty("trayAvailable", false);
+        engine.rootContext()->setContextProperty("startHidden", false);
+        engine.load(QUrl("qrc:/qml/Main.qml"));
+        QVERIFY(!engine.rootObjects().isEmpty());
+        auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
+        QVERIFY(window);
+        QVERIFY(QTest::qWaitForWindowExposed(window));
+        window->setProperty("navIndex", 2); // Audio Features
+        QQuickItem* card = nullptr;
+        QTRY_VERIFY((card = window->findChild<QQuickItem*>("speakToChatCard")));
+        QTRY_VERIFY(card->height() > 0);
+        auto* onOff = window->findChild<QQuickItem*>("speakToChatSwitch");
+        auto* sensitivity = window->findChild<QQuickItem*>("stcSensitivityCombo");
+        QVERIFY(onOff && sensitivity);
+
+        QStringList phases;
+        QSet<qreal> heights;
+        const auto sample = [&] {
+            const auto phase = card->property("phase").toString();
+            if (phases.isEmpty() || phases.last() != phase) phases << phase;
+            heights << card->height();
+        };
+        // After every snapshot the controller applies: updates come from a
+        // worker thread, and a busy main thread can apply several between two
+        // timer ticks. The timer still samples the height once laid out.
+        connect(&controller, &DeviceCenterController::stateChanged, card, sample);
+        connect(&controller, &DeviceCenterController::capabilitiesChanged, card, sample);
+        QTimer sampler;
+        connect(&sampler, &QTimer::timeout, this, sample);
+        sampler.start(20);
+        sample();
+        const auto phase = [&] { return card->property("phase").toString(); };
+        QCOMPARE(phase(), QString("disconnected"));
+
+        controller.connectDevice(QString::fromStdString(simulated.address), QString::fromStdString(simulated.name));
+        QTRY_COMPARE_WITH_TIMEOUT(phase(), QString("settingsPending"), 20000);
+        QVERIFY2(onOff->isVisible() && !sensitivity->isVisible(), "the switch is live before the settings are");
+        QTRY_COMPARE_WITH_TIMEOUT(phase(), QString("ready"), 20000);
+        QVERIFY(sensitivity->isVisible());
+        QCOMPARE(phases, QStringList({"disconnected", "reading", "settingsPending", "ready"}));
+
+        // Disconnected partway: back to unknown, and reading again after.
+        phases.clear();
+        sample();
+        controller.disconnectDevice();
+        QTRY_COMPARE_WITH_TIMEOUT(phase(), QString("disconnected"), 5000);
+        controller.connectDevice(QString::fromStdString(simulated.address), QString::fromStdString(simulated.name));
+        QTRY_COMPARE_WITH_TIMEOUT(phase(), QString("reading"), 5000);
+        controller.disconnectDevice();
+        QTRY_COMPARE_WITH_TIMEOUT(phase(), QString("disconnected"), 5000);
+        QCOMPARE(phases, QStringList({"ready", "disconnected", "reading", "disconnected"}));
+        QVERIFY2(heights.size() == 1, "the card keeps one height in every phase");
     }
     void hotkeysRouteActionsToController() {
         auto simulated = core::createSimulatedDevice();
