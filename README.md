@@ -71,7 +71,7 @@ real hardware.
 | **WH-1000XM6** | V2 | ⚠️ Partially working | Controls work; **equalizer has no effect** ([#10](../../issues/10)), battery intermittent ([#11](../../issues/11)) |
 | **WF-1000XM6** | V2 | ✅ Verified | Community report |
 | **MDR-1000X** | V1 | ❌ Known broken | Shows as disconnected, no controls work ([#12](../../issues/12)) |
-| **WH-1000XM4** | V1 | ✅ Verified | Community report (firmware 3.0.1, Windows): battery, noise control readback, EQ + Clear Bass, firmware, codec. Speak-to-Chat on/off verified (Standard ~30s timeout; 15s / 1 min / do-not-close UI is a nice-to-have). |
+| **WH-1000XM4** | V1 | ✅ Verified | Community report (firmware 3.0.1, Windows): battery, noise control readback, EQ + Clear Bass, firmware, codec. Speak-to-Chat on/off verified (Standard ~30s timeout); sensitivity and timeout settings verified (readback, and Headphones Connect shows what the app set). |
 | WF-1000XM5, WF-1000XM4 | V2 | 🟡 Untested | TWS battery reporting unverified |
 | WH-CH720N, ULT WEAR, LinkBuds S, WF-C700N | V2 | 🟡 Untested | |
 | WH-XB910N, WH-CH520 | V2 | 🟡 Untested | |
@@ -222,6 +222,7 @@ sonyctl eq custom 5 0 1 2 1 0   # Custom Clear Bass (+5) and bands: 400Hz, 1kHz,
 sonyctl dsee on                 # Enable DSEE audio upscaling
 sonyctl apo 3                   # Set Auto Power-Off preset (0=Off, 1=5m, 2=15m, 3=30m, 4=1h, 5=3h)
 sonyctl stc on                  # Speak-to-Chat on/off
+sonyctl stc timeout long        # Speak-to-Chat ends after short/standard/long/never; `stc sensitivity auto|high|low`, `stc passthrough on|off`
 sonyctl adaptive off            # Adaptive Volume on/off
 sonyctl connect CC:98:8B:00:11:22   # Connect to a specific paired device; `sonyctl disconnect` drops it
 

@@ -497,6 +497,14 @@ verify on hardware → fixture → `IProtocol` + `DeviceState` +
 - [x] **V1 (XM4): Speak-to-Chat.** Smart Talking Mode (`0xf6 0x05`) is
   enabled for the WH-1000XM4 profile after verification on firmware 3.0.1;
   enabling it writes the Standard (~30 s) timeout configuration first.
+- [~] **V1 (XM4): Speak-to-Chat sensitivity, timeout and voice passthrough.**
+  On the Speak-to-Chat card in Audio Features, and `sonyctl stc
+  get|sensitivity|timeout|passthrough`. SET (`0xfc 0x05`) is the write that
+  enable has always sent; GET (`0xfa 0x05` → `0xfb 0x05 0x00 00 00 01` at the
+  defaults) is ✅ captured on an XM4, and a Short timeout written by `sonyctl`
+  ✅ shows in Headphones Connect, and back. Voice passthrough is the third
+  byte. The `0xfd` notification updates the app at once; the
+  `0xf9 0x05` on/off notification still needs a hardware sighting.
 - [~] **V1 (XM4): DSEE and Auto Power-Off contributor test.** DSEE on/off was
   confirmed through the GUI on firmware 3.0.1, although the CLI failed to
   connect and produced no literal TX/RX dump. Auto Power-Off did not work, so

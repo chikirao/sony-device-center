@@ -173,6 +173,37 @@ TEST_CASE("DeviceEventDispatcher parses equalizer notifications", "[events]") {
     CHECK(receivedEq.bands[4] == -2);
 }
 
+TEST_CASE("DeviceEventDispatcher parses V1 Speak-to-Chat notifications", "[events]") {
+    DeviceEventDispatcher dispatcher;
+    DeviceState state;
+    int changes = 0;
+    auto sub = dispatcher.onStateChanged([&](const DeviceStateChanged&) { ++changes; });
+
+    // Captured from a WH-1000XM4 after a settings write (Short timeout).
+    CHECK(dispatcher.parseNotificationPayload({0xfd, 0x05, 0x00, 0x00, 0x00, 0x00}, state));
+    CHECK(state.speakToChatConfig.sensitivity == 0);
+    CHECK(state.speakToChatConfig.voicePassthrough == false);
+    CHECK(state.speakToChatConfig.timeout == 0);
+    CHECK(dispatcher.parseNotificationPayload({0xfd, 0x05, 0x00, 0x01, 0x01, 0x03}, state));
+    CHECK(state.speakToChatConfig.sensitivity == 1);
+    CHECK(state.speakToChatConfig.voicePassthrough == true);
+    CHECK(state.speakToChatConfig.timeout == 3);
+    CHECK(changes == 2);
+
+    // Codes outside the table, and a short frame, change nothing.
+    CHECK_FALSE(dispatcher.parseNotificationPayload({0xfd, 0x05, 0x00, 0x03, 0x00, 0x00}, state));
+    CHECK_FALSE(dispatcher.parseNotificationPayload({0xfd, 0x05, 0x00, 0x00}, state));
+    CHECK(state.speakToChatConfig.timeout == 3);
+
+    // The switch: kind 0x01. A talking session (0x02) is not the switch.
+    CHECK(dispatcher.parseNotificationPayload({0xf9, 0x05, 0x01, 0x01}, state));
+    CHECK(state.speakToChat);
+    CHECK_FALSE(dispatcher.parseNotificationPayload({0xf9, 0x05, 0x02, 0x00}, state));
+    CHECK(state.speakToChat);
+    CHECK(dispatcher.parseNotificationPayload({0xf9, 0x05, 0x01, 0x00}, state));
+    CHECK_FALSE(state.speakToChat);
+}
+
 TEST_CASE("Headphones event-driven integration", "[events]") {
     auto connector = std::make_unique<DummyConnector>();
     BluetoothWrapper conn(std::move(connector));

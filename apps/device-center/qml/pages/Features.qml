@@ -13,6 +13,50 @@ ViewPage {
     // locked, so the page reads the same on every model.
     function lacks(has) { return controller.connected && !has }
 
+    // A Speak-to-Chat setting as a row: its label on the left, the dropdown
+    // on the right at the width the card gives it. Until the settings are
+    // read, a placeholder of the same size stands in for the dropdown.
+    component StcPicker: RowLayout {
+        id: picker
+        required property var appWindow
+        property bool live: false
+        property bool loading: false
+        property real controlWidth: 240
+        readonly property real labelWidth: label.implicitWidth
+        property string label
+        property string comboName
+        property var options: []
+        property int value: 0
+        signal picked(int index)
+        Layout.fillWidth: true
+        Layout.preferredHeight: combo.implicitHeight
+        spacing: 16
+        Text { id: label; textFormat: Text.PlainText; Layout.fillWidth: true; text: picker.label; color: Theme.txt; font.pixelSize: 13; font.weight: Font.Medium; elide: Text.ElideRight }
+        Item {
+            Layout.preferredWidth: picker.controlWidth
+            Layout.fillHeight: true
+            NeoCombo { appWindow: picker.appWindow;
+                id: combo
+                objectName: picker.comboName
+                anchors.fill: parent
+                visible: picker.live
+                enabled: controller.connected && controller.hasSpeakToChatConfig
+                model: picker.options
+                currentIndex: picker.live ? picker.value : -1
+                Connections {
+                    target: controller
+                    function onStateChanged() { combo.currentIndex = Qt.binding(function() { return picker.live ? picker.value : -1 }) }
+                }
+                onActivated: picker.picked(index)
+            }
+            Placeholder {
+                anchors.fill: parent
+                visible: !picker.live
+                loading: picker.loading
+            }
+        }
+    }
+
     // Scrolls once a narrow window stacks the tiles.
     WheelScroll { flickable: flick }
     Flickable {
@@ -90,55 +134,178 @@ ViewPage {
                 }
             }
 
-            // Feature tiles, side by side or stacked.
-            GridLayout {
+            // Speak-to-Chat: the switch in the header, its settings below. Each
+            // control shows what the headset has reported so far, in place of
+            // a status line, and the card keeps one size throughout.
+            Card { appWindow: root.appWindow;
+                id: stcCard
+                objectName: "speakToChatCard"
+                // disconnected, unsupported, reading (on/off not known yet),
+                // settingsPending (on/off known, settings not yet) or ready.
+                readonly property string phase: !controller.connected ? "disconnected"
+                    : !controller.hasSpeakToChat ? "unsupported"
+                    : !root.known("speakToChat") ? "reading"
+                    : controller.hasSpeakToChatConfig && !root.known("speakToChatConfig") ? "settingsPending"
+                    : "ready"
+                readonly property bool switchLive: phase === "settingsPending" || phase === "ready"
+                // A model with the switch but not the settings keeps them greyed.
+                readonly property bool settingsLocked: controller.connected && !controller.hasSpeakToChatConfig
+                readonly property bool settingsLive: phase === "ready" && !settingsLocked
+                readonly property bool settingsLoading: !settingsLocked && (phase === "reading" || phase === "settingsPending")
+                // From the card's own width, not the window's.
+                readonly property bool compact: width <= 380
+                readonly property int headerHeight: compact ? 76 : 84
+                // One width for both dropdowns, so they line up: 240, giving
+                // way down to 150 before the longer label is cut short. From
+                // the card's width, not the rows': a width computed from the
+                // rows themselves makes the layout rearrange in a loop.
+                readonly property real pickerWidth: Math.max(150, Math.min(240,
+                    width - 36 - 16 - Math.ceil(Math.max(sensitivityRow.labelWidth, timeoutRow.labelWidth)) - 1))
                 Layout.fillWidth: true
-                Layout.fillHeight: false
-                columns: appWindow.stacked ? 1 : 2
-                columnSpacing: 16
-                rowSpacing: 16
-                Repeater {
-                    model: [
-                        { key: "speakToChat",   title: "Speak-to-Chat",   desc: appWindow.tr("feat_speak_desc"),    glyph: appWindow.icons.chat,   supported: controller.hasSpeakToChat,   on: controller.speakToChat },
-                        { key: "adaptiveVolume", title: "Adaptive Volume", desc: appWindow.tr("feat_adaptive_desc"), glyph: appWindow.icons.volume, supported: controller.hasAdaptiveVolume, on: controller.adaptiveVolume }
-                    ]
-                    delegate: Card { appWindow: root.appWindow;
-                        id: tile
-                        required property var modelData
-                        readonly property bool ready: modelData.supported && root.known(modelData.key)
-                        objectName: modelData.key + "Tile"
-                        opacity: root.lacks(modelData.supported) ? 0.45 : 1
+                // Three 40 px rows, 12 apart, inside the 18 px padding.
+                Layout.preferredHeight: headerHeight + 1 + 18 + 3 * 40 + 2 * 12 + 18
+                opacity: root.lacks(controller.hasSpeakToChat) ? 0.45 : 1
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 0
+                    RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredWidth: 1
-                        Layout.preferredHeight: 168
+                        Layout.preferredHeight: stcCard.headerHeight
+                        Layout.leftMargin: 18
+                        Layout.rightMargin: 18
+                        spacing: stcCard.compact ? 12 : 16
+                        Rectangle {
+                            readonly property int size: stcCard.compact ? 40 : 48
+                            width: size; height: size; radius: size / 2
+                            color: Theme.surfaceHi
+                            border.width: 1
+                            border.color: Theme.line
+                            Glyph { appWindow: root.appWindow; anchors.centerIn: parent; path: appWindow.icons.chat; size: stcCard.compact ? 20 : 22; weight: 1.6; color: stcCard.phase === "disconnected" ? Theme.txtFaint : Theme.txt }
+                        }
                         ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 18
-                            spacing: 8
-                            Glyph { appWindow: root.appWindow; path: tile.modelData.glyph; size: 26; weight: 1.6; color: Theme.txt }
-                            Text { textFormat: Text.PlainText; Layout.topMargin: 4; text: tile.modelData.title; color: Theme.txt; font.pixelSize: 15; font.weight: Font.DemiBold }
-                            Text {
-                                textFormat: Text.PlainText
-                                Layout.fillWidth: true
-                                text: !tile.modelData.supported ? appWindow.tr("not_supported") : !tile.ready ? appWindow.tr("state_unknown_waiting") : tile.modelData.desc
-                                color: Theme.txtDim
-                                font.pixelSize: 12
-                                wrapMode: Text.Wrap
-                                Layout.preferredWidth: 1
-                                maximumLineCount: 2
-                                elide: Text.ElideRight
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            spacing: 2
+                            Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: "Speak-to-Chat"; color: Theme.txt; font.pixelSize: 15; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                            Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: root.lacks(controller.hasSpeakToChat) ? appWindow.tr("not_supported") : appWindow.tr("feat_speak_desc"); color: Theme.txtDim; font.pixelSize: 12; elide: Text.ElideRight }
+                        }
+                        Item {
+                            implicitWidth: stcSwitch.implicitWidth
+                            implicitHeight: stcSwitch.implicitHeight
+                            NeoSwitch { appWindow: root.appWindow;
+                                id: stcSwitch
+                                objectName: "speakToChatSwitch"
+                                anchors.fill: parent
+                                visible: stcCard.switchLive
+                                enabled: controller.connected && controller.hasSpeakToChat
+                                confirmedChecked: controller.speakToChat
+                                onToggled: controller.setSpeakToChat(checked)
                             }
-                            Item { Layout.fillHeight: true }
-                            Rectangle { Layout.fillWidth: true; height: 1; color: Theme.line }
-                            RowLayout {
-                                Layout.fillWidth: true
-                                Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: tile.modelData.on ? appWindow.tr("active") : appWindow.tr("noise_control_off"); color: Theme.txt; font.pixelSize: 12; font.weight: Font.Medium }
+                            Placeholder {
+                                anchors.fill: parent
+                                visible: !stcCard.switchLive
+                                switchShape: true
+                                loading: stcCard.phase === "reading"
+                            }
+                        }
+                    }
+                    Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.line }
+                    ColumnLayout {
+                        objectName: "speakToChatSettings"
+                        Layout.fillWidth: true
+                        Layout.margins: 18
+                        spacing: 12
+                        // Greyed where the model lacks them; dimmed but still
+                        // editable while Speak-to-Chat is off.
+                        opacity: root.lacks(controller.hasSpeakToChat) ? 1 : stcCard.settingsLocked ? 0.45
+                               : stcCard.phase === "ready" && !controller.speakToChat ? 0.55 : 1
+                        StcPicker {
+                            id: sensitivityRow
+                            appWindow: root.appWindow
+                            controlWidth: stcCard.pickerWidth
+                            live: stcCard.settingsLive
+                            loading: stcCard.settingsLoading
+                            label: appWindow.tr("stc_sensitivity")
+                            comboName: "stcSensitivityCombo"
+                            // Wire codes, in order.
+                            options: [appWindow.tr("stc_sensitivity_auto"), appWindow.tr("stc_sensitivity_high"), appWindow.tr("stc_sensitivity_low")]
+                            value: controller.speakToChatSensitivity
+                            onPicked: function(index) { controller.setSpeakToChatSensitivity(index) }
+                        }
+                        StcPicker {
+                            id: timeoutRow
+                            appWindow: root.appWindow
+                            controlWidth: stcCard.pickerWidth
+                            live: stcCard.settingsLive
+                            loading: stcCard.settingsLoading
+                            label: appWindow.tr("stc_timeout")
+                            comboName: "stcTimeoutCombo"
+                            options: [appWindow.tr("stc_timeout_short"), appWindow.tr("stc_timeout_standard"), appWindow.tr("stc_timeout_long"), appWindow.tr("stc_timeout_never")]
+                            value: controller.speakToChatTimeout
+                            onPicked: function(index) { controller.setSpeakToChatTimeout(index) }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
+                            spacing: 16
+                            Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: appWindow.tr("stc_voice_passthrough"); color: Theme.txt; font.pixelSize: 13; font.weight: Font.Medium; elide: Text.ElideRight }
+                            Item {
+                                implicitWidth: passthroughSwitch.implicitWidth
+                                implicitHeight: passthroughSwitch.implicitHeight
                                 NeoSwitch { appWindow: root.appWindow;
-                                    enabled: tile.modelData.supported && controller.connected
-                                    confirmedChecked: tile.modelData.on
-                                    onToggled: tile.modelData.key === "speakToChat" ? controller.setSpeakToChat(checked) : controller.setAdaptiveVolume(checked)
+                                    id: passthroughSwitch
+                                    objectName: "stcVoicePassthroughSwitch"
+                                    anchors.fill: parent
+                                    visible: stcCard.settingsLive
+                                    enabled: controller.connected && controller.hasSpeakToChatConfig
+                                    confirmedChecked: controller.speakToChatVoicePassthrough
+                                    onToggled: controller.setSpeakToChatVoicePassthrough(checked)
+                                }
+                                Placeholder {
+                                    anchors.fill: parent
+                                    visible: !stcCard.settingsLive
+                                    switchShape: true
+                                    loading: stcCard.settingsLoading
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            Card { appWindow: root.appWindow;
+                id: adaptiveTile
+                readonly property bool ready: controller.hasAdaptiveVolume && root.known("adaptiveVolume")
+                objectName: "adaptiveVolumeTile"
+                opacity: root.lacks(controller.hasAdaptiveVolume) ? 0.45 : 1
+                Layout.fillWidth: true
+                Layout.preferredHeight: 168
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 8
+                    Glyph { appWindow: root.appWindow; path: appWindow.icons.volume; size: 26; weight: 1.6; color: Theme.txt }
+                    Text { textFormat: Text.PlainText; Layout.topMargin: 4; text: "Adaptive Volume"; color: Theme.txt; font.pixelSize: 15; font.weight: Font.DemiBold }
+                    Text {
+                        textFormat: Text.PlainText
+                        Layout.fillWidth: true
+                        text: !controller.hasAdaptiveVolume ? appWindow.tr("not_supported") : !adaptiveTile.ready ? appWindow.tr("state_unknown_waiting") : appWindow.tr("feat_adaptive_desc")
+                        color: Theme.txtDim
+                        font.pixelSize: 12
+                        wrapMode: Text.Wrap
+                        Layout.preferredWidth: 1
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
+                    }
+                    Item { Layout.fillHeight: true }
+                    Rectangle { Layout.fillWidth: true; height: 1; color: Theme.line }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: controller.adaptiveVolume ? appWindow.tr("active") : appWindow.tr("noise_control_off"); color: Theme.txt; font.pixelSize: 12; font.weight: Font.Medium }
+                        NeoSwitch { appWindow: root.appWindow;
+                            enabled: controller.hasAdaptiveVolume && controller.connected
+                            confirmedChecked: controller.adaptiveVolume
+                            onToggled: controller.setAdaptiveVolume(checked)
                         }
                     }
                 }
@@ -168,11 +335,10 @@ ViewPage {
                         Text { textFormat: Text.PlainText; text: appWindow.tr("auto_power_off"); color: Theme.txt; font.pixelSize: 15; font.weight: Font.DemiBold }
                         Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: root.lacks(controller.hasAutoPowerOff) ? appWindow.tr("not_supported") : appWindow.tr("auto_power_off_desc"); color: Theme.txtDim; font.pixelSize: 12; elide: Text.ElideRight }
                     }
-                    ComboBox {
+                    NeoCombo { appWindow: root.appWindow;
                         id: powerCombo
                         objectName: "autoPowerOffCombo"
                         implicitWidth: appWindow.compact ? 132 : 150
-                        implicitHeight: 40
                         enabled: controller.connected && controller.hasAutoPowerOff
                         // The six protocol codes, in order.
                         model: [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_30min"), appWindow.tr("apo_1h"), appWindow.tr("apo_3h"), appWindow.tr("apo_when_taken_off")]
@@ -182,34 +348,6 @@ ViewPage {
                             function onStateChanged() { powerCombo.currentIndex = Qt.binding(function() { return root.known("autoPowerOff") ? controller.autoPowerOff : -1 }) }
                         }
                         onActivated: controller.setAutoPowerOff(index)
-
-                        background: Rectangle {
-                            radius: Theme.controlRadius
-                            color: powerCombo.hovered ? Theme.surfaceHi : Theme.surface
-                            border.width: 1
-                            border.color: powerCombo.hovered ? Theme.lineHi : Theme.line
-                            Behavior on color { ColorAnimation { duration: Theme.tFast } }
-                        }
-                        contentItem: Text {
-                            textFormat: Text.PlainText
-                            leftPadding: 14
-                            rightPadding: 30
-                            text: powerCombo.displayText
-                            color: Theme.txt
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                            verticalAlignment: Text.AlignVCenter
-                            elide: Text.ElideRight
-                        }
-                        indicator: Glyph { appWindow: root.appWindow;
-                            x: powerCombo.width - width - 12
-                            y: powerCombo.height / 2 - height / 2
-                            size: 14
-                            color: Theme.txtDim
-                            path: appWindow.icons.chevron
-                            rotation: powerCombo.popup.visible ? 180 : 0
-                            Behavior on rotation { NumberAnimation { duration: Theme.tBase } }
-                        }
                     }
                 }
             }
