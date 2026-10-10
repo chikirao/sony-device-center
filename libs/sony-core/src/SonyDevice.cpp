@@ -367,6 +367,8 @@ void SonyDevice::setAutoPowerOff(int index) {
         throw SonyException(SonyErrorCode::Unsupported, "Auto Power Off is not supported by this device");
     if (index < 0 || index > 5)
         throw std::invalid_argument("Auto Power Off index must be 0 to 5");
+    if (_capabilities.autoPowerOffWhenTakenOffOnly && index != 0 && index != 5)
+        throw SonyException(SonyErrorCode::Unsupported, "This model only turns off when taken off (5) or never (0)");
     _protocol->setAutoPowerOff(index);
     {
         std::lock_guard lock(_stateMutex);

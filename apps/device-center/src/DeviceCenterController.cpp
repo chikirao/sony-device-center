@@ -315,6 +315,8 @@ bool DeviceCenterController::hasAdaptiveVolume() const { return _capabilities.va
 
 bool DeviceCenterController::hasAutoPowerOff() const { return _capabilities.value("autoPowerOff").toBool(); }
 
+bool DeviceCenterController::hasAutoPowerOffWhenTakenOffOnly() const { return _capabilities.value("autoPowerOffWhenTakenOffOnly").toBool(); }
+
 QVariantList DeviceCenterController::pairedDevices() const { return _pairedDevices; }
 
 void DeviceCenterController::setAnc(bool enabled) { _send("anc", {{"enabled",enabled}}); }

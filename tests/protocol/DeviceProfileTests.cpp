@@ -56,7 +56,8 @@ TEST_CASE("DeviceProfileRegistry: provides immediate capabilities for known mode
         REQUIRE(profile->capabilities.speakToChat == true);
         REQUIRE(profile->capabilities.speakToChatConfig == true);
         REQUIRE(profile->capabilities.adaptiveVolume == false);
-        REQUIRE(profile->capabilities.autoPowerOff == false);
+        REQUIRE(profile->capabilities.autoPowerOff == true);
+        REQUIRE(profile->capabilities.autoPowerOffWhenTakenOffOnly == true);
         REQUIRE(profile->capabilities.wearSensor == true);
         REQUIRE(profile->capabilities.multipoint == true);
     }
@@ -79,6 +80,7 @@ TEST_CASE("DeviceProfileRegistry: provides immediate capabilities for known mode
         REQUIRE(profile->capabilities.speakToChatConfig == false);
         REQUIRE(profile->capabilities.adaptiveVolume == true);
         REQUIRE(profile->capabilities.autoPowerOff == true);
+        REQUIRE(profile->capabilities.autoPowerOffWhenTakenOffOnly == false);
         REQUIRE(profile->capabilities.firmwareInfo == true);
         REQUIRE(profile->capabilities.codecInfo == true);
     }

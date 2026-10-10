@@ -178,10 +178,16 @@ private slots:
         } else if (model == "WH-1000XM4") {
             QVERIFY(controller.isConnected());
             QVERIFY(controller.hasSpeakToChatConfig());
-            QVERIFY(!controller.hasAutoPowerOff());
+            QVERIFY(controller.hasAutoPowerOff());
+            QVERIFY(controller.hasAutoPowerOffWhenTakenOffOnly());
             auto* autoPowerOff = window->findChild<QObject*>("autoPowerOffCombo");
             QVERIFY(autoPowerOff);
-            QVERIFY(!autoPowerOff->property("enabled").toBool());
+            QVERIFY(autoPowerOff->property("enabled").toBool());
+            QCOMPARE(autoPowerOff->property("count").toInt(), 2);
+        } else if (model == "WH-1000XM5") {
+            auto* autoPowerOff = window->findChild<QObject*>("autoPowerOffCombo");
+            QVERIFY(autoPowerOff);
+            QCOMPARE(autoPowerOff->property("count").toInt(), 6);
         }
         {
             // Audio Features keeps every card; what the connected model
@@ -1284,7 +1290,8 @@ private slots:
         QTRY_VERIFY(card->height() > 0);
         auto* onOff = window->findChild<QQuickItem*>("speakToChatSwitch");
         auto* sensitivity = window->findChild<QQuickItem*>("stcSensitivityCombo");
-        QVERIFY(onOff && sensitivity);
+        auto* autoPowerOff = window->findChild<QQuickItem*>("autoPowerOffCombo");
+        QVERIFY(onOff && sensitivity && autoPowerOff);
 
         QStringList phases;
         QSet<qreal> heights;
@@ -1304,12 +1311,14 @@ private slots:
         sample();
         const auto phase = [&] { return card->property("phase").toString(); };
         QCOMPARE(phase(), QString("disconnected"));
+        QVERIFY2(!autoPowerOff->isVisible(), "auto power-off waits behind its placeholder too");
 
         controller.connectDevice(QString::fromStdString(simulated.address), QString::fromStdString(simulated.name));
         QTRY_COMPARE_WITH_TIMEOUT(phase(), QString("settingsPending"), 20000);
         QVERIFY2(onOff->isVisible() && !sensitivity->isVisible(), "the switch is live before the settings are");
         QTRY_COMPARE_WITH_TIMEOUT(phase(), QString("ready"), 20000);
         QVERIFY(sensitivity->isVisible());
+        QTRY_VERIFY(autoPowerOff->isVisible());
         QCOMPARE(phases, QStringList({"disconnected", "reading", "settingsPending", "ready"}));
 
         // Disconnected partway: back to unknown, and reading again after.

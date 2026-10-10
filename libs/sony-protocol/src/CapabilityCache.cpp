@@ -24,7 +24,8 @@ std::string serializeCapabilities(const DeviceCapabilities& caps) {
        << (caps.codecInfo ? "1" : "0") << ","
        << (caps.wearSensor ? "1" : "0") << ","
        << (caps.multipoint ? "1" : "0") << ","
-       << (caps.speakToChatConfig ? "1" : "0");
+       << (caps.speakToChatConfig ? "1" : "0") << ","
+       << (caps.autoPowerOffWhenTakenOffOnly ? "1" : "0");
     return ss.str();
 }
 
@@ -55,8 +56,9 @@ std::optional<DeviceCapabilities> deserializeCapabilities(std::string_view str) 
     caps.codecInfo = bits[12];
     caps.wearSensor = bits[13];
     caps.multipoint = bits[14];
-    // Appended later; caches written before it have 15 fields.
+    // Appended later; older caches have 15 or 16 fields.
     caps.speakToChatConfig = bits.size() > 15 && bits[15];
+    caps.autoPowerOffWhenTakenOffOnly = bits.size() > 16 && bits[16];
     return caps;
 }
 

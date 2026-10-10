@@ -335,19 +335,33 @@ ViewPage {
                         Text { textFormat: Text.PlainText; text: appWindow.tr("auto_power_off"); color: Theme.txt; font.pixelSize: 15; font.weight: Font.DemiBold }
                         Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: root.lacks(controller.hasAutoPowerOff) ? appWindow.tr("not_supported") : appWindow.tr("auto_power_off_desc"); color: Theme.txtDim; font.pixelSize: 12; elide: Text.ElideRight }
                     }
-                    NeoCombo { appWindow: root.appWindow;
-                        id: powerCombo
-                        objectName: "autoPowerOffCombo"
+                    // The dropdown once the headset has reported the setting;
+                    // before that a placeholder of its size, as on Speak-to-Chat:
+                    // dashed with no headset or no setting, pulsing while read.
+                    Item {
+                        id: powerSlot
+                        readonly property bool live: root.known("autoPowerOff")
                         implicitWidth: appWindow.compact ? 132 : 150
-                        enabled: controller.connected && controller.hasAutoPowerOff
-                        // The six protocol codes, in order.
-                        model: [appWindow.tr("apo_off"), appWindow.tr("apo_5min"), appWindow.tr("apo_30min"), appWindow.tr("apo_1h"), appWindow.tr("apo_3h"), appWindow.tr("apo_when_taken_off")]
-                        currentIndex: root.known("autoPowerOff") ? controller.autoPowerOff : -1
-                        Connections {
-                            target: controller
-                            function onStateChanged() { powerCombo.currentIndex = Qt.binding(function() { return root.known("autoPowerOff") ? controller.autoPowerOff : -1 }) }
+                        implicitHeight: powerCombo.implicitHeight
+                        NeoCombo { appWindow: root.appWindow;
+                            id: powerCombo
+                            objectName: "autoPowerOffCombo"
+                            anchors.fill: parent
+                            visible: powerSlot.live
+                            enabled: controller.connected && controller.hasAutoPowerOff
+                            model: appWindow.autoPowerOffChoices.map(function(choice) { return choice.label })
+                            currentIndex: powerSlot.live ? appWindow.autoPowerOffChoice(controller.autoPowerOff) : -1
+                            Connections {
+                                target: controller
+                                function onStateChanged() { powerCombo.currentIndex = Qt.binding(function() { return powerSlot.live ? appWindow.autoPowerOffChoice(controller.autoPowerOff) : -1 }) }
+                            }
+                            onActivated: controller.setAutoPowerOff(appWindow.autoPowerOffChoices[index].index)
                         }
-                        onActivated: controller.setAutoPowerOff(index)
+                        Placeholder {
+                            anchors.fill: parent
+                            visible: !powerSlot.live
+                            loading: controller.connected && controller.hasAutoPowerOff
+                        }
                     }
                 }
             }

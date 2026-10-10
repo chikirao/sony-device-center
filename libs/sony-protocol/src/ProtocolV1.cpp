@@ -10,9 +10,9 @@
 // exercised on WH-1000XM3 hardware for years) and Gadgetbridge's
 // SonyProtocolImplV1. The established battery/noise/EQ/metadata GETs and
 // Speak-to-Chat were replayed against a WH-1000XM4 on firmware 3.0.1, and
-// the Speak-to-Chat settings readback against another XM4. DSEE and Auto
-// Power-Off below are deliberately marked as expected from Gadgetbridge until
-// the contributor test build produces literal captures.
+// the Speak-to-Chat settings and Auto Power-Off against another XM4. DSEE
+// below is deliberately marked as expected from Gadgetbridge until the
+// contributor test build produces a literal capture.
 //
 // CRITICAL: opcode 0x22 is POWER OFF on this generation. The only place that
 // may emit it is powerOff() below; ProtocolV1Tests pins that for every query.
@@ -39,8 +39,9 @@ constexpr uint8_t kDseeInquired = 0x02;
 constexpr uint8_t kAutoPowerOffInquired = 0x04;
 constexpr uint8_t kAutoPowerOffParameter = 0x01;
 
-// Expected V1 values from Gadgetbridge. These remain unverified until the
-// contributor returns a literal XM4 TX/RX dump.
+// Gadgetbridge's V1 codes, by index: off, 5 min, 30 min, 1 h, 3 h, when
+// taken off. A WH-1000XM4 has only the first and last (11 00 and 10 00, both
+// captured); the timed ones are other models'.
 const std::pair<uint8_t, uint8_t> kAutoPowerOffCodes[] = {
     {0x11, 0x00}, {0x00, 0x00}, {0x01, 0x01},
     {0x02, 0x02}, {0x03, 0x03}, {0x10, 0x00}
@@ -277,7 +278,8 @@ std::string ProtocolV1::getCodec() {
 }
 
 int ProtocolV1::getAutoPowerOff() {
-    // Expected from Gadgetbridge: GET f6 04 -> RET f7 04 01 <code0> <code1>.
+    // GET f6 04 -> RET f7 04 01 <code0> <code1>; an XM4 answers f7 04 01 10 00
+    // when set to turn off once taken off.
     auto resp = _session.sendAndAwaitResponse(
         SonyFrame{ .type = DataType::DataMdr, .payload = {0xf6, kAutoPowerOffInquired} },
         0xf7, kAutoPowerOffInquired, kTimeout);
@@ -290,7 +292,7 @@ int ProtocolV1::getAutoPowerOff() {
 void ProtocolV1::setAutoPowerOff(int index) {
     if (index < 0 || index >= static_cast<int>(std::size(kAutoPowerOffCodes))) return;
     const auto [first, second] = kAutoPowerOffCodes[index];
-    // Expected from Gadgetbridge: SET f8 04 01 <code0> <code1>.
+    // SET f8 04 01 <code0> <code1>, verified on an XM4 against Sony's app.
     _session.send(SonyFrame{
         .type = DataType::DataMdr,
         .payload = {0xf8, kAutoPowerOffInquired, kAutoPowerOffParameter, first, second}
