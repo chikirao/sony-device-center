@@ -9,7 +9,8 @@ no hardware verification or release publication is implied by the automated test
 1. **Hardware acceptance and protocol gaps (#8–12).** Test reconnect, physical NC
    button changes, battery refresh, and commands on XM3/XM5 hardware. V1 battery,
    NC and EQ readback is decoded and verified on an XM4; the XM3 still needs a
-   re-test on the same path, and V1 DSEE / auto power-off remain unimplemented.
+   re-test on the same path, and V1 DSEE still lacks a literal capture (auto
+   power-off is verified on an XM4).
    V1 Speak-to-Chat (XM4 Smart Talking Mode, `F6 05` plus config `FC 05`
    Standard timeout) is wired; hardware on a WH-1000XM4 confirmed enable and
    that a talking session closes after ~30s. Sensitivity and timeout are now
