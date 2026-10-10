@@ -28,6 +28,7 @@ endif()
 
 add_executable(sony-device-center
     main.cpp
+    include/AppSettings.h
     src/DeviceCenterController.cpp
     src/DeviceBackend.cpp
     include/DeviceBackend.h

@@ -1,4 +1,5 @@
 #include "DeviceCenterController.h"
+#include "AppSettings.h"
 #include "DeviceBackend.h"
 #include "PeripheralSource.h"
 #include <QJsonDocument>
@@ -42,7 +43,7 @@ DeviceCenterController::DeviceCenterController(QObject* parent, std::shared_ptr<
     _history = std::make_unique<BatteryHistory>(
         historyDir.isEmpty() ? QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) : historyDir);
     connect(_history.get(), &BatteryHistory::changed, this, &DeviceCenterController::batteryHistoryChanged);
-    QSettings settings("SonyBridge", "SonyDeviceCenter");
+    AppSettings settings;
     _themeMode = settings.value("themeMode", "light").toString();
     if (_themeMode != "dark" && _themeMode != "light" && _themeMode != "system") _themeMode = "light";
     _iconAntialiasing = settings.value("iconAntialiasing", true).toBool();
@@ -161,7 +162,7 @@ void DeviceCenterController::_applySnapshot(const QByteArray& data) {
     // dropping to 1; it is persisted because the device does not keep it.
     if (const int reported = nc.value("ambientLevel").toInt(); reported > 0 && reported != _ambientLevel) {
         _ambientLevel = reported;
-        QSettings("SonyBridge", "SonyDeviceCenter").setValue("ambientLevel", reported);
+        AppSettings().setValue("ambientLevel", reported);
     }
     const auto eq = s.value("equalizer").toObject();
     _equalizerPreset = valid("equalizer") ? eq.value("preset").toInt() : -1;
@@ -197,7 +198,7 @@ void DeviceCenterController::setAlias(const QString& address, const QString& ali
     if (name == aliasFor(key)) return;
     if (name.isEmpty()) _aliases.remove(key);
     else _aliases.insert(key, name);
-    QSettings settings("SonyBridge", "SonyDeviceCenter");
+    AppSettings settings;
     if (_aliases.isEmpty()) settings.remove("deviceAliases");
     else settings.setValue("deviceAliases", _aliases);
     emit aliasesChanged();
@@ -385,7 +386,7 @@ void DeviceCenterController::setAutostart(bool enable) {
 void DeviceCenterController::setIconAntialiasing(bool enabled) {
     if (_iconAntialiasing == enabled) return;
     _iconAntialiasing = enabled;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("iconAntialiasing", enabled);
+    AppSettings().setValue("iconAntialiasing", enabled);
     emit appearanceChanged();
 }
 
@@ -393,21 +394,21 @@ void DeviceCenterController::setThemeMode(const QString& mode) {
     if (mode != "dark" && mode != "light" && mode != "system") return;
     if (_themeMode == mode) return;
     _themeMode = mode;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("themeMode", mode);
+    AppSettings().setValue("themeMode", mode);
     emit appearanceChanged();
 }
 
 void DeviceCenterController::setAnimationsEnabled(bool enabled) {
     if (_animationsEnabled == enabled) return;
     _animationsEnabled = enabled;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("animationsEnabled", enabled);
+    AppSettings().setValue("animationsEnabled", enabled);
     emit appearanceChanged();
 }
 
 void DeviceCenterController::setPlainFont(bool enabled) {
     if (_plainFont == enabled) return;
     _plainFont = enabled;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("plainFont", enabled);
+    AppSettings().setValue("plainFont", enabled);
     emit appearanceChanged();
 }
 
@@ -415,51 +416,51 @@ bool DeviceCenterController::minimizeToTray() const { return _minimizeToTray; }
 void DeviceCenterController::setMinimizeToTray(bool enable) {
     if (_minimizeToTray == enable) return;
     _minimizeToTray = enable;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("minimizeToTray", enable);
+    AppSettings().setValue("minimizeToTray", enable);
     emit minimizeToTrayChanged();
 }
 
 void DeviceCenterController::setNotifyLowBattery(bool enable) {
     if (_notifyLowBattery == enable) return;
     _notifyLowBattery = enable;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("notifyLowBattery", enable);
+    AppSettings().setValue("notifyLowBattery", enable);
     emit notificationSettingsChanged();
 }
 void DeviceCenterController::setNotifyConnection(bool enable) {
     if (_notifyConnection == enable) return;
     _notifyConnection = enable;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("notifyConnection", enable);
+    AppSettings().setValue("notifyConnection", enable);
     emit notificationSettingsChanged();
 }
 void DeviceCenterController::setNotifyCharged(bool enable) {
     if (_notifyCharged == enable) return;
     _notifyCharged = enable;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("notifyCharged", enable);
+    AppSettings().setValue("notifyCharged", enable);
     emit notificationSettingsChanged();
 }
 void DeviceCenterController::setNotifyHotkeys(bool enable) {
     if (_notifyHotkeys == enable) return;
     _notifyHotkeys = enable;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("notifyHotkeys", enable);
+    AppSettings().setValue("notifyHotkeys", enable);
     emit notificationSettingsChanged();
 }
 void DeviceCenterController::setNotifyUpdates(bool enable) {
     if (_notifyUpdates == enable) return;
     _notifyUpdates = enable;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("notifyUpdates", enable);
+    AppSettings().setValue("notifyUpdates", enable);
     emit notificationSettingsChanged();
 }
 void DeviceCenterController::setCheckUpdatesOnStart(bool enable) {
     if (_checkUpdatesOnStart == enable) return;
     _checkUpdatesOnStart = enable;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("checkUpdatesOnStart", enable);
+    AppSettings().setValue("checkUpdatesOnStart", enable);
     emit notificationSettingsChanged();
 }
 void DeviceCenterController::setLowBatteryThreshold(int percent) {
     percent = std::clamp(percent, 5, 50);
     if (_lowBatteryThreshold == percent) return;
     _lowBatteryThreshold = percent;
-    QSettings("SonyBridge", "SonyDeviceCenter").setValue("lowBatteryThreshold", percent);
+    AppSettings().setValue("lowBatteryThreshold", percent);
     emit notificationSettingsChanged();
 }
 
@@ -478,7 +479,7 @@ QVariantList DeviceCenterController::availableLanguages() const {
 void DeviceCenterController::setLanguage(const QString& langCode) {
     if (_currentLanguage != langCode) {
         _currentLanguage = langCode;
-        QSettings settings("SonyBridge", "SonyDeviceCenter");
+        AppSettings settings;
         settings.setValue("language", langCode);
         emit languageChanged();
     }

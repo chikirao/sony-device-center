@@ -7,6 +7,7 @@
 #include "DeviceCenterController.h"
 #include "PeripheralModel.h"
 #include "PeripheralSource.h"
+#include "../support/ScratchSettings.h"
 #include "sony/core/DeviceService.h"
 #include "sony/core/SimulatedDevice.h"
 
@@ -55,6 +56,7 @@ class PeripheralModelTests : public QObject {
     Q_OBJECT
 private slots:
     void initTestCase() { QStandardPaths::setTestModeEnabled(true); }
+    void init() { QVERIFY(_settings.reset()); }
 
     void kindFromNameCoversTheUsualSuspects() {
         QCOMPARE(peripheralKindFromName("MX Master 3S"), PeripheralKind::Mouse);
@@ -268,6 +270,9 @@ private slots:
         QCOMPARE(rig.names().mid(0, 2), QStringList({"Keychron K3", "MX Master 3S"}));
         QCOMPARE(rig.names().at(2), QString("LinkBuds S"));
     }
+
+private:
+    test::ScratchSettings _settings;
 };
 
 QTEST_GUILESS_MAIN(PeripheralModelTests)

@@ -1,10 +1,10 @@
 #include "HotkeyManager.h"
+#include "AppSettings.h"
 #include "DeviceCenterController.h"
 #include "TrayController.h"
 
 #include <QCoreApplication>
 #include <QKeySequence>
-#include <QSettings>
 #include <QVariantMap>
 
 #ifdef Q_OS_WIN
@@ -135,7 +135,7 @@ QString HotkeyManager::displayText(const QString& portable) {
 }
 
 void HotkeyManager::_load() {
-    QSettings settings("SonyBridge", "SonyDeviceCenter");
+    AppSettings settings;
     settings.beginGroup(_settingsGroup);
     for (int i = 0; i < kActionCount; ++i) {
         const auto key = QLatin1String(kActionKeys[i]);
@@ -145,7 +145,7 @@ void HotkeyManager::_load() {
 }
 
 void HotkeyManager::_save(Action action) {
-    QSettings settings("SonyBridge", "SonyDeviceCenter");
+    AppSettings settings;
     settings.beginGroup(_settingsGroup);
     const auto& binding = _bindings[index(action)];
     settings.setValue(actionKey(action) + "/enabled", binding.enabled);
