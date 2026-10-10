@@ -28,6 +28,7 @@ struct DeviceState {
 
     int autoPowerOff{0};
     bool speakToChat{false};
+    SpeakToChatConfig speakToChatConfig;
     bool adaptiveVolume{false};
 };
 

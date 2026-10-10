@@ -44,6 +44,22 @@ size_t SimulatedDeviceTransport::send(std::span<const std::byte> data) {
     return written;
 }
 
+void SimulatedDeviceTransport::setSpeakToChatConfig(int sensitivity, bool voicePassthrough, int timeout) {
+    std::lock_guard lock(_stateMutex);
+    _speakToChatConfig = {static_cast<uint8_t>(std::clamp(sensitivity, 0, 2)),
+                          static_cast<uint8_t>(voicePassthrough ? 1 : 0),
+                          static_cast<uint8_t>(std::clamp(timeout, 0, 3))};
+    if (!isConnected()) return;
+    // NTFY fd 05 00 <sensitivity> <voicePassthrough> <timeout>
+    reply({0xfd, 0x05, 0x00, _speakToChatConfig[0], _speakToChatConfig[1], _speakToChatConfig[2]});
+}
+
+void SimulatedDeviceTransport::setUnanswered(uint8_t opcode, bool unanswered) {
+    std::lock_guard lock(_stateMutex);
+    if (unanswered) _unanswered.insert(opcode);
+    else _unanswered.erase(opcode);
+}
+
 void SimulatedDeviceTransport::setBattery(int level, bool charging) {
     std::lock_guard lock(_stateMutex);
     _battery = static_cast<uint8_t>(std::clamp(level, 0, 100));
@@ -64,6 +80,7 @@ void SimulatedDeviceTransport::reply(std::vector<uint8_t> payload) {
 void SimulatedDeviceTransport::handle(const std::vector<uint8_t>& p) {
     if (p.empty()) return;
     std::lock_guard lock(_stateMutex);
+    if (_unanswered.contains(p[0])) return;
     const uint8_t op = p[0];
     const uint8_t type = p.size() > 1 ? p[1] : 0;
 
@@ -188,6 +205,18 @@ void SimulatedDeviceTransport::handle(const std::vector<uint8_t>& p) {
             if (type == 0x0a) _adaptiveVolume = p[2] == 0;
             if (type == 0x05 && p.size() >= 4) _speakToChat = p[3] != 0;
             if (type == 0x04 && p.size() >= 5) _autoPowerOff = {p[3], p[4]};
+        }
+        break;
+
+    case 0xfa: // V1 Speak-to-Chat settings query
+        if (type == 0x05)
+            reply({0xfb, 0x05, 0x00, _speakToChatConfig[0], _speakToChatConfig[1], _speakToChatConfig[2]});
+        break;
+
+    case 0xfc: // V1 Speak-to-Chat settings set: fc 05 00 <sensitivity> <voicePassthrough> <timeout>
+        if (type == 0x05 && p.size() >= 6) {
+            _speakToChatConfig = {p[3], p[4], p[5]};
+            reply({0xfd, 0x05, 0x00, p[3], p[4], p[5]});  // the XM4's NTFY
         }
         break;
 

@@ -197,6 +197,26 @@ bool DeviceEventDispatcher::parseNotificationPayload(const std::vector<uint8_t>&
         }
     }
 
+    // Speak-to-Chat on V1 (Smart Talking Mode); SonyDevice passes these on
+    // for V1 devices only. Settings: fd 05 00
+    // <sensitivity> <voicePassthrough> <timeout>, sent after every change,
+    // including one made on another connected device. Enable: f9 05 01
+    // <onOff>; other kinds are talking sessions, not the switch.
+    if (opcode == 0xfd && payload.size() >= 6 && payload[1] == 0x05 && payload[3] <= 2 && payload[5] <= 3) {
+        inOutState.speakToChatConfig = {
+            .sensitivity = payload[3],
+            .voicePassthrough = payload[4] != 0,
+            .timeout = payload[5]
+        };
+        if (notify) dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
+        return true;
+    }
+    if (opcode == 0xf9 && payload.size() >= 4 && payload[1] == 0x05 && payload[2] == 0x01) {
+        inOutState.speakToChat = payload[3] != 0;
+        if (notify) dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
+        return true;
+    }
+
     return false;
 }
 

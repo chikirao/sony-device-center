@@ -75,6 +75,19 @@ TEST_CASE("sonyctl words map onto the typed request", "[core][cli]") {
         CHECK_THROWS_AS(cli({"eq", "custom", "3", "1", "0"}), std::invalid_argument);
         CHECK_THROWS_AS(cli({"eq", "custom", "11", "0", "0", "0", "0", "0"}), std::invalid_argument);
     }
+    SECTION("speak-to-chat settings") {
+        CHECK(cli({"stc", "get"}).request["method"] == "speakToChatConfigGet");
+        CHECK(cli({"stc", "get"}).select == "speakToChatConfig");
+        const auto sensitivity = cli({"stc", "sensitivity", "High"}).request;
+        CHECK(sensitivity["method"] == "speakToChatConfig");
+        CHECK(sensitivity["params"] == Json({{"sensitivity", 1}}));
+        CHECK(cli({"stc", "timeout", "never"}).request["params"] == Json({{"timeout", 3}}));
+        CHECK(cli({"stc", "timeout", "short"}).request["params"] == Json({{"timeout", 0}}));
+        CHECK(cli({"stc", "passthrough", "on"}).request["params"] == Json({{"voicePassthrough", true}}));
+        CHECK_THROWS_AS(cli({"stc", "passthrough"}), std::invalid_argument);
+        CHECK_THROWS_AS(cli({"stc", "sensitivity", "medium"}), std::invalid_argument);
+        CHECK_THROWS_AS(cli({"stc", "timeout"}), std::invalid_argument);
+    }
     SECTION("power, auto power-off, connections") {
         CHECK(cli({"power", "off"}).request["method"] == "powerOff");
         CHECK_THROWS_AS(cli({"power", "on"}), std::invalid_argument);
@@ -155,4 +168,41 @@ TEST_CASE("Typed CLI requests run end to end against the simulator", "[core][cli
     CHECK(failed["ok"] == false);
     CHECK(failed["error"]["code"] == "Disconnected");
     CHECK(run({"battery"})["ok"] == true);
+}
+
+TEST_CASE("Speak-to-Chat settings round-trip on a simulated WH-1000XM4", "[core][cli][simulated]") {
+    auto simulated = createSimulatedDevice("WH-1000XM4", "00:11:22:33:44:55");
+    DeviceService service(simulated.transport, simulated.discovery);
+    service.startAutoConnect(simulated.address);
+    service.tick();
+    REQUIRE(service.isConnected());
+
+    auto run = [&](std::initializer_list<const char*> words) {
+        const auto request = cli(words);
+        return cliSelect(JsonProtocol::execute(request.request, service), request.select);
+    };
+    auto settings = run({"stc", "get"});
+    REQUIRE(settings["ok"] == true);
+    CHECK(settings["data"] == Json({{"sensitivity", 0}, {"voicePassthrough", false}, {"timeout", 1}}));
+
+    // Each word changes its own field and keeps the others.
+    REQUIRE(run({"stc", "timeout", "long"})["ok"] == true);
+    REQUIRE(run({"stc", "sensitivity", "low"})["ok"] == true);
+    REQUIRE(run({"stc", "passthrough", "on"})["ok"] == true);
+    settings = run({"stc", "get"});
+    CHECK(settings["data"] == Json({{"sensitivity", 2}, {"voicePassthrough", true}, {"timeout", 2}}));
+    CHECK(run({"info"})["data"]["capabilities"]["speakToChatConfig"] == true);
+}
+
+TEST_CASE("Speak-to-Chat settings are refused where the profile lacks them", "[core][cli][simulated]") {
+    auto simulated = createSimulatedDevice();
+    DeviceService service(simulated.transport, simulated.discovery);
+    service.startAutoConnect(simulated.address);
+    service.tick();
+    REQUIRE(service.isConnected());
+
+    const auto request = cli({"stc", "timeout", "long"});
+    const auto reply = JsonProtocol::execute(request.request, service);
+    CHECK(reply["ok"] == false);
+    CHECK(reply["error"]["code"] == "Unsupported");
 }

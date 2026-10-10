@@ -213,9 +213,11 @@ void SonyProtocolSession::_handleDecodedFrame(const SonyFrame& frame) {
     }
 
     if (frame.type == DataType::DataMdr) {
-        std::string desc = Logger::describePayload(frame.payload);
-        if (!desc.empty()) {
-            Logger::debug(LogCategory::Protocol, desc);
+        // A payload without a name is logged as bytes, so a capture of a new
+        // command shows the reply too.
+        if (Logger::getLogLevel() <= LogLevel::Debug) {
+            const std::string desc = Logger::describePayload(frame.payload);
+            Logger::debug(LogCategory::Protocol, desc.empty() ? "RX  " + Logger::formatHex(frame.payload) : desc);
         }
 
         // Send ACK back to device with toggled 1-bit sequence

@@ -296,6 +296,14 @@ void ProtocolV2::setSpeakToChat(bool enabled) {
     _session.send(SonyFrame{ .type = DataType::DataMdr, .payload = std::move(payload) });
 }
 
+SpeakToChatConfig ProtocolV2::getSpeakToChatConfig() {
+    throw SonyException(SonyErrorCode::Unsupported, "Speak-to-Chat settings are not implemented on Protocol V2");
+}
+
+void ProtocolV2::setSpeakToChatConfig(const SpeakToChatConfig& /*config*/) {
+    throw SonyException(SonyErrorCode::Unsupported, "Speak-to-Chat settings are not implemented on Protocol V2");
+}
+
 bool ProtocolV2::getAdaptiveVolume() {
     // GET: f6 0a -> RET: f7 0a <inverted_enabled>
     auto resp = _session.sendAndAwaitResponse(

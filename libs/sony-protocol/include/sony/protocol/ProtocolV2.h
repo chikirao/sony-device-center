@@ -38,6 +38,8 @@ public:
 
     bool getSpeakToChat() override;
     void setSpeakToChat(bool enabled) override;
+    SpeakToChatConfig getSpeakToChatConfig() override;
+    void setSpeakToChatConfig(const SpeakToChatConfig& config) override;
 
     bool getAdaptiveVolume() override;
     void setAdaptiveVolume(bool enabled) override;

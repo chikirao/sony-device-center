@@ -103,6 +103,11 @@ DeviceCapabilities CapabilityDiscovery::probeDevice(
     } catch (const SonyException&) {}
 
     try {
+        protocol.getSpeakToChatConfig();
+        caps.speakToChatConfig = true;
+    } catch (const SonyException&) {}
+
+    try {
         protocol.getAdaptiveVolume();
         caps.adaptiveVolume = true;
     } catch (const SonyException&) {}
