@@ -4,6 +4,7 @@
 
 #ifdef Q_OS_WIN
 
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QSettings>
@@ -21,13 +22,27 @@ namespace {
 constexpr const wchar_t* kAppUserModelId = L"SonyBridge.SonyDeviceCenter";
 
 // Windows reads the toast icon from a file path, not from Qt resources, so
-// the brand PNG is written once to the app data folder.
+// the brand PNG is written to the app data folder. The file is named after
+// its content: Windows caches the icon by path, and a copy written once kept
+// showing an old brand icon after the app's icon changed.
 QString iconPath() {
-    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-    const QString path = dir + "/toast-icon.png";
+    QFile source(":/resources/brand/app-icon.png");
+    if (!source.open(QIODevice::ReadOnly)) return {};
+    const QByteArray png = source.readAll();
+    const QString name = "toast-icon-" + QString::fromLatin1(QCryptographicHash::hash(png, QCryptographicHash::Sha1).toHex().left(8)) + ".png";
+    const QDir dir(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation));
+    const QString path = dir.filePath(name);
     if (!QFile::exists(path)) {
-        QDir().mkpath(dir);
-        QFile::copy(":/resources/brand/app-icon.png", path);
+        dir.mkpath(".");
+        // Older copies, including the read-only one QFile::copy made from the
+        // resource before.
+        for (const auto& old : dir.entryList({"toast-icon*.png"}, QDir::Files)) {
+            QFile file(dir.filePath(old));
+            file.setPermissions(file.permissions() | QFileDevice::WriteUser);
+            file.remove();
+        }
+        QFile target(path);
+        if (target.open(QIODevice::WriteOnly)) target.write(png);
     }
     return QDir::toNativeSeparators(path);
 }
