@@ -34,6 +34,9 @@ jobs:
                 qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-templates \
                 qml6-module-qtquick-layouts qml6-module-qtquick-shapes qml6-module-qtquick-window \
                 qml6-module-qtqml-workerscript gdb
+              # Ubuntu only lets a process trace its own children; QtTest's crash
+              # handler attaches gdb to itself, so allow any same-user process.
+              sudo sysctl -w kernel.yama.ptrace_scope=0
             cmake_args: ""
           - os: windows-latest
             artifact_name: sony-device-center-win-x64
