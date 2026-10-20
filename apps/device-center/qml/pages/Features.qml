@@ -152,8 +152,10 @@ ViewPage {
                 readonly property bool settingsLocked: controller.connected && !controller.hasSpeakToChatConfig
                 readonly property bool settingsLive: phase === "ready" && !settingsLocked
                 readonly property bool settingsLoading: !settingsLocked && (phase === "reading" || phase === "settingsPending")
-                // From the card's own width, not the window's.
-                readonly property bool compact: width <= 380
+                // From the card's own width, not the window's. A card the
+                // layout has not sized yet (width 0) is not compact: counting
+                // it as one gave the header a second height for a frame.
+                readonly property bool compact: width > 0 && width <= 380
                 readonly property int headerHeight: compact ? 76 : 84
                 // One width for both dropdowns, so they line up: 240, giving
                 // way down to 150 before the longer label is cut short. From
