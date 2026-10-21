@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import ".."
 
 // Stands in for a switch or a picker whose value is not known, at the
@@ -22,26 +23,37 @@ Item {
         onRunningChanged: if (!running) ph.pulse = 1
     }
 
-    // Qt Quick has no dashed border, so the outline is drawn.
-    Canvas {
+    // Qt Quick has no dashed border, so the outline is a path. A Shape rather
+    // than a Canvas: the software renderer (Linux CI) crashed in drawPixmap
+    // painting a Canvas that was being resized, and pages hold many of these.
+    Shape {
         id: outline
         anchors.fill: parent
         visible: !ph.loading
-        onPaint: {
-            var ctx = getContext("2d")
-            ctx.reset()
-            ctx.strokeStyle = Theme.lineHi
-            ctx.lineWidth = ph.switchShape ? 1.5 : 1
-            // Older Qt draws it solid.
-            if (ctx.setLineDash) ctx.setLineDash([4, 3])
-            var inset = ctx.lineWidth / 2
-            ctx.beginPath()
-            ctx.roundedRect(inset, inset, width - 2 * inset, height - 2 * inset, ph.radius - inset, ph.radius - inset)
-            ctx.stroke()
+        readonly property real lineWidth: ph.switchShape ? 1.5 : 1
+        readonly property real inset: lineWidth / 2
+        readonly property real r: Math.max(0, Math.min(ph.radius - inset, (width - 2 * inset) / 2, (height - 2 * inset) / 2))
+        readonly property real x0: inset
+        readonly property real y0: inset
+        readonly property real x1: width - inset
+        readonly property real y1: height - inset
+        ShapePath {
+            strokeColor: Theme.lineHi
+            strokeWidth: outline.lineWidth
+            fillColor: "transparent"
+            strokeStyle: ShapePath.DashLine
+            // In line widths: 4 px dashes, 3 px gaps.
+            dashPattern: [4 / outline.lineWidth, 3 / outline.lineWidth]
+            startX: outline.x0 + outline.r; startY: outline.y0
+            PathLine { x: outline.x1 - outline.r; y: outline.y0 }
+            PathArc { x: outline.x1; y: outline.y0 + outline.r; radiusX: outline.r; radiusY: outline.r }
+            PathLine { x: outline.x1; y: outline.y1 - outline.r }
+            PathArc { x: outline.x1 - outline.r; y: outline.y1; radiusX: outline.r; radiusY: outline.r }
+            PathLine { x: outline.x0 + outline.r; y: outline.y1 }
+            PathArc { x: outline.x0; y: outline.y1 - outline.r; radiusX: outline.r; radiusY: outline.r }
+            PathLine { x: outline.x0; y: outline.y0 + outline.r }
+            PathArc { x: outline.x0 + outline.r; y: outline.y0; radiusX: outline.r; radiusY: outline.r }
         }
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
-        Connections { target: Theme; function onLightChanged() { outline.requestPaint() } }
     }
 
     // Loading.
