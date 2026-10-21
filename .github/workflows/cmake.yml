@@ -33,11 +33,13 @@ jobs:
               sudo apt-get install -y libbluetooth-dev libglew-dev libglfw3-dev libdbus-1-dev qt6-base-dev qt6-declarative-dev libgl1-mesa-dev \
                 qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-templates \
                 qml6-module-qtquick-layouts qml6-module-qtquick-shapes qml6-module-qtquick-window \
-                qml6-module-qtqml-workerscript gdb
+                qml6-module-qtqml-workerscript gdb \
+                xvfb xauth qt6-qpa-plugins libgl1-mesa-dri
               # Ubuntu only lets a process trace its own children; QtTest's crash
               # handler attaches gdb to itself, so allow any same-user process.
               sudo sysctl -w kernel.yama.ptrace_scope=0
-            cmake_args: ""
+            # UI suite on xcb under Xvfb (OpenGL through Mesa), not offscreen.
+            cmake_args: "-DSONY_UI_TEST_QPA=xcb"
           - os: windows-latest
             artifact_name: sony-device-center-win-x64
             install_deps: ""
@@ -78,14 +80,16 @@ jobs:
         run: |
           cmake --build build --config ${BUILD_TYPE}
 
-      # A failed test runs once more. Qt 6.4's software renderer (Ubuntu,
-      # offscreen) now and then crashes in QPainter::drawPixmap mid-frame:
-      # about one UI-suite run in 80 in a container, never with Qt 6.10 and
-      # never twice in a row. A real failure fails both runs.
+      # A failed test runs once more. On Linux the tests run inside Xvfb so the
+      # UI suite renders through OpenGL: offscreen falls back to Qt 6.4's
+      # software renderer, which crashed in QPainter::drawPixmap painting
+      # resized Canvases, by #41 in most runs.
       - name: Run unit & protocol tests
         shell: bash
         run: |
-          ctest --test-dir build -C ${BUILD_TYPE} --output-on-failure --no-tests=error --repeat until-pass:2
+          run=()
+          if [ "$RUNNER_OS" = Linux ]; then run=(xvfb-run -a -s "-screen 0 1920x1080x24"); fi
+          "${run[@]}" ctest --test-dir build -C ${BUILD_TYPE} --output-on-failure --no-tests=error --repeat until-pass:2
 
       # The Windows log does not carry the UI suite's output; the suite also
       # writes it to a file, kept here when something fails.
