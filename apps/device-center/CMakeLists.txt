@@ -215,9 +215,13 @@ if(BUILD_TESTING)
         # The tray icon renderer needs a GUI platform. Headless CI runners
         # have none; Windows always has one, and its deployed plugin folder
         # next to the binaries carries only qwindows.
+        # The Linux CI job runs it on xcb under Xvfb instead, where Qt Quick
+        # renders through OpenGL (Mesa llvmpipe): Qt 6.4's software renderer,
+        # which offscreen falls back to, crashes painting resized Canvases.
+        set(SONY_UI_TEST_QPA "offscreen" CACHE STRING "QT_QPA_PLATFORM for the UI test suite outside Windows")
         if(NOT WIN32)
             set_tests_properties("device-controller-worker-integration" PROPERTIES
-                ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+                ENVIRONMENT "QT_QPA_PLATFORM=${SONY_UI_TEST_QPA}")
         endif()
 
         # The battery log and its estimate are plain Qt Core, so they get a
